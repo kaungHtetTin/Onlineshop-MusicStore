@@ -1,0 +1,8 @@
+what I want is that
+1. I want role permission management system, for admin, manager, staff and sale
+2. POS interface 
+3. Inventory management system. In my real work, I have one warehouse and one store. I want to know the realtime update for the Inventory stock list interface
+in both warehouse and store. also need adjust and transfer. In future. I can have multiple warehouse and multiple store. 
+4. Now I want more clear and good UI UX for inventory and stock update CRUD system.
+
+tell me what need to do for this and give me implementation update roadmap with md file

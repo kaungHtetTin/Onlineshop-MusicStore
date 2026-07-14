@@ -1,0 +1,103 @@
+/* Shared storefront polish. Tailwind directives removed. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  overflow-x: hidden;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  background: #f6f8f8;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+#app {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+.MuiContainer-root {
+  min-width: 0;
+}
+
+.MuiCard-root,
+.MuiPaper-root {
+  max-width: 100%;
+}
+
+.MuiTypography-root {
+  overflow-wrap: anywhere;
+}
+
+.MuiButton-root {
+  min-width: 0;
+}
+
+.MuiDialog-paper {
+  max-width: calc(100vw - 24px);
+}
+
+@media (max-width: 600px) {
+  .MuiContainer-root {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .MuiToolbar-root {
+    min-width: 0;
+  }
+
+  .MuiIconButton-root {
+    padding: 7px;
+  }
+
+  .MuiButton-root {
+    min-height: 36px;
+  }
+
+  .MuiPagination-ul {
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .MuiPaginationItem-root {
+    min-width: 30px;
+    height: 30px;
+    margin: 0;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .MuiContainer-root {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .MuiBottomNavigationAction-root {
+    min-width: 0 !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+
+  .MuiBottomNavigationAction-label {
+    font-size: 0.58rem !important;
+  }
+}
