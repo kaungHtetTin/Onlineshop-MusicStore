@@ -18,7 +18,6 @@ export default function ProductFormUI({
     app_url,
     selectedSkuImageKey,
     setSelectedSkuImageKey,
-    onGenerateVariants,
     onUpdateSku,
     onRemoveSku,
     onAddSku,
@@ -29,19 +28,53 @@ export default function ProductFormUI({
     onSetCover,
     imageKeyForSku,
     setImageKeyForSku,
+    onProductNameChange,
+    onRegenerateSku,
+    onSkuStructureChange,
 }) {
     const isEdit = mode === 'edit';
     const existingImages = isEdit ? product.images.filter((img) => data.imageAttachmentIds.includes(img.id)) : [];
 
     const addOption = () => {
         if (options.length >= 3) return;
-        setOptions([...options, { id: Date.now(), name: '', values: [] }]);
+        setOptions([...options, { id: Date.now(), name: '' }]);
     };
 
     const removeOption = (index) => {
-        const next = [...options];
-        next.splice(index, 1);
-        setOptions(next);
+        const removedKey = normalizeOptionKey(options[index]?.name);
+        const nextOptions = options.filter((_, optionIndex) => optionIndex !== index);
+        setOptions(nextOptions);
+
+        if (removedKey) {
+            const nextSkus = data.skus.map((sku) => {
+                const attributes = { ...(sku.attributes || {}) };
+                delete attributes[removedKey];
+                return { ...sku, attributes };
+            });
+            onSkuStructureChange(nextSkus, nextOptions);
+        }
+    };
+
+    const renameOption = (index, name) => {
+        const oldKey = normalizeOptionKey(options[index]?.name);
+        const newKey = normalizeOptionKey(name);
+        const nextOptions = options.map((option, optionIndex) => (
+            optionIndex === index ? { ...option, name } : option
+        ));
+        setOptions(nextOptions);
+
+        if (oldKey !== newKey && oldKey) {
+            const nextSkus = data.skus.map((sku) => {
+                const attributes = { ...(sku.attributes || {}) };
+                if (Object.prototype.hasOwnProperty.call(attributes, oldKey)) {
+                    const value = attributes[oldKey];
+                    delete attributes[oldKey];
+                    if (newKey) attributes[newKey] = value;
+                }
+                return { ...sku, attributes };
+            });
+            onSkuStructureChange(nextSkus, nextOptions);
+        }
     };
 
     const renderThumbPicker = (sku, idx) => {
@@ -88,7 +121,7 @@ export default function ProductFormUI({
                     <div className="crud-grid" style={{ padding: 0 }}>
                         <label className="form-field span-2">
                             <span>Product name</span>
-                            <input value={data.name} onChange={(e) => setData('name', e.target.value)} required />
+                            <input value={data.name} onChange={(e) => onProductNameChange(e.target.value)} required />
                             {errors.name && <small style={{ color: '#ce4444' }}>{errors.name}</small>}
                         </label>
                         <label className="form-field span-2">
@@ -205,50 +238,52 @@ export default function ProductFormUI({
                 </section>
 
                 <section className="panel glass">
-                    <PanelHeading eyebrow="Options" title="Variant options" />
-                    <p>Define options like Size or Color (max 3).</p>
-                    <div className="stack-sm" style={{ marginTop: 12 }}>
+                    <PanelHeading
+                        eyebrow="Options"
+                        title="Variant options"
+                        action={
+                            <button type="button" className="btn secondary" onClick={addOption} disabled={options.length >= 3 || processing}>
+                                <Icon name="plus" size={14} />
+                                Add option
+                            </button>
+                        }
+                    />
+                    <div className="variant-options-list">
+                        {options.length === 0 && (
+                            <div className="variant-options-empty">
+                                <Icon name="tag" size={20} />
+                                <strong>No variant options</strong>
+                            </div>
+                        )}
                         {options.map((opt, idx) => (
-                            <div key={opt.id} className="variant-card">
-                                <div className="crud-grid" style={{ padding: 0 }}>
+                            <div key={opt.id} className="variant-option-card">
+                                <div className="variant-option-heading">
+                                    <span className="variant-option-number">{idx + 1}</span>
+                                    <strong>{opt.name.trim() || `Option ${idx + 1}`}</strong>
+                                    <button
+                                        type="button"
+                                        className="icon-btn danger"
+                                        onClick={() => removeOption(idx)}
+                                        disabled={processing}
+                                        aria-label={`Remove option ${idx + 1}`}
+                                        title="Remove option"
+                                    >
+                                        <Icon name="trash" size={15} />
+                                    </button>
+                                </div>
+                                <div className="variant-option-fields">
                                     <label className="form-field">
                                         <span>Option name</span>
                                         <input
                                             value={opt.name}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                setOptions((prev) => prev.map((o, i) => (i === idx ? { ...o, name: value } : o)));
-                                            }}
-                                        />
-                                    </label>
-                                    <label className="form-field">
-                                        <span>Values (comma separated)</span>
-                                        <input
-                                            value={(opt.values || []).join(', ')}
-                                            onChange={(e) => {
-                                                const values = e.target.value
-                                                    .split(',')
-                                                    .map((s) => s.trim())
-                                                    .filter((s) => s !== '');
-                                                setOptions((prev) => prev.map((o, i) => (i === idx ? { ...o, values } : o)));
-                                            }}
+                                            placeholder="Color"
+                                            autoComplete="off"
+                                            onChange={(e) => renameOption(idx, e.target.value)}
                                         />
                                     </label>
                                 </div>
-                                <button
-                                    type="button"
-                                    className="btn danger"
-                                    style={{ marginTop: 8, minHeight: 32 }}
-                                    onClick={() => removeOption(idx)}
-                                    disabled={processing}
-                                >
-                                    Remove option
-                                </button>
                             </div>
                         ))}
-                        <button type="button" className="btn secondary" onClick={addOption} disabled={options.length >= 3 || processing}>
-                            Add option
-                        </button>
                     </div>
                 </section>
 
@@ -257,20 +292,10 @@ export default function ProductFormUI({
                         eyebrow="Variants"
                         title="SKUs"
                         action={
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                <button
-                                    type="button"
-                                    className="btn secondary"
-                                    style={{ minHeight: 32 }}
-                                    onClick={onGenerateVariants}
-                                    disabled={processing || optionNames.length === 0}
-                                >
-                                    {isEdit ? 'Update grid' : 'Generate variants'}
-                                </button>
-                                <button type="button" className="btn secondary" style={{ minHeight: 32 }} onClick={onAddSku} disabled={processing}>
-                                    Add variant
-                                </button>
-                            </div>
+                            <button type="button" className="btn secondary" style={{ minHeight: 32 }} onClick={onAddSku} disabled={processing}>
+                                <Icon name="plus" size={14} />
+                                Add SKU
+                            </button>
                         }
                     />
 
@@ -315,19 +340,37 @@ export default function ProductFormUI({
                                     })}
                                     <label className="form-field">
                                         <span>SKU code</span>
-                                        <input value={v.sku_code} onChange={(e) => onUpdateSku(idx, { sku_code: e.target.value })} />
+                                        <div className="field-with-action">
+                                            <input
+                                                value={v.sku_code}
+                                                onChange={(e) => onUpdateSku(idx, { sku_code: e.target.value, sku_code_auto: false })}
+                                            />
+                                            <button
+                                                type="button"
+                                                className={`icon-btn ${v.sku_code_auto ? 'active' : ''}`}
+                                                onClick={() => onRegenerateSku(idx)}
+                                                aria-label="Generate SKU code"
+                                                title="Generate SKU code"
+                                            >
+                                                <Icon name="bolt" size={15} />
+                                            </button>
+                                        </div>
                                     </label>
                                     <label className="form-field">
                                         <span>Barcode</span>
                                         <input value={v.barcode} onChange={(e) => onUpdateSku(idx, { barcode: e.target.value })} />
                                     </label>
                                     <label className="form-field">
-                                        <span>Price</span>
-                                        <input type="number" value={v.price} onChange={(e) => onUpdateSku(idx, { price: e.target.value })} />
+                                        <span>Original price</span>
+                                        <input type="number" value={v.cost ?? ''} onChange={(e) => onUpdateSku(idx, { cost: e.target.value })} />
                                     </label>
                                     <label className="form-field">
-                                        <span>Stock</span>
-                                        <input type="number" value={v.stock_qty} onChange={(e) => onUpdateSku(idx, { stock_qty: e.target.value })} />
+                                        <span>Wholesale price</span>
+                                        <input type="number" value={v.wholesale_price ?? ''} onChange={(e) => onUpdateSku(idx, { wholesale_price: e.target.value })} />
+                                    </label>
+                                    <label className="form-field">
+                                        <span>Retail price</span>
+                                        <input type="number" value={v.price} onChange={(e) => onUpdateSku(idx, { price: e.target.value })} />
                                     </label>
                                     <label className="form-field checkbox-row">
                                         <input

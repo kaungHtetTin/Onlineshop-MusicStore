@@ -15,7 +15,18 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('inventory:expire-reservations')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
+        $schedule->command('operations:health-check')
+            ->everyFifteenMinutes()
+            ->withoutOverlapping();
+        $schedule->command('inventory:reconcile')
+            ->dailyAt('02:00')
+            ->withoutOverlapping();
+        $schedule->command('inventory:scan-low-stock')
+            ->dailyAt(config('inventory.low_stock_digest_time', '08:00'))
+            ->withoutOverlapping();
     }
 
     /**

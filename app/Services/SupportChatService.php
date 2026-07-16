@@ -11,10 +11,14 @@ class SupportChatService
 {
     public function pickSupportAgent(): ?User
     {
-        return User::query()
-            ->whereIn('role', ['support', 'manager', 'super_admin', 'cashier'])
+        $priority = ['support' => 1, 'manager' => 2, 'super_admin' => 3, 'sales' => 4];
+
+        return User::adminStaff()
             ->where('status', 'active')
-            ->orderByRaw("CASE role WHEN 'support' THEN 1 WHEN 'manager' THEN 2 WHEN 'super_admin' THEN 3 ELSE 4 END")
+            ->with('roles.permissions')
+            ->get()
+            ->filter(fn (User $user) => $user->hasAdminPermission('chat.manage'))
+            ->sortBy(fn (User $user) => $priority[$user->adminRoleName()] ?? 99)
             ->first();
     }
 

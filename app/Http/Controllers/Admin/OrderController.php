@@ -50,7 +50,7 @@ class OrderController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $role = $request->user()->role;
+        $user = $request->user();
 
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
@@ -61,9 +61,9 @@ class OrderController extends Controller
                 'q' => $search ?: null,
                 'tab' => $tab ?: null,
             ],
-            'canReviewPayments' => in_array($role, ['super_admin', 'manager'], true),
-            'canManageOrders' => in_array($role, ['super_admin', 'manager', 'cashier'], true),
-            'canCancelOrders' => in_array($role, ['super_admin', 'manager'], true),
+            'canReviewPayments' => $user->hasAdminPermission('orders.review_payment'),
+            'canManageOrders' => $user->hasAdminPermission('orders.manage'),
+            'canCancelOrders' => $user->hasAdminPermission('orders.cancel'),
         ]);
     }
 
@@ -76,12 +76,9 @@ class OrderController extends Controller
             'items.sku',
             'paymentReviewer:id,name',
             'selectedPaymentMethod',
-            'returns.item.product',
-            'returns.item.sku',
-            'returns.processor:id,name',
         ]);
 
-        $role = $request->user()->role;
+        $user = $request->user();
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
@@ -90,10 +87,9 @@ class OrderController extends Controller
                 'pdf' => route('admin.orders.voucher.pdf', $order),
                 'public' => route('public.invoices.show', $voucherService->ensurePublicToken($order)),
             ],
-            'canReviewPayments' => in_array($role, ['super_admin', 'manager'], true),
-            'canManageOrders' => in_array($role, ['super_admin', 'manager', 'cashier'], true),
-            'canCancelOrders' => in_array($role, ['super_admin', 'manager'], true),
-            'canManageReturns' => in_array($role, ['super_admin', 'manager'], true),
+            'canReviewPayments' => $user->hasAdminPermission('orders.review_payment'),
+            'canManageOrders' => $user->hasAdminPermission('orders.manage'),
+            'canCancelOrders' => $user->hasAdminPermission('orders.cancel'),
         ]);
     }
 
@@ -182,5 +178,22 @@ class OrderController extends Controller
         return redirect()
             ->route('admin.orders.show', $order)
             ->with('success', $message);
+    }
+
+    public function destroy(Request $request, Order $order, OrderManagementService $orderManagementService)
+    {
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $orderManagementService->deleteOrderAsReturn($order, $request->user(), $validated['reason'] ?? null);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        return redirect()
+            ->route('admin.orders.index')
+            ->with('success', 'Order deleted. Stock and POS finance records were reversed.');
     }
 }

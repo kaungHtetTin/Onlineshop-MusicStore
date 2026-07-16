@@ -1,4 +1,6 @@
 import axios from 'axios';
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 
 /**
  * We'll load the axios HTTP library which allows us to easily issue requests
@@ -18,13 +20,33 @@ window.axios.defaults.withCredentials = true;
  * allows your team to easily build robust real-time web applications.
  */
 
-// import Echo from 'laravel-echo';
+window.configureRealtime = (appBase = '') => {
+    if (window.Echo || !import.meta.env.VITE_PUSHER_APP_KEY) {
+        return window.Echo || null;
+    }
 
-// window.Pusher = require('pusher-js');
+    const cleanBase = appBase && appBase !== '/' ? `/${String(appBase).replace(/^\/+|\/+$/g, '')}` : '';
+    const scheme = import.meta.env.VITE_PUSHER_SCHEME || 'https';
+    const host = import.meta.env.VITE_PUSHER_HOST || undefined;
+    const port = import.meta.env.VITE_PUSHER_PORT || (scheme === 'https' ? 443 : 80);
 
-// window.Echo = new Echo({
-//     broadcaster: 'pusher',
-//     key: process.env.MIX_PUSHER_APP_KEY,
-//     cluster: process.env.MIX_PUSHER_APP_CLUSTER,
-//     forceTLS: true
-// });
+    window.Pusher = Pusher;
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: import.meta.env.VITE_PUSHER_APP_KEY,
+        cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'mt1',
+        wsHost: host,
+        wsPort: Number(port),
+        wssPort: Number(port),
+        forceTLS: scheme === 'https',
+        enabledTransports: ['ws', 'wss'],
+        authEndpoint: `${cleanBase}/broadcasting/auth`,
+        auth: {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        },
+    });
+
+    return window.Echo;
+};

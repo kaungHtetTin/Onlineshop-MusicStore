@@ -15,8 +15,15 @@ class ConfigureAdminSessionCookie
     public function handle(Request $request, Closure $next): Response
     {
         if ($this->requestUsesAdminSession($request)) {
+            $adminCookie = trim((string) config('session.admin_cookie'));
+
+            if ($adminCookie === '') {
+                $sessionCookie = trim((string) config('session.cookie'));
+                $adminCookie = ($sessionCookie !== '' ? $sessionCookie : 'laravel_session').'_admin';
+            }
+
             config([
-                'session.cookie' => config('session.admin_cookie'),
+                'session.cookie' => $adminCookie,
             ]);
         }
 

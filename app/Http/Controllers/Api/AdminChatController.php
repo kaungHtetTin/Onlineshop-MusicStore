@@ -12,14 +12,14 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminChatController extends Controller
 {
-    private function adminRoles(): array
+    private function authorizeAdminChat(Request $request): void
     {
-        return ['super_admin', 'manager', 'cashier', 'support'];
+        abort_unless($request->user()?->hasAdminPermission('chat.manage'), 403);
     }
 
     public function unreadCount(Request $request, SupportChatService $supportChatService)
     {
-        abort_unless(in_array($request->user()->role, $this->adminRoles(), true), 403);
+        $this->authorizeAdminChat($request);
 
         return response()->json([
             'count' => $supportChatService->unreadCountAllCustomerMessages(),
@@ -28,7 +28,7 @@ class AdminChatController extends Controller
 
     public function index(Request $request, SupportChatService $supportChatService)
     {
-        abort_unless(in_array($request->user()->role, $this->adminRoles(), true), 403);
+        $this->authorizeAdminChat($request);
 
         $search = trim((string) $request->query('q', ''));
 
@@ -79,7 +79,7 @@ class AdminChatController extends Controller
 
     public function show(Request $request, Conversation $conversation, SupportChatService $supportChatService)
     {
-        abort_unless(in_array($request->user()->role, $this->adminRoles(), true), 403);
+        $this->authorizeAdminChat($request);
 
         $conversation->load(['customer:id,name,email,phone,avatar', 'supportUser:id,name,role']);
         $supportChatService->markVisibleMessagesSeen($conversation, $request->user());
@@ -103,7 +103,7 @@ class AdminChatController extends Controller
 
     public function paginatedMessages(Request $request, Conversation $conversation, SupportChatService $supportChatService)
     {
-        abort_unless(in_array($request->user()->role, $this->adminRoles(), true), 403);
+        $this->authorizeAdminChat($request);
 
         $beforeId = $request->query('before_id');
         $limit = min((int) $request->query('limit', 35), 80);
@@ -128,7 +128,7 @@ class AdminChatController extends Controller
 
     public function latest(Request $request, SupportChatService $supportChatService)
     {
-        abort_unless(in_array($request->user()->role, $this->adminRoles(), true), 403);
+        $this->authorizeAdminChat($request);
 
         $validated = $request->validate([
             'conversation_id' => ['required', 'integer', 'exists:conversations,id'],
@@ -154,7 +154,7 @@ class AdminChatController extends Controller
 
     public function send(Request $request, SupportChatService $supportChatService)
     {
-        abort_unless(in_array($request->user()->role, $this->adminRoles(), true), 403);
+        $this->authorizeAdminChat($request);
 
         $validated = $request->validate([
             'conversation_id' => ['required', 'integer', 'exists:conversations,id'],
@@ -222,7 +222,7 @@ class AdminChatController extends Controller
 
     public function uploadImage(Request $request)
     {
-        abort_unless(in_array($request->user()->role, $this->adminRoles(), true), 403);
+        $this->authorizeAdminChat($request);
 
         $request->validate([
             'image' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp'],
@@ -241,7 +241,7 @@ class AdminChatController extends Controller
      */
     public function conversationForCustomer(Request $request, User $user, SupportChatService $supportChatService)
     {
-        abort_unless(in_array($request->user()->role, $this->adminRoles(), true), 403);
+        $this->authorizeAdminChat($request);
 
         $conversation = $supportChatService->getOrCreateConversation($user);
 

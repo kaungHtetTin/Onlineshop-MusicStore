@@ -17,9 +17,10 @@ import {
     Typography,
 } from '@mui/material';
 import { AccountBalanceWallet, CloudUpload, Image as ImageIcon } from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
@@ -28,6 +29,7 @@ import { useCartStore } from '@/stores/cartStore';
 const steps = ['Shipping', 'Payment proof', 'Review'];
 
 export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
+    const theme = useTheme();
     const { app_base, auth } = usePage().props;
     const items = useCartStore((s) => s.items);
     const clearCart = useCartStore((s) => s.clear);
@@ -142,7 +144,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 12, md: 4 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title="Checkout" />
             <Navbar />
 
@@ -275,7 +277,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                                     borderRadius: 2,
                                                     border: '1px solid',
                                                     borderColor: selected ? 'primary.main' : 'divider',
-                                                    bgcolor: selected ? 'rgba(8, 127, 116, 0.06)' : 'background.paper',
+                                                    bgcolor: selected ? alpha(theme.palette.primary.main, 0.06) : 'background.paper',
                                                     cursor: 'pointer',
                                                     color: 'inherit',
                                                     '&:hover': { borderColor: 'primary.main' },
@@ -512,6 +514,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

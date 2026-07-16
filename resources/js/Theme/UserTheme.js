@@ -33,10 +33,10 @@ export const createUserTheme = (settings = {}) => {
     const primary = /^#[0-9a-fA-F]{6}$/.test(settings?.theme_color || '')
         ? settings.theme_color
         : '#E91E63';
+    const secondary = '#FF5C8A';
+    const background = '#FFF7FA';
     const primaryLight = mix(primary, '#ffffff', 0.72);
     const primaryDark = mix(primary, '#000000', 0.22);
-    const secondary = mix(primary, '#ff5c8a', 0.45);
-    const background = mix(primary, '#ffffff', 0.92);
 
     return createTheme({
     palette: {

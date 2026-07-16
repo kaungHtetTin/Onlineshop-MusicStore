@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('order_item_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('type', 24)->default('return');
             $table->string('status', 24)->default('requested');
             $table->unsignedInteger('quantity')->default(1);

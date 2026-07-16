@@ -101,7 +101,7 @@ const ProductCard = ({ product }) => {
                 showToast('Please select an option first.', 'warning');
                 return;
             }
-            const isPreorder = Number(selectedSku.stock_qty ?? 0) <= 0;
+            const isPreorder = Number(selectedSku.available_qty ?? 0) <= 0;
             const skuLabel = formatSkuLabel(selectedSku);
             const imagePath = selectedSku?.image?.image_path || product.primary_image?.image_path || null;
 
@@ -116,7 +116,7 @@ const ProductCard = ({ product }) => {
                 originalPrice: skuOriginalPrice(selectedSku),
                 flashSale: selectedSku.flash_sale || null,
                 imagePath,
-                maxQty: Number(selectedSku.stock_qty ?? 0),
+                maxQty: Number(selectedSku.available_qty ?? 0),
                 isPreorder,
                 qty: quantity,
             });
@@ -271,7 +271,7 @@ const ProductCard = ({ product }) => {
                     <Stack spacing={1}>
                         {(product.skus || []).map((sku) => {
                             const isSelected = selectedSku?.id === sku.id;
-                            const isPreorder = Number(sku.stock_qty ?? 0) <= 0;
+                            const isPreorder = Number(sku.available_qty ?? 0) <= 0;
                             const skuImageUrl = getSkuImageUrl(sku, imageUrl, app_url);
                             return (
                                 <Button
@@ -295,7 +295,7 @@ const ProductCard = ({ product }) => {
                                                 {formatSkuLabel(sku)}
                                             </Typography>
                                             <Typography variant="caption" color={isPreorder ? 'warning.main' : 'text.secondary'}>
-                                                {isPreorder ? 'Out of stock - Preorder' : `In stock (${sku.stock_qty})`}
+                                                {isPreorder ? 'Out of stock - Preorder' : `In stock (${sku.available_qty})`}
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -346,7 +346,7 @@ const ProductCard = ({ product }) => {
                         Cancel
                     </Button>
                     <Button variant="contained" onClick={handleConfirmAddToCart} disabled={!selectedSku}>
-                        {selectedSku && Number(selectedSku.stock_qty ?? 0) <= 0 ? 'Add Preorder' : 'Add to cart'}
+                        {selectedSku && Number(selectedSku.available_qty ?? 0) <= 0 ? 'Add Preorder' : 'Add to cart'}
                     </Button>
                 </DialogActions>
             </Dialog>

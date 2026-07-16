@@ -297,42 +297,46 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
 
             <section className="panel glass" style={{ marginBottom: 14 }}>
                 <PanelHeading eyebrow="Period controls" title="Finance filters" />
-                <form className="filter-toolbar finance-filter" onSubmit={submitSearch}>
-                    <label className="form-field inline">
-                        <span>From</span>
-                        <input type="date" value={filters.from || ''} onChange={(e) => applyFilters({ from: e.target.value || undefined })} />
-                    </label>
-                    <label className="form-field inline">
-                        <span>To</span>
-                        <input type="date" value={filters.to || ''} onChange={(e) => applyFilters({ to: e.target.value || undefined })} />
-                    </label>
-                    <select value={filters.type || ''} onChange={(e) => applyFilters({ type: e.target.value || undefined, category: undefined })}>
-                        <option value="">All types</option>
-                        <option value="income">Income</option>
-                        <option value="expense">Expense</option>
-                    </select>
-                    <select value={filters.status || ''} onChange={(e) => applyFilters({ status: e.target.value || undefined })}>
-                        <option value="">All statuses</option>
-                        {options.statuses.map((status) => (
-                            <option key={status} value={status}>
-                                {status}
-                            </option>
-                        ))}
-                    </select>
-                    <select value={filters.category || ''} onChange={(e) => applyFilters({ category: e.target.value || undefined })}>
-                        <option value="">All categories</option>
-                        {categoryOptions.map((category) => (
-                            <option key={`${category.value}-${category.label}`} value={category.value}>
-                                {category.label}
-                            </option>
-                        ))}
-                    </select>
-                    <div className="search-box">
-                        <Icon name="search" size={16} />
-                        <input placeholder="Search title, reference, notes..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                <form className="finance-filter" onSubmit={submitSearch}>
+                    <div className="finance-filter-row search-row">
+                        <div className="search-box">
+                            <Icon name="search" size={16} />
+                            <input placeholder="Search title, reference, notes..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                        </div>
+                        <button type="submit" className="btn primary">Search</button>
                     </div>
-                    <button type="submit" className="btn primary">Search</button>
-                    <button type="button" className="btn secondary" onClick={resetFilters}>Reset</button>
+                    <div className="finance-filter-row controls-row">
+                        <label className="form-field inline">
+                            <span>From</span>
+                            <input type="date" value={filters.from || ''} onChange={(e) => applyFilters({ from: e.target.value || undefined })} />
+                        </label>
+                        <label className="form-field inline">
+                            <span>To</span>
+                            <input type="date" value={filters.to || ''} onChange={(e) => applyFilters({ to: e.target.value || undefined })} />
+                        </label>
+                        <select value={filters.type || ''} onChange={(e) => applyFilters({ type: e.target.value || undefined, category: undefined })}>
+                            <option value="">All types</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                        <select value={filters.status || ''} onChange={(e) => applyFilters({ status: e.target.value || undefined })}>
+                            <option value="">All statuses</option>
+                            {options.statuses.map((status) => (
+                                <option key={status} value={status}>
+                                    {status}
+                                </option>
+                            ))}
+                        </select>
+                        <select value={filters.category || ''} onChange={(e) => applyFilters({ category: e.target.value || undefined })}>
+                            <option value="">All categories</option>
+                            {categoryOptions.map((category) => (
+                                <option key={`${category.value}-${category.label}`} value={category.value}>
+                                    {category.label}
+                                </option>
+                            ))}
+                        </select>
+                        <button type="button" className="btn secondary" onClick={resetFilters}>Reset</button>
+                    </div>
                 </form>
             </section>
 
@@ -361,32 +365,40 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
                         <tbody>
                             {entries.data.length === 0 ? (
                                 <tr><td colSpan={7}><span className="muted">No manual finance entries match your filters.</span></td></tr>
-                            ) : entries.data.map((entry) => (
-                                <tr key={entry.id}>
-                                    <td>{entry.entry_date?.slice(0, 10)}</td>
-                                    <td>
-                                        <strong>{entry.title}</strong>
-                                        <small>
-                                            {categoryLabel(options, entry.type, entry.category)}
-                                            {entry.reference ? ` / ${entry.reference}` : ''}
-                                        </small>
-                                    </td>
-                                    <td><StatusBadge status={entry.type === 'income' ? 'success' : 'warning'} label={entry.type} /></td>
-                                    <td><strong>{money(entry.amount)}</strong></td>
-                                    <td><StatusBadge status={entry.status} label={entry.status} /></td>
-                                    <td>{entry.recorder?.name || 'System'}</td>
-                                    <td>
-                                        <div className="inline-actions">
-                                            <button type="button" className="icon-btn small" onClick={() => openModal(entry)} aria-label="Edit entry">
-                                                <Icon name="edit" size={13} />
-                                            </button>
-                                            <button type="button" className="icon-btn small danger" onClick={() => remove(entry)} aria-label="Delete entry">
-                                                <Icon name="trash" size={13} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            ) : entries.data.map((entry) => {
+                                const isStockReceiptEntry = entry.is_stock_receipt_entry || entry.category === 'stock_receipt';
+
+                                return (
+                                    <tr key={entry.id}>
+                                        <td>{entry.entry_date?.slice(0, 10)}</td>
+                                        <td>
+                                            <strong>{entry.title}</strong>
+                                            <small>
+                                                {categoryLabel(options, entry.type, entry.category)}
+                                                {entry.reference ? ` / ${entry.reference}` : ''}
+                                            </small>
+                                        </td>
+                                        <td><StatusBadge status={entry.type === 'income' ? 'success' : 'warning'} label={entry.type} /></td>
+                                        <td><strong>{money(entry.amount)}</strong></td>
+                                        <td><StatusBadge status={entry.status} label={entry.status} /></td>
+                                        <td>{entry.recorder?.name || 'System'}</td>
+                                        <td>
+                                            {isStockReceiptEntry ? (
+                                                <span className="muted">Managed by receipt</span>
+                                            ) : (
+                                                <div className="inline-actions">
+                                                    <button type="button" className="icon-btn small" onClick={() => openModal(entry)} aria-label="Edit entry">
+                                                        <Icon name="edit" size={13} />
+                                                    </button>
+                                                    <button type="button" className="icon-btn small danger" onClick={() => remove(entry)} aria-label="Delete entry">
+                                                        <Icon name="trash" size={13} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

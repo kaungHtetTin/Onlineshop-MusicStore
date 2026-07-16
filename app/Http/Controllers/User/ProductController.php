@@ -12,12 +12,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use App\Services\FlashSalePricingService;
+use App\Services\Inventory\StorefrontInventoryService;
 use App\Models\FlashSaleItem;
 
 class ProductController extends Controller
 {
-    public function index(Request $request, FlashSalePricingService $flashSalePricing)
+    public function index(
+        Request $request,
+        FlashSalePricingService $flashSalePricing,
+        StorefrontInventoryService $storefrontInventory
+    )
     {
+        $fulfillmentLocation = $storefrontInventory->fulfillmentLocation();
         $query = Product::with(['category', 'primaryImage', 'skus.image'])
             ->where('status', 'active');
 
@@ -42,10 +48,16 @@ class ProductController extends Controller
         }
 
         if ($request->filled('availability')) {
+            $hasAvailableStock = fn ($q) => $q
+                ->where('is_active', true)
+                ->whereHas('inventoryBalances', fn ($balance) => $balance
+                    ->where('location_id', $fulfillmentLocation->id)
+                    ->whereColumn('inventory_balances.on_hand_qty', '>', 'inventory_balances.reserved_qty'));
+
             if ($request->availability === 'in_stock') {
-                $query->whereHas('skus', fn ($q) => $q->where('is_active', true)->where('stock_qty', '>', 0));
+                $query->whereHas('skus', $hasAvailableStock);
             } elseif ($request->availability === 'out_of_stock') {
-                $query->whereDoesntHave('skus', fn ($q) => $q->where('is_active', true)->where('stock_qty', '>', 0));
+                $query->whereDoesntHave('skus', $hasAvailableStock);
             }
         }
 
@@ -116,6 +128,7 @@ class ProductController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
         $flashSalePricing->attachToProducts($products->getCollection());
+        $storefrontInventory->attachAvailableQuantities($products->getCollection(), $fulfillmentLocation);
 
         $categories = Category::where('is_active', true)
             ->orderBy('sort_order')
@@ -128,7 +141,11 @@ class ProductController extends Controller
         ]);
     }
 
-    public function show($slug, FlashSalePricingService $flashSalePricing)
+    public function show(
+        $slug,
+        FlashSalePricingService $flashSalePricing,
+        StorefrontInventoryService $storefrontInventory
+    )
     {
         $product = Product::with(['category', 'images', 'skus.image'])
             ->where('slug', $slug)
@@ -200,11 +217,24 @@ class ProductController extends Controller
                 ->get();
         }
 
+        $flashSalePricing->attachToProducts(collect([$product]));
+        $flashSalePricing->attachToProducts($relatedProducts);
+        $flashSalePricing->attachToProducts($recommendedProducts);
+        $flashSalePricing->attachToProducts($frequentlyBoughtTogether);
+
+        $storefrontInventory->attachAvailableQuantities(
+            collect([$product])
+                ->concat($relatedProducts)
+                ->concat($recommendedProducts)
+                ->concat($frequentlyBoughtTogether)
+                ->unique('id')
+        );
+
         return Inertia::render('User/Products/Show', [
-            'product' => tap($product, fn ($item) => $flashSalePricing->attachToProducts(collect([$item]))),
-            'relatedProducts' => tap($relatedProducts, fn ($items) => $flashSalePricing->attachToProducts($items)),
-            'recommendedProducts' => tap($recommendedProducts, fn ($items) => $flashSalePricing->attachToProducts($items)),
-            'frequentlyBoughtTogether' => tap($frequentlyBoughtTogether, fn ($items) => $flashSalePricing->attachToProducts($items)),
+            'product' => $product,
+            'relatedProducts' => $relatedProducts,
+            'recommendedProducts' => $recommendedProducts,
+            'frequentlyBoughtTogether' => $frequentlyBoughtTogether,
             'reviews' => $reviews,
         ]);
     }

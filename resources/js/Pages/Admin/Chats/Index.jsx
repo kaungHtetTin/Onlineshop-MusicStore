@@ -7,6 +7,7 @@ import Icon from '@/Components/Admin/icons';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { apiUrl, routeWithBase } from '@/Utils/url';
 import { ensureSanctumCookie } from '@/lib/chat/supportChatCore';
+import { AdminChatPanel } from './Show';
 
 function useDebouncedValue(value, delayMs) {
     const [debounced, setDebounced] = useState(value);
@@ -23,6 +24,8 @@ export default function AdminChatsIndex() {
     const debouncedQ = useDebouncedValue(q, 350);
     const [page, setPage] = useState(1);
     const [csrfReady, setCsrfReady] = useState(false);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [isLargeScreen, setIsLargeScreen] = useState(() => (typeof window === 'undefined' ? true : window.matchMedia('(min-width: 900px)').matches));
 
     useEffect(() => {
         let cancelled = false;
@@ -43,6 +46,14 @@ export default function AdminChatsIndex() {
         setPage(1);
     }, [debouncedQ]);
 
+    useEffect(() => {
+        const media = window.matchMedia('(min-width: 900px)');
+        const update = () => setIsLargeScreen(media.matches);
+        update();
+        media.addEventListener?.('change', update);
+        return () => media.removeEventListener?.('change', update);
+    }, []);
+
     const conversationsQuery = useQuery({
         queryKey: ['admin-support-inbox', debouncedQ, page],
         enabled: csrfReady,
@@ -59,11 +70,29 @@ export default function AdminChatsIndex() {
     const meta = conversationsQuery.data?.meta || null;
     const unreadTotal = useMemo(() => rows.reduce((sum, r) => sum + (r.unread_count || 0), 0), [rows]);
 
+    useEffect(() => {
+        if (!isLargeScreen) return;
+        if (rows.length === 0) {
+            setSelectedCustomer(null);
+            return;
+        }
+        if (!selectedCustomer || !rows.some((row) => row.customer?.id === selectedCustomer.id)) {
+            setSelectedCustomer(rows[0].customer);
+        }
+    }, [isLargeScreen, rows, selectedCustomer]);
+
     return (
-        <AdminLayout title="Customer chats" eyebrow="Support inbox">
+        <AdminLayout
+            title="Customer chats"
+            eyebrow="Support inbox"
+            mainClassName="admin-main-chat"
+            contentClassName="admin-content-chat"
+            showPageHeading={false}
+        >
             <Head title="Chats" />
 
-            <section className="panel glass">
+            <div className="chat-split-shell">
+            <section className="panel glass chat-inbox-panel">
                 <PanelHeading
                     eyebrow="Inbox"
                     title="Customer conversations"
@@ -101,9 +130,19 @@ export default function AdminChatsIndex() {
                             const c = row.customer;
                             const last = row.last_message;
                             const subtitle = last?.body || (last?.image_url ? 'Photo' : 'Open conversation');
+                            const active = selectedCustomer?.id === c.id;
 
                             return (
-                                <Link key={row.conversation.id} href={routeWithBase(`/admin/chats/${c.id}`, app_base)}>
+                                <Link
+                                    key={row.conversation.id}
+                                    href={routeWithBase(`/admin/chats/${c.id}`, app_base)}
+                                    className={active ? 'active' : ''}
+                                    onClick={(e) => {
+                                        if (!isLargeScreen) return;
+                                        e.preventDefault();
+                                        setSelectedCustomer(c);
+                                    }}
+                                >
                                     <span className="avatar">
                                         {(c.name || 'C')[0]}
                                         {row.unread_count > 0 && (
@@ -153,6 +192,10 @@ export default function AdminChatsIndex() {
                     </div>
                 )}
             </section>
+            <div className="chat-detail-pane">
+                <AdminChatPanel customer={selectedCustomer} className="chat-layout-split" />
+            </div>
+            </div>
         </AdminLayout>
     );
 }

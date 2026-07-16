@@ -4,22 +4,17 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import CropImageModal from '@/Components/Admin/CropImageModal';
 import ProductFormUI from '@/Components/Admin/ProductFormUI';
-import {
-    buildCombinations,
-    generateSkuCode,
-    normalizeOptionKey,
-    signatureForAttributes,
-} from '@/Components/Admin/productFormUtils';
+import { normalizeOptionKey, refreshAutoSkuCodes } from '@/Components/Admin/productFormUtils';
 import { routeWithBase } from '@/Utils/url';
 
 export default function Create({ categories, app_base }) {
     const [previews, setPreviews] = useState([]);
-    const [options, setOptions] = useState([{ id: Date.now(), name: '', values: [] }]);
+    const [options, setOptions] = useState([]);
     const [selectedSkuImageIndex, setSelectedSkuImageIndex] = useState(null);
     const [croppingImage, setCroppingImage] = useState(null);
     const [pendingFiles, setPendingFiles] = useState([]);
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, transform, post, processing, errors } = useForm({
         category_id: '',
         name: '',
         description: '',
@@ -37,47 +32,39 @@ export default function Create({ categories, app_base }) {
         [options],
     );
 
-    const generateVariants = () => {
-        const combos = buildCombinations(options);
-        if (combos.length === 0) return;
+    const namesFromOptions = (nextOptions) => nextOptions
+        .map((option) => option.name)
+        .filter((name) => name && name.trim() !== '' && normalizeOptionKey(name) !== '');
 
-        const bySig = new Map();
-        for (const v of data.skus) {
-            bySig.set(signatureForAttributes(v.attributes, optionNames), v);
-        }
-
-        const skuCodes = new Set(data.skus.map((v) => v.sku_code).filter(Boolean));
-        const next = [...data.skus];
-
-        for (const attrs of combos) {
-            const sig = signatureForAttributes(attrs, optionNames);
-            if (!bySig.has(sig)) {
-                next.push({
-                    sku_code: generateSkuCode({ title: data.name, attrs, optionNames, existing: skuCodes }),
-                    barcode: '',
-                    price: 0,
-                    stock_qty: 0,
-                    is_active: true,
-                    attributes: attrs,
-                    image_index: selectedSkuImageIndex,
-                });
-            }
-        }
-
-        setData({
-            ...data,
-            metadata: { options: options.filter((o) => o.name && o.values.length > 0) },
-            skus: next,
-        });
-    };
+    const refreshSkuCodes = (skus, title = data.name, names = optionNames) => (
+        refreshAutoSkuCodes(skus, title, names)
+    );
 
     const updateSku = (index, patch) => {
         const newSkus = [...data.skus];
         newSkus[index] = { ...newSkus[index], ...patch };
-        setData('skus', newSkus);
+        setData('skus', refreshSkuCodes(newSkus));
     };
 
-    const removeSku = (index) => setData('skus', data.skus.filter((_, i) => i !== index));
+    const addSku = () => {
+        const nextSkus = [
+            ...data.skus,
+            {
+                sku_code: '',
+                sku_code_auto: true,
+                barcode: '',
+                price: 0,
+                wholesale_price: '',
+                cost: '',
+                is_active: true,
+                attributes: {},
+                image_index: selectedSkuImageIndex,
+            },
+        ];
+        setData('skus', refreshSkuCodes(nextSkus));
+    };
+
+    const removeSku = (index) => setData('skus', refreshSkuCodes(data.skus.filter((_, i) => i !== index)));
 
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
@@ -130,6 +117,14 @@ export default function Create({ categories, app_base }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        transform((current) => ({
+            ...current,
+            metadata: {
+                options: options
+                    .map((option) => ({ name: option.name.trim() }))
+                    .filter((option) => option.name),
+            },
+        }));
         post(routeWithBase('/admin/products', app_base));
     };
 
@@ -182,23 +177,9 @@ export default function Create({ categories, app_base }) {
                     app_url={null}
                     selectedSkuImageKey={selectedSkuImageIndex}
                     setSelectedSkuImageKey={setSelectedSkuImageIndex}
-                    onGenerateVariants={generateVariants}
                     onUpdateSku={updateSku}
                     onRemoveSku={removeSku}
-                    onAddSku={() =>
-                        setData('skus', [
-                            ...data.skus,
-                            {
-                                sku_code: '',
-                                barcode: '',
-                                price: 0,
-                                stock_qty: 0,
-                                is_active: true,
-                                attributes: {},
-                                image_index: selectedSkuImageIndex,
-                            },
-                        ])
-                    }
+                    onAddSku={addSku}
                     onImageChange={handleImageChange}
                     onRemoveNewPreview={removeNewPreview}
                     onRemoveExistingImage={() => {}}
@@ -211,6 +192,14 @@ export default function Create({ categories, app_base }) {
                     onSetCover={() => {}}
                     imageKeyForSku={(sku) => sku.image_index ?? null}
                     setImageKeyForSku={(key) => ({ image_index: key })}
+                    onProductNameChange={(name) => setData({ ...data, name, skus: refreshSkuCodes(data.skus, name) })}
+                    onRegenerateSku={(index) => {
+                        const nextSkus = data.skus.map((sku, skuIndex) => (
+                            skuIndex === index ? { ...sku, sku_code_auto: true } : sku
+                        ));
+                        setData('skus', refreshSkuCodes(nextSkus));
+                    }}
+                    onSkuStructureChange={(skus, nextOptions) => setData('skus', refreshSkuCodes(skus, data.name, namesFromOptions(nextOptions)))}
                 />
             </form>
 

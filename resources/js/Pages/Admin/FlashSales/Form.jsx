@@ -349,7 +349,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                 <tr key={sku.id}>
                                                     <td>
                                                         <strong>{sku.product.name}</strong>
-                                                        <small className="muted" style={{ display: 'block' }}>{skuLabel(sku)} · stock {sku.stock_qty}</small>
+                                                        <small className="muted" style={{ display: 'block' }}>{skuLabel(sku)} · available {sku.available_qty}</small>
                                                     </td>
                                                     <td>
                                                         <span className="price-pill">${Number(sku.price).toFixed(2)}</span>

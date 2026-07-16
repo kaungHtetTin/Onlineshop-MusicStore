@@ -13,7 +13,7 @@ import {
 import { Add, DeleteOutlined, Remove } from '@mui/icons-material';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav, { MOBILE_BOTTOM_NAV_HEIGHT } from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase, storageUrl } from '@/Utils/url';
@@ -33,16 +33,14 @@ export default function CartIndex() {
             sx={{
                 bgcolor: 'background.default',
                 minHeight: '100dvh',
-                pb: {
-                    xs: `calc(${MOBILE_BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px) + 12px)`,
-                    md: 4,
-                },
+                display: 'flex',
+                flexDirection: 'column',
             }}
         >
             <UserBrandHead title="Your Cart" />
             <Navbar />
 
-            <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
+            <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 }, flex: '1 0 auto', width: '100%' }}>
                 <BackLink href={routeWithBase('/products', app_base)}>
                     Continue shopping
                 </BackLink>
@@ -204,6 +202,7 @@ export default function CartIndex() {
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

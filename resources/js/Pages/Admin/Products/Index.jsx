@@ -24,10 +24,7 @@ export default function Index({ products, app_base }) {
         return min === max ? `$${min}` : `$${min} - $${max}`;
     };
 
-    const getTotalStock = (skus) => {
-        if (!skus || skus.length === 0) return 0;
-        return skus.reduce((sum, s) => sum + parseInt(s.stock_qty, 10), 0);
-    };
+    const getTotalStock = (product) => product.total_on_hand ?? 0;
 
     return (
         <AdminLayout
@@ -65,7 +62,7 @@ export default function Index({ products, app_base }) {
                                 </tr>
                             ) : (
                                 productRows.map((product) => {
-                                    const stock = getTotalStock(product.skus);
+                                    const stock = getTotalStock(product);
                                     const status = product.status === 'active' ? 'success' : product.status === 'draft' ? 'warning' : 'neutral';
 
                                     return (

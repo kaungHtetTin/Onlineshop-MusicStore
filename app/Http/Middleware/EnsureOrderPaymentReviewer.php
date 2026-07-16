@@ -12,9 +12,9 @@ class EnsureOrderPaymentReviewer
      */
     public function handle(Request $request, Closure $next)
     {
-        $role = auth()->user()?->role;
+        $user = $request->user();
 
-        if (! in_array($role, ['super_admin', 'manager'], true)) {
+        if (! $user?->hasAdminPermission('orders.review_payment')) {
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json(['message' => 'Only managers can review order payments.'], 403);
             }

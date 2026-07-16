@@ -32,6 +32,11 @@ const paths = {
     logout: 'M10 17l-5-5 5-5M5 12h14',
     image: 'M4 5h16v14H4V5zm0 9 4-4 4 4 4-5 4 5',
     book: 'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H7a3 3 0 0 0-3 3V5.5zm0 0V22m4-14h8m-8 4h8',
+    upload: 'M12 16V4m0 0L7 9m5-5 5 5M4 16v4h16v-4',
+    download: 'M12 4v12m0 0 5-5m-5 5-5-5M4 20h16',
+    history: 'M4 12a8 8 0 1 0 2.3-5.7L4 8m0-4v4h4m4-1v5l3 2',
+    truck: 'M3 7h11v8H3V7zm11 0h3l3 4v4h-6V7zm-12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm14 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM7 10h6',
+    wifiOff: 'M2 8.5a16 16 0 0 1 3.2-2M8.5 4.6A16 16 0 0 1 22 8.5M5 13a10 10 0 0 1 12.5-1.2M8.5 16.5a5 5 0 0 1 7 0M12 20h.01M3 3l18 18',
 };
 
 export default function Icon({ name, size = 17, className, style }) {

@@ -29,7 +29,7 @@ function newClientTempId() {
     return `tmp_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-export default function AdminChatsShow({ customer }) {
+export function AdminChatPanel({ customer, showBackLink = false, backHref = null, onBack = null, className = '' }) {
     const { app_base, auth, app_url } = usePage().props;
     const queryClient = useQueryClient();
     const pageVisible = usePageVisible();
@@ -40,7 +40,7 @@ export default function AdminChatsShow({ customer }) {
 
     const [messages, setMessages] = useState([]);
     const [conversationId, setConversationId] = useState(null);
-    const [customerPreview, setCustomerPreview] = useState(customer);
+    const [customerPreview, setCustomerPreview] = useState(customer || {});
     const [draft, setDraft] = useState('');
     const [preview, setPreview] = useState(null);
     const [previewFile, setPreviewFile] = useState(null);
@@ -49,6 +49,20 @@ export default function AdminChatsShow({ customer }) {
     const [loadingOlder, setLoadingOlder] = useState(false);
     const [uploadPct, setUploadPct] = useState(null);
     const [csrfReady, setCsrfReady] = useState(false);
+
+    useEffect(() => {
+        setCustomerPreview(customer || {});
+        setConversationId(null);
+        setMessages([]);
+        setDraft('');
+        setPreview(null);
+        setPreviewFile(null);
+        setLightbox(null);
+        setHasMoreOlder(false);
+        setUploadPct(null);
+        stickToBottomRef.current = true;
+        maxServerIdRef.current = 0;
+    }, [customer?.id]);
 
     useEffect(() => {
         let cancelled = false;
@@ -274,23 +288,30 @@ export default function AdminChatsShow({ customer }) {
         !conversationId;
 
     return (
-        <AdminLayout title={customerPreview.name} eyebrow="Customer chat">
-            <Head title={`Chat • ${customerPreview.name}`} />
+        <>
+            {showBackLink && (
+                onBack ? (
+                    <button type="button" className="back-link as-button" onClick={onBack}>
+                        <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} />
+                        Back to inbox
+                    </button>
+                ) : (
+                    <Link href={backHref || routeWithBase('/admin/chats', app_base)} className="back-link">
+                        <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} />
+                        Back to inbox
+                    </Link>
+                )
+            )}
 
-            <Link href={routeWithBase('/admin/chats', app_base)} className="back-link">
-                <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} />
-                Back to inbox
-            </Link>
-
-            <div className="chat-layout">
+            <div className={`chat-layout ${className}`.trim()}>
                 <section className="panel glass chat-header">
                     <div className="stack-row">
                         <div className="rider-cell">
-                            <span>{(customerPreview.name || 'C')[0]}</span>
+                            <span>{(customerPreview?.name || 'C')[0]}</span>
                             <div>
-                                <strong>{customerPreview.name}</strong>
+                                <strong>{customerPreview?.name || 'Select a conversation'}</strong>
                                 <small>
-                                    {customerPreview.email}
+                                    {customerPreview?.email || 'Choose a customer from the inbox.'}
                                     {customerPreview.phone ? ` · ${customerPreview.phone}` : ''}
                                 </small>
                             </div>
@@ -303,7 +324,13 @@ export default function AdminChatsShow({ customer }) {
                 </section>
 
                 <section className="panel glass chat-panel">
-                    {!csrfReady || metaQuery.isLoading || messagesBootstrap.isLoading ? (
+                    {!customer?.id ? (
+                        <div className="chat-empty-state">
+                            <Icon name="chat" size={26} />
+                            <strong>Select a conversation</strong>
+                            <p>Pick a customer from the inbox to view and reply to messages.</p>
+                        </div>
+                    ) : !csrfReady || metaQuery.isLoading || messagesBootstrap.isLoading ? (
                         <div className="chat-skeleton">
                             <div className="bar" />
                             <div className="bar" />
@@ -445,6 +472,15 @@ export default function AdminChatsShow({ customer }) {
                     </div>
                 </div>
             )}
+        </>
+    );
+}
+
+export default function AdminChatsShow({ customer }) {
+    return (
+        <AdminLayout title={customer.name} eyebrow="Customer chat">
+            <Head title={`Chat • ${customer.name}`} />
+            <AdminChatPanel customer={customer} showBackLink />
         </AdminLayout>
     );
 }

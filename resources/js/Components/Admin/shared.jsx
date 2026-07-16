@@ -27,7 +27,8 @@ const STATUS_MAP = {
     inactive: 'status-neutral',
     super_admin: 'status-info',
     manager: 'status-success',
-    cashier: 'status-warning',
+    inventory_staff: 'status-warning',
+    sales: 'status-warning',
     support: 'status-neutral',
 };
 

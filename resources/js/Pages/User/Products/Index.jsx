@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import { Search, Clear, Tune, Close } from '@mui/icons-material';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import ProductCard from '@/Components/User/ProductCard';
 import UserBrandHead from '@/Components/User/UserBrandHead';
@@ -280,7 +280,7 @@ const Index = ({ products, categories, filters }) => {
     );
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 12, md: 4 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title="Shop All Products" />
 
             <Navbar />
@@ -309,7 +309,7 @@ const Index = ({ products, categories, filters }) => {
 
                     {isMobileFilters ? (
                         <Badge
-                            color="secondary"
+                            color="primary"
                             overlap="circular"
                             badgeContent={activeFilterCount}
                             invisible={activeFilterCount === 0}
@@ -530,6 +530,7 @@ const Index = ({ products, categories, filters }) => {
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Order;
-use App\Models\Sku;
 use App\Models\User;
+use App\Services\Inventory\StockReservationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -14,7 +14,11 @@ class OrderPaymentService
 
     private AuditLogService $auditLogService;
 
-    public function __construct(LoyaltyService $loyaltyService, AuditLogService $auditLogService)
+    public function __construct(
+        LoyaltyService $loyaltyService,
+        AuditLogService $auditLogService,
+        private StockReservationService $stockReservations
+    )
     {
         $this->loyaltyService = $loyaltyService;
         $this->auditLogService = $auditLogService;
@@ -36,7 +40,7 @@ class OrderPaymentService
 
         return DB::transaction(function () use ($order, $reviewer, $approvalDiscount) {
             $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
-            $order->load(['items.sku.product']);
+            $order->load(['location', 'items.sku.product', 'reservations']);
 
             if ($order->payment_status !== 'pending_review') {
                 throw ValidationException::withMessages([
@@ -45,28 +49,16 @@ class OrderPaymentService
             }
 
             foreach ($order->items as $item) {
-                $sku = $item->sku_id
-                    ? Sku::query()->whereKey($item->sku_id)->lockForUpdate()->first()
-                    : null;
-
-                if (! $sku || ! $sku->is_active || ! $sku->product || $sku->product->status !== 'active') {
+                if (! $item->sku || ! $item->sku->is_active || ! $item->sku->product || $item->sku->product->status !== 'active') {
                     throw ValidationException::withMessages([
                         'order' => "Item \"{$item->product?->name}\" is no longer available.",
                     ]);
                 }
-
-                if ($sku->stock_qty < $item->quantity) {
-                    throw ValidationException::withMessages([
-                        'order' => "Insufficient stock for \"{$sku->product->name}\" (need {$item->quantity}, have {$sku->stock_qty}).",
-                    ]);
-                }
             }
 
-            foreach ($order->items as $item) {
-                if ($item->sku_id) {
-                    Sku::query()->whereKey($item->sku_id)->decrement('stock_qty', $item->quantity);
-                }
-            }
+            $this->stockReservations->ensureForOrder($order, $reviewer);
+            $order->unsetRelation('reservations');
+            $this->stockReservations->convertOrder($order, $reviewer);
 
             $discount = $this->approvalDiscountFor($order, $approvalDiscount);
 
@@ -161,6 +153,12 @@ class OrderPaymentService
                     'order' => 'This order is not awaiting payment review.',
                 ]);
             }
+
+            $this->stockReservations->releaseOrder(
+                $order,
+                $reviewer,
+                $reason ?: 'Payment rejected'
+            );
 
             $order->forceFill([
                 'payment_status' => 'rejected',

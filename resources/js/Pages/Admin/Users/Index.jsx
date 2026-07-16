@@ -4,7 +4,6 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
-import { adminRoleLabels } from '@/constants/adminRoles';
 import { routeWithBase } from '@/Utils/url';
 
 const emptyForm = {
@@ -117,7 +116,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
             <section className="panel glass">
                 <PanelHeading eyebrow="Access control" title="Admin staff" />
 
-                <form className="filter-toolbar compact" onSubmit={handleSearch}>
+                <form className="filter-toolbar staff-filter" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input
@@ -203,7 +202,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                             <td>
                                                 <StatusBadge
                                                     status={user.role}
-                                                    label={adminRoleLabels[user.role] || user.role}
+                                                    label={user.role_label || user.role}
                                                 />
                                             </td>
                                             <td>
@@ -340,7 +339,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                 />
                             </label>
                             <div className="form-field span-2">
-                                <span>Optional permissions</span>
+                                <span>Additional user permissions</span>
                                 <div className="stack-sm" style={{ marginTop: 6 }}>
                                     {permissions.map((permission) => (
                                         <label key={permission.value} className="checkbox-row">

@@ -12,9 +12,10 @@ import {
     Pagination,
 } from '@mui/material';
 import { ChevronRight } from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
@@ -23,11 +24,12 @@ function categoryVisual(cat) {
     return {
         emoji: cat.metadata?.icon || cat.icon || '🛍️',
         imageUrl: cat.icon_image_url || null,
-        accent: cat.metadata?.color || '#FCE4EC',
+        accent: cat.metadata?.color || null,
     };
 }
 
 export default function CategoriesIndex({ categories = [] }) {
+    const theme = useTheme();
     const { app_base } = usePage().props;
     const categoryRows = categories.data || categories;
 
@@ -36,7 +38,7 @@ export default function CategoriesIndex({ categories = [] }) {
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 12, md: 4 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title="Categories" />
             <Navbar />
 
@@ -81,10 +83,9 @@ export default function CategoriesIndex({ categories = [] }) {
                                     borderRadius: 3,
                                     textDecoration: 'none',
                                     color: 'inherit',
-                                    border: '1px solid rgba(233, 30, 99, 0.12)',
-                                    background:
-                                        'linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,245,248,0.98) 100%)',
-                                    boxShadow: '0 12px 40px rgba(233, 30, 99, 0.06)',
+                                    border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                                    background: `linear-gradient(145deg, rgba(255,255,255,0.95) 0%, ${alpha(theme.palette.primary.main, 0.04)} 100%)`,
+                                    boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.06)}`,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'stretch',
@@ -92,7 +93,7 @@ export default function CategoriesIndex({ categories = [] }) {
                                     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                                     '&:hover': {
                                         transform: 'translateY(-3px)',
-                                        boxShadow: '0 18px 48px rgba(233, 30, 99, 0.12)',
+                                        boxShadow: `0 18px 48px ${alpha(theme.palette.primary.main, 0.12)}`,
                                     },
                                 }}
                             >
@@ -102,7 +103,7 @@ export default function CategoriesIndex({ categories = [] }) {
                                         sx={{
                                             width: { xs: 44, sm: 52 },
                                             height: { xs: 44, sm: 52 },
-                                            bgcolor: v.accent,
+                                            bgcolor: v.accent || alpha(theme.palette.primary.main, 0.12),
                                             borderRadius: 2,
                                             fontSize: '1.35rem',
                                             flexShrink: 0,
@@ -208,6 +209,7 @@ export default function CategoriesIndex({ categories = [] }) {
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

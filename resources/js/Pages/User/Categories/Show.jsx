@@ -13,9 +13,10 @@ import {
     Pagination,
 } from '@mui/material';
 import { ShoppingBag } from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import ProductCard from '@/Components/User/ProductCard';
 import UserBrandHead from '@/Components/User/UserBrandHead';
@@ -26,11 +27,12 @@ function categoryVisual(cat) {
     return {
         emoji: cat.metadata?.icon || cat.icon || '🛍️',
         imageUrl: cat.icon_image_url || null,
-        accent: cat.metadata?.color || '#FCE4EC',
+        accent: cat.metadata?.color || null,
     };
 }
 
 export default function CategoriesShow({ category, products = { data: [] } }) {
+    const theme = useTheme();
     const { app_base } = usePage().props;
     const v = categoryVisual(category);
     const subs = category.children || [];
@@ -42,7 +44,7 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 12, md: 4 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title={category.name} />
             <Navbar />
 
@@ -69,10 +71,9 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
                         p: { xs: 2, sm: 3 },
                         mb: 3,
                         borderRadius: 4,
-                        border: '1px solid rgba(233, 30, 99, 0.14)',
-                        background:
-                            'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(255,241,245,0.92) 100%)',
-                        boxShadow: '0 18px 55px rgba(233, 30, 99, 0.08)',
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
+                        background: `linear-gradient(135deg, rgba(255,255,255,0.96) 0%, ${alpha(theme.palette.primary.main, 0.04)} 100%)`,
+                        boxShadow: `0 18px 55px ${alpha(theme.palette.primary.main, 0.08)}`,
                     }}
                 >
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
@@ -81,7 +82,7 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
                             sx={{
                                 width: { xs: 56, sm: 72 },
                                 height: { xs: 56, sm: 72 },
-                                bgcolor: v.accent,
+                                bgcolor: v.accent || alpha(theme.palette.primary.main, 0.12),
                                 fontSize: { xs: '1.5rem', sm: '1.85rem' },
                                 borderRadius: 3,
                                 alignSelf: { xs: 'flex-start', sm: 'center' },
@@ -177,6 +178,7 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

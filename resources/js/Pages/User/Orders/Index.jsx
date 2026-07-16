@@ -3,7 +3,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { Box, Button, Chip, Container, Pagination, Paper, Stack, Typography } from '@mui/material';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
@@ -35,7 +35,7 @@ export default function OrdersIndex({ orders }) {
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 12, md: 4 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title="My orders" />
             <Navbar />
 
@@ -119,6 +119,7 @@ export default function OrdersIndex({ orders }) {
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

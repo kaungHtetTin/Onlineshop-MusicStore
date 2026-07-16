@@ -8,13 +8,31 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Coupon;
+use App\Models\Location;
+use App\Services\OperationsReportService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ReportController extends Controller
 {
-    public function index()
+    public function index(Request $request, OperationsReportService $operations)
     {
+        $user = $request->user();
+        $view = $request->string('view')->toString();
+        if (! $view) {
+            $view = $user->hasAdminPermission('view_reports') || $user->hasAdminPermission('reports.sales') ? 'sales' : 'inventory';
+        }
+        $this->authorizeView($user, $view);
+        $filters = $request->validate([
+            'view' => ['nullable', 'string', 'in:sales,inventory,pos,health'],
+            'location_id' => ['nullable', 'integer', 'exists:locations,id'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'q' => ['nullable', 'string', 'max:120'],
+            'stock_status' => ['nullable', 'string', 'in:low,out'],
+        ]);
         $paidOrders = Order::query()->where('payment_status', 'paid');
         $paidOrderCount = (clone $paidOrders)->count();
         $paidRevenue = (float) (clone $paidOrders)->sum('final_amount');
@@ -161,6 +179,18 @@ class ReportController extends Controller
             ]);
 
         return Inertia::render('Admin/Reports/Index', [
+            'view' => $view,
+            'filters' => $filters,
+            'locations' => Location::query()
+                ->whereIn('id', $user->accessibleLocationIds())
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'code', 'name', 'type']),
+            'canViewSales' => $user->hasAdminPermission('view_reports') || $user->hasAdminPermission('reports.sales'),
+            'canViewInventory' => $user->hasAdminPermission('view_reports') || $user->hasAdminPermission('reports.inventory'),
+            'inventoryReport' => $view === 'inventory' ? $operations->inventory($user, $filters) : null,
+            'posReport' => $view === 'pos' ? $operations->pos($user, $filters) : null,
+            'healthReport' => $view === 'health' ? $operations->health($user) : null,
             'summary' => [
                 'paid_orders' => $paidOrderCount,
                 'revenue' => $paidRevenue,
@@ -180,5 +210,61 @@ class ReportController extends Controller
             'couponPerformance' => $couponPerformance,
             'flashSalePerformance' => $flashSalePerformance,
         ]);
+    }
+
+    public function export(Request $request, OperationsReportService $operations)
+    {
+        $view = $request->string('view')->toString();
+        if (! in_array($view, ['inventory', 'pos'], true)) {
+            throw ValidationException::withMessages(['view' => 'Choose inventory or POS for CSV export.']);
+        }
+
+        $this->authorizeView($request->user(), $view);
+        $filters = $request->validate([
+            'view' => ['required', 'string', 'in:inventory,pos'],
+            'location_id' => ['nullable', 'integer', 'exists:locations,id'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'q' => ['nullable', 'string', 'max:120'],
+            'stock_status' => ['nullable', 'string', 'in:low,out'],
+        ]);
+
+        $filename = $view.'-report-'.now()->format('Ymd-His').'.csv';
+        $report = $view === 'inventory'
+            ? $operations->inventory($request->user(), $filters)
+            : $operations->pos($request->user(), $filters);
+
+        return response()->streamDownload(function () use ($view, $report) {
+            $output = fopen('php://output', 'w');
+            if ($view === 'inventory') {
+                fputcsv($output, ['Warehouse', 'Product', 'SKU', 'On hand', 'Reserved', 'Available', 'Reorder point', 'Original value', 'Retail price']);
+                foreach ($report['stock_rows'] as $row) {
+                    fputcsv($output, [
+                        $row->location_name, $row->product_name, $row->sku_code, $row->on_hand_qty,
+                        $row->reserved_qty, $row->available_qty, $row->reorder_point, $row->cost_value, $row->price,
+                    ]);
+                }
+            } else {
+                fputcsv($output, ['Warehouse', 'Register', 'Cashier', 'Status', 'Opened', 'Closed', 'Cash sales', 'Expected cash', 'Counted cash', 'Variance']);
+                foreach ($report['shifts'] as $row) {
+                    fputcsv($output, [
+                        $row->location_name, $row->register_name, $row->cashier_name, $row->status,
+                        $row->opened_at, $row->closed_at, $row->cash_sales, $row->expected_cash, $row->counted_cash, $row->variance,
+                    ]);
+                }
+            }
+            fclose($output);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    private function authorizeView(User $user, string $view): void
+    {
+        $allowed = match ($view) {
+            'sales', 'pos' => $user->hasAdminPermission('view_reports') || $user->hasAdminPermission('reports.sales'),
+            'inventory', 'health' => $user->hasAdminPermission('view_reports') || $user->hasAdminPermission('reports.inventory'),
+            default => false,
+        };
+
+        abort_unless($allowed, 403, 'You do not have permission to view this report.');
     }
 }

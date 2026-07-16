@@ -35,7 +35,7 @@ export const routeWithBase = (path, base = '') => {
 };
 
 /**
- * Get the full URL for a storage file using APP_URL from .env
+ * Get the full URL for an uploaded public file using APP_URL from .env.
  * 
  * @param {string} path 
  * @param {string} appUrl 
@@ -47,9 +47,15 @@ export const storageUrl = (path, appUrl = '') => {
     
     const cleanAppUrl = (appUrl || '').replace(/\/+$/, '');
     const cleanPath = path.replace(/^\/+/, '');
+
+    if (cleanPath.startsWith('uploads/')) {
+        return `${cleanAppUrl}/${cleanPath}`;
+    }
+
+    // Legacy records store paths such as "products/example.jpg".
+    const uploadPath = cleanPath.startsWith('storage/')
+        ? cleanPath.replace(/^storage\//, 'uploads/')
+        : `uploads/${cleanPath}`;
     
-    // If path doesn't start with storage/ and it's a relative path from storage
-    const storagePath = cleanPath.startsWith('storage/') ? cleanPath : `storage/${cleanPath}`;
-    
-    return `${cleanAppUrl}/${storagePath}`;
+    return `${cleanAppUrl}/${uploadPath}`;
 };

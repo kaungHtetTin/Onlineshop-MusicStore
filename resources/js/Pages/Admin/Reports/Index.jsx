@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
-import { PanelHeading } from '@/Components/Admin/shared';
+import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
+import { routeWithBase } from '@/Utils/url';
 
 const money = (value) =>
     `$${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -134,7 +135,185 @@ function InsightCard({ label, value, caption }) {
     );
 }
 
-export default function ReportsIndex({ summary, topProducts, salesByDay, categoryPerformance, purchaseSegments, productPairs, couponPerformance = [], flashSalePerformance = [] }) {
+function ReportTabs({ view, canViewSales, canViewInventory, appBase }) {
+    const tabs = [
+        ...(canViewSales ? [{ key: 'sales', label: 'Sales' }, { key: 'pos', label: 'POS' }] : []),
+        ...(canViewInventory ? [{ key: 'inventory', label: 'Inventory' }, { key: 'health', label: 'Health' }] : []),
+    ];
+
+    return (
+        <nav className="report-tabs" aria-label="Report sections">
+            {tabs.map((tab) => (
+                <Link
+                    key={tab.key}
+                    href={routeWithBase(`/admin/reports?view=${tab.key}`, appBase)}
+                    className={view === tab.key ? 'active' : ''}
+                >
+                    {tab.label}
+                </Link>
+            ))}
+        </nav>
+    );
+}
+
+function ReportFilters({ view, filters, locations, appBase, showDates = false, showStock = false }) {
+    const query = new URLSearchParams({ view });
+    Object.entries(filters || {}).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') query.set(key, value);
+    });
+
+    return (
+        <div className="report-filter-bar">
+            <form method="get" action={routeWithBase('/admin/reports', appBase)}>
+                <input type="hidden" name="view" value={view} />
+                <label>
+                    <span>Warehouse</span>
+                    <select name="location_id" defaultValue={filters?.location_id || ''}>
+                        <option value="">All accessible</option>
+                        {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+                    </select>
+                </label>
+                {showDates && (
+                    <>
+                        <label><span>From</span><input type="date" name="from" defaultValue={filters?.from || ''} /></label>
+                        <label><span>To</span><input type="date" name="to" defaultValue={filters?.to || ''} /></label>
+                    </>
+                )}
+                {showStock && (
+                    <>
+                        <label><span>Search</span><input type="search" name="q" defaultValue={filters?.q || ''} placeholder="Product or SKU" /></label>
+                        <label>
+                            <span>Stock status</span>
+                            <select name="stock_status" defaultValue={filters?.stock_status || ''}>
+                                <option value="">All stock</option>
+                                <option value="low">Low stock</option>
+                                <option value="out">Out of stock</option>
+                            </select>
+                        </label>
+                    </>
+                )}
+                <button className="btn secondary" type="submit"><Icon name="search" size={14} /> Apply</button>
+            </form>
+            <a className="btn secondary" href={`${routeWithBase('/admin/reports/export', appBase)}?${query.toString()}`}>
+                <Icon name="download" size={14} /> CSV
+            </a>
+        </div>
+    );
+}
+
+function InventoryReport({ report, filters, locations, appBase }) {
+    const summary = report.summary || {};
+    return (
+        <>
+            <ReportFilters view="inventory" filters={filters} locations={locations} appBase={appBase} showStock />
+            <div className="metrics-grid four">
+                <MetricCard label="Original valuation" value={money(summary.cost_value)} hint={`${summary.on_hand || 0} units on hand`} icon="wallet" />
+                <MetricCard label="Retail value" value={money(summary.retail_value)} hint={`${summary.available || 0} available`} icon="chart" tone="success" />
+                <MetricCard label="Low stock" value={summary.low_stock || 0} hint="At reorder point" icon="bell" />
+                <MetricCard label="Out of stock" value={summary.out_of_stock || 0} hint={`${summary.reserved || 0} units reserved`} icon="box" />
+            </div>
+
+            <div className="reports-layout">
+                <section className="panel glass">
+                    <PanelHeading eyebrow="Warehouse balances" title="Stock risk and valuation" />
+                    <div className="table-wrap report-products-table">
+                        <table>
+                            <thead><tr><th>Product / SKU</th><th>Warehouse</th><th>On hand</th><th>Reserved</th><th>Available</th><th>Reorder</th><th>Original value</th></tr></thead>
+                            <tbody>
+                                {report.stock_rows.length === 0 ? <tr><td colSpan={7}><span className="muted">No balances match these filters.</span></td></tr> : report.stock_rows.map((row) => (
+                                    <tr key={row.id}>
+                                        <td><strong>{row.product_name}</strong><small>{row.sku_code}</small></td>
+                                        <td>{row.location_name}</td><td>{row.on_hand_qty}</td><td>{row.reserved_qty}</td>
+                                        <td><StatusBadge status={Number(row.available_qty) <= 0 ? 'failed' : Number(row.available_qty) <= Number(row.reorder_point) ? 'warning' : 'healthy'} label={String(row.available_qty)} /></td>
+                                        <td>{row.reorder_point}</td><td><strong>{money(row.cost_value)}</strong></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <div className="report-analysis-grid">
+                    <section className="panel glass">
+                        <PanelHeading eyebrow="Last 30 days" title="Movement activity" />
+                        <div className="report-pair-list">
+                            {report.movements.length === 0 ? <p className="muted">No recent movements.</p> : report.movements.map((row) => (
+                                <article className="report-pair" key={row.type}><strong>{row.type.replaceAll('_', ' ')}</strong><small>{row.movements} movements</small><span>{row.net_quantity} net / {row.absolute_quantity} handled</span></article>
+                            ))}
+                        </div>
+                    </section>
+                    <section className="panel glass">
+                        <PanelHeading eyebrow="Shrinkage" title="Adjustment variance" />
+                        <div className="table-wrap report-products-table"><table><thead><tr><th>Reason</th><th>Documents</th><th>Variance</th><th>Loss value</th></tr></thead><tbody>
+                            {report.adjustments.length === 0 ? <tr><td colSpan={4}><span className="muted">No posted adjustments.</span></td></tr> : report.adjustments.map((row) => <tr key={row.reason_code}><td><strong>{row.reason_code.replaceAll('_', ' ')}</strong></td><td>{row.documents}</td><td>{row.net_quantity}</td><td>{money(row.loss_value)}</td></tr>)}
+                        </tbody></table></div>
+                    </section>
+                </div>
+
+                <div className="report-analysis-grid">
+                    <section className="panel glass">
+                        <PanelHeading eyebrow="Last 30 days" title="Transfer activity" />
+                        <div className="table-wrap report-products-table"><table><thead><tr><th>Transfer</th><th>Route</th><th>Units</th><th>Date</th></tr></thead><tbody>
+                            {report.transfers.length === 0 ? <tr><td colSpan={4}><span className="muted">No recent transfers.</span></td></tr> : report.transfers.map((row) => <tr key={row.id}><td><strong>{row.transfer_number}</strong></td><td>{row.source_name} to {row.destination_name}</td><td>{row.moved_quantity}</td><td>{new Date(row.created_at).toLocaleDateString()}</td></tr>)}
+                        </tbody></table></div>
+                    </section>
+                    <section className="panel glass">
+                        <PanelHeading eyebrow="Last 30 days" title="SKU sell-through" />
+                        <div className="table-wrap report-products-table"><table><thead><tr><th>Product / SKU</th><th>Sold</th><th>On hand</th><th>Rate</th></tr></thead><tbody>
+                            {report.sell_through.length === 0 ? <tr><td colSpan={4}><span className="muted">No paid sales for this warehouse.</span></td></tr> : report.sell_through.map((row) => <tr key={row.id}><td><strong>{row.product_name}</strong><small>{row.sku_code}</small></td><td>{row.units_sold}</td><td>{row.on_hand_qty || 0}</td><td><strong>{percent(row.sell_through_rate)}</strong></td></tr>)}
+                        </tbody></table></div>
+                    </section>
+                </div>
+            </div>
+        </>
+    );
+}
+
+function PosReport({ report, filters, locations, appBase }) {
+    const summary = report.summary || {};
+    return (
+        <>
+            <ReportFilters view="pos" filters={filters} locations={locations} appBase={appBase} showDates />
+            <div className="metrics-grid four">
+                <MetricCard label="POS revenue" value={money(summary.revenue)} hint={`${summary.orders || 0} completed sales`} icon="wallet" tone="success" />
+                <MetricCard label="Average sale" value={money(summary.average_sale)} hint={report.own_only ? 'Your shifts only' : 'All accessible warehouses'} icon="receipt" />
+                <MetricCard label="Discounts" value={money(summary.discounts)} hint="POS order discounts" icon="tag" />
+                <MetricCard label="Closed shifts" value={report.shifts.filter((shift) => shift.status === 'closed').length} hint={`${report.shifts.length} shifts in period`} icon="card" />
+            </div>
+            <div className="reports-layout">
+                <div className="report-analysis-grid">
+                    <section className="panel glass"><PanelHeading eyebrow="Warehouse performance" title="Sales by warehouse" /><div className="report-pair-list">{report.by_location.length === 0 ? <p className="muted">No POS sales in this period.</p> : report.by_location.map((row) => <article className="report-pair" key={row.id}><strong>{row.name}</strong><small>{row.orders} sales</small><span>{money(row.revenue)}</span></article>)}</div></section>
+                    <section className="panel glass"><PanelHeading eyebrow="Payment mix" title="Tender breakdown" /><div className="report-pair-list">{report.tenders.length === 0 ? <p className="muted">No payments in this period.</p> : report.tenders.map((row) => <article className="report-pair" key={row.tender_type}><strong>{row.tender_type || 'Other'}</strong><small>{row.payments} payments</small><span>{money(row.amount)}</span></article>)}</div></section>
+                </div>
+                <div className="report-analysis-grid">
+                    <section className="panel glass"><PanelHeading eyebrow="Register performance" title="Sales by register" /><div className="table-wrap report-products-table"><table><thead><tr><th>Register</th><th>Orders</th><th>Revenue</th></tr></thead><tbody>{report.by_register.length === 0 ? <tr><td colSpan={3}><span className="muted">No register sales.</span></td></tr> : report.by_register.map((row) => <tr key={row.id}><td><strong>{row.name}</strong><small>{row.code}</small></td><td>{row.orders}</td><td>{money(row.revenue)}</td></tr>)}</tbody></table></div></section>
+                    <section className="panel glass"><PanelHeading eyebrow="Team performance" title="Sales by cashier" /><div className="table-wrap report-products-table"><table><thead><tr><th>Cashier</th><th>Orders</th><th>Revenue</th></tr></thead><tbody>{report.by_cashier.length === 0 ? <tr><td colSpan={3}><span className="muted">No cashier sales.</span></td></tr> : report.by_cashier.map((row) => <tr key={row.id}><td><strong>{row.name}</strong></td><td>{row.orders}</td><td>{money(row.revenue)}</td></tr>)}</tbody></table></div></section>
+                </div>
+                <section className="panel glass"><PanelHeading eyebrow={`${report.from} to ${report.to}`} title="Shift reconciliation" /><div className="table-wrap report-products-table"><table><thead><tr><th>Shift</th><th>Cashier</th><th>Register</th><th>Cash sales</th><th>Expected</th><th>Counted</th><th>Variance</th></tr></thead><tbody>{report.shifts.length === 0 ? <tr><td colSpan={7}><span className="muted">No shifts in this period.</span></td></tr> : report.shifts.map((row) => <tr key={row.id}><td><strong>#{row.id}</strong><small>{row.opened_at}</small></td><td>{row.cashier_name}</td><td><strong>{row.register_name}</strong><small>{row.location_name}</small></td><td>{money(row.cash_sales)}</td><td>{money(row.expected_cash)}</td><td>{row.counted_cash === null ? '-' : money(row.counted_cash)}</td><td><StatusBadge status={Math.abs(Number(row.variance || 0)) > 0.01 ? 'warning' : 'healthy'} label={row.variance === null ? 'Open' : money(row.variance)} /></td></tr>)}</tbody></table></div></section>
+            </div>
+        </>
+    );
+}
+
+function HealthReport({ report }) {
+    return (
+        <>
+            <div className="metrics-grid four">
+                <MetricCard label="Healthy checks" value={report.summary.healthy} hint="Latest system snapshots" icon="check" tone="success" />
+                <MetricCard label="Warnings" value={report.summary.warnings} hint="Configuration or workflow" icon="bell" />
+                <MetricCard label="Failed checks" value={report.summary.failed} hint={`${report.summary.failed_jobs} failed jobs`} icon="close" />
+                <MetricCard label="Stock alerts" value={report.summary.open_alerts} hint="Open reorder alerts" icon="box" />
+            </div>
+            <div className="reports-layout">
+                <section className="panel glass"><PanelHeading eyebrow="Latest snapshots" title="Operations health" /><div className="operations-health-grid">{report.checks.length === 0 ? <p className="muted">Run the operations health command to create the first snapshot.</p> : report.checks.map((check) => <article key={check.check_name} className="operations-health-row"><StatusBadge status={check.status} label={check.status} /><div><strong>{check.check_name.replaceAll('_', ' ')}</strong><p>{check.summary}</p><small>{check.checked_at}</small></div></article>)}</div></section>
+                <section className="panel glass"><PanelHeading eyebrow="Reorder queue" title="Open stock alerts" /><div className="table-wrap report-products-table"><table><thead><tr><th>Product / SKU</th><th>Warehouse</th><th>Available</th><th>Reorder</th><th>Severity</th></tr></thead><tbody>{report.alerts.length === 0 ? <tr><td colSpan={5}><span className="muted">No open stock alerts.</span></td></tr> : report.alerts.map((alert) => <tr key={alert.id}><td><strong>{alert.sku?.product?.name}</strong><small>{alert.sku?.sku_code}</small></td><td>{alert.location?.name}</td><td>{alert.available_qty}</td><td>{alert.reorder_point}</td><td><StatusBadge status={alert.type === 'out_of_stock' ? 'failed' : 'warning'} label={alert.type.replaceAll('_', ' ')} /></td></tr>)}</tbody></table></div></section>
+            </div>
+        </>
+    );
+}
+
+export default function ReportsIndex({ view = 'sales', filters = {}, locations = [], canViewSales = false, canViewInventory = false, inventoryReport = null, posReport = null, healthReport = null, summary = {}, topProducts = [], salesByDay = [], categoryPerformance = [], purchaseSegments = [], productPairs = [], couponPerformance = [], flashSalePerformance = [] }) {
+    const { app_base } = usePage().props;
     const topRevenue = Math.max(...topProducts.map((product) => Number(product.revenue || 0)), 1);
     const topCategoryRevenue = Math.max(1, ...categoryPerformance.map((category) => Number(category.revenue || 0)));
     const topSegmentOrders = Math.max(1, ...purchaseSegments.map((segment) => Number(segment.orders || 0)));
@@ -142,7 +321,10 @@ export default function ReportsIndex({ summary, topProducts, salesByDay, categor
     return (
         <AdminLayout title="Reports" eyebrow="Analytics">
             <Head title="Reports" />
+            <ReportTabs view={view} canViewSales={canViewSales} canViewInventory={canViewInventory} appBase={app_base} />
 
+            {view === 'sales' && (
+            <>
             <div className="metrics-grid four">
                 <MetricCard label="Paid orders" value={summary.paid_orders} hint="Confirmed payments" icon="receipt" />
                 <MetricCard label="Revenue" value={money(summary.revenue)} hint="Paid order total" icon="wallet" tone="success" />
@@ -370,6 +552,12 @@ export default function ReportsIndex({ summary, topProducts, salesByDay, categor
                     </div>
                 </section>
             </div>
+            </>
+            )}
+
+            {view === 'inventory' && inventoryReport && <InventoryReport report={inventoryReport} filters={filters} locations={locations} appBase={app_base} />}
+            {view === 'pos' && posReport && <PosReport report={posReport} filters={filters} locations={locations} appBase={app_base} />}
+            {view === 'health' && healthReport && <HealthReport report={healthReport} />}
         </AdminLayout>
     );
 }

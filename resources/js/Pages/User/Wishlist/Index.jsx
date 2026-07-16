@@ -3,7 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { Box, Button, Container, Pagination, Paper, Stack, Typography } from '@mui/material';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import ProductCard from '@/Components/User/ProductCard';
@@ -42,7 +42,7 @@ export default function WishlistIndex() {
     }, [page, pageCount]);
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 12, md: 4 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title="Wishlist" />
             <Navbar />
 
@@ -86,6 +86,7 @@ export default function WishlistIndex() {
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

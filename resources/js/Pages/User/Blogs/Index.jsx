@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { ArticleOutlined, ArrowForward, PlayCircle } from '@mui/icons-material';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 
@@ -93,7 +93,7 @@ export default function BlogsIndex({ posts, filters, categories, tags }) {
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 10, md: 0 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title="Blog" />
             <Head title="Blog" />
             <Navbar />
@@ -160,6 +160,7 @@ export default function BlogsIndex({ posts, filters, categories, tags }) {
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

@@ -14,9 +14,9 @@ class EnsureOrderStaff
      */
     public function handle(Request $request, Closure $next)
     {
-        $role = auth()->user()?->role;
+        $user = $request->user();
 
-        if (! in_array($role, ['super_admin', 'manager', 'cashier'], true)) {
+        if (! $user?->hasAdminPermission('orders.manage')) {
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json(['message' => 'You do not have permission to manage orders.'], 403);
             }

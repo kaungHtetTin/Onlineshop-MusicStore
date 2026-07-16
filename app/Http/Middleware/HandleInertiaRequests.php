@@ -36,6 +36,16 @@ class HandleInertiaRequests extends Middleware
         $requestPath = parse_url(url('/'), PHP_URL_PATH) ?: '';
         $path = rtrim($configuredPath ?: $requestPath, '/');
         $appSettings = app(AppSettingsService::class)->publicSettings();
+        $user = $request->user();
+        $isAdminUser = $user?->isAdminStaff() ?? false;
+        $authUser = $user?->toArray();
+
+        if ($authUser && $isAdminUser) {
+            unset($authUser['roles']);
+            $authUser['role'] = $user->adminRoleName();
+            $authUser['role_label'] = $user->adminRoleLabel();
+            $authUser['permissions'] = $user->effectiveAdminPermissions();
+        }
 
         return array_merge(parent::share($request), [
             'admin_app_url' => config('app.admin_app_url'),
@@ -47,28 +57,24 @@ class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->get('error'),
             ],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $authUser,
             ],
-            'is_super_admin' => $request->user()?->role === 'super_admin',
-            'orders_pending_payment_count' => (function () use ($request) {
-                $user = $request->user();
-                $adminRoles = ['super_admin', 'manager', 'cashier', 'support'];
-                if (! $user || ! in_array($user->role ?? '', $adminRoles, true)) {
+            'is_super_admin' => $user?->isSuperAdmin() ?? false,
+            'orders_pending_payment_count' => (function () use ($user, $isAdminUser) {
+                if (! $isAdminUser || ! $user->hasAdminPermission('orders.view')) {
                     return 0;
                 }
 
                 return Order::where('payment_status', 'pending_review')->count();
             })(),
-            'chat_unread_count' => (function () use ($request) {
-                $user = $request->user();
+            'chat_unread_count' => (function () use ($user, $isAdminUser) {
                 if (! $user) {
                     return 0;
                 }
 
                 $service = app(SupportChatService::class);
-                $adminRoles = ['super_admin', 'manager', 'cashier', 'support'];
 
-                if (in_array($user->role ?? '', $adminRoles, true)) {
+                if ($isAdminUser && $user->hasAdminPermission('chat.manage')) {
                     return $service->unreadCountAllCustomerMessages();
                 }
 

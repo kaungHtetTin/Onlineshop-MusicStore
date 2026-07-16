@@ -25,6 +25,7 @@ import {
     ErrorOutlineOutlined,
     Send,
 } from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MOBILE_BOTTOM_NAV_HEIGHT } from '@/Components/User/MobileBottomNav';
@@ -56,6 +57,7 @@ function newClientTempId() {
 }
 
 export default function UserChatShow() {
+    const theme = useTheme();
     const { app_base, auth, app_url, app_settings } = usePage().props;
     const appName = app_settings?.app_name || 'LaLaPick';
     const queryClient = useQueryClient();
@@ -322,7 +324,7 @@ export default function UserChatShow() {
                 display: 'flex',
                 flexDirection: 'column',
                 overflow: 'hidden',
-                background: '#fff7fa',
+                background: 'background.default',
                 /* Reserve space for fixed MobileBottomNav + safe area + small gap so composer is never hidden */
                 pb: {
                     xs: `calc(${MOBILE_BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px) + 10px)`,
@@ -361,9 +363,9 @@ export default function UserChatShow() {
                             px: { xs: 1, sm: 1.1 },
                             py: { xs: 0.75, sm: 0.85 },
                             borderRadius: 1.5,
-                            border: '1px solid rgba(233, 30, 99, 0.12)',
+                            border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
                             background: '#fff',
-                            boxShadow: '0 8px 22px rgba(233, 30, 99, 0.06)',
+                            boxShadow: `0 8px 22px ${alpha(theme.palette.primary.main, 0.06)}`,
                         }}
                     >
                         <Stack direction="row" spacing={0.85} alignItems="center">
@@ -371,7 +373,7 @@ export default function UserChatShow() {
                                 sx={{
                                     width: { xs: 30, sm: 32 },
                                     height: { xs: 30, sm: 32 },
-                                    background: 'linear-gradient(135deg, #FF5C8A 0%, #E91E63 100%)',
+                                    background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
                                     fontWeight: 800,
                                     fontSize: '0.82rem',
                                 }}
@@ -387,7 +389,7 @@ export default function UserChatShow() {
                                 </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
-                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.main', fontSize: '0.62rem' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.62rem' }}>
                                     {pollQuery.isFetching ? 'Updating…' : 'Live'}
                                 </Typography>
                             </Box>
@@ -404,7 +406,7 @@ export default function UserChatShow() {
                         mb: { xs: 0, md: 1.25 },
                         borderRadius: 1.75,
                         overflow: 'hidden',
-                        border: '1px solid rgba(233, 30, 99, 0.12)',
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
                         background: '#fff',
                         display: 'flex',
                         flexDirection: 'column',
@@ -434,7 +436,7 @@ export default function UserChatShow() {
                                         WebkitOverflowScrolling: 'touch',
                                         px: { xs: 0.85, sm: 1.1 },
                                         py: { xs: 0.9, sm: 1 },
-                                        background: '#fffafb',
+                                        background: 'background.default',
                                     }}
                                 >
                                     {hasMoreOlder && (
@@ -478,19 +480,19 @@ export default function UserChatShow() {
                                                             px: { xs: 0.8, sm: 0.9 },
                                                             py: { xs: 0.5, sm: 0.55 },
                                                             borderRadius: mine ? '9px 9px 3px 9px' : '9px 9px 9px 3px',
-                                                            border: mine ? 'none' : '1px solid rgba(233, 30, 99, 0.14)',
+                                                            border: mine ? 'none' : `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
                                                             background: mine
-                                                                ? 'linear-gradient(135deg, #FF5C8A 0%, #E91E63 55%, #D81F5E 100%)'
+                                                                ? `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 55%, ${theme.palette.primary.dark} 100%)`
                                                                 : 'rgba(255,255,255,0.92)',
                                                             color: mine ? '#fff' : 'text.primary',
                                                             boxShadow: mine
-                                                                ? '0 6px 16px rgba(233, 30, 99, 0.20)'
+                                                                ? `0 6px 16px ${alpha(theme.palette.primary.main, 0.2)}`
                                                                 : '0 6px 18px rgba(0,0,0,0.04)',
                                                             transition: 'transform 180ms ease, box-shadow 180ms ease',
                                                             '&:hover': {
                                                                 transform: 'translateY(-1px)',
                                                                 boxShadow: mine
-                                                                    ? '0 8px 20px rgba(233, 30, 99, 0.24)'
+                                                                    ? `0 8px 20px ${alpha(theme.palette.primary.main, 0.24)}`
                                                                     : '0 8px 22px rgba(0,0,0,0.05)',
                                                             },
                                                             opacity: m.failed ? 0.72 : 1,
@@ -566,7 +568,7 @@ export default function UserChatShow() {
 
                                     {typingOn && (
                                         <Stack direction="row" spacing={0.6} alignItems="center" sx={{ mt: 0.85, opacity: 0.85 }}>
-                                            <Typography variant="caption" sx={{ fontWeight: 750, color: 'secondary.main', fontSize: '0.65rem' }}>
+                                            <Typography variant="caption" sx={{ fontWeight: 750, color: 'primary.main', fontSize: '0.65rem' }}>
                                                 Support is typing
                                             </Typography>
                                             <Stack direction="row" spacing={0.5}>
@@ -577,7 +579,7 @@ export default function UserChatShow() {
                                                             width: 5,
                                                             height: 5,
                                                             borderRadius: 999,
-                                                            bgcolor: 'secondary.main',
+                                                            bgcolor: 'primary.main',
                                                             animation: 'pulse 1.1s ease-in-out infinite',
                                                             animationDelay: `${i * 0.15}s`,
                                                             '@keyframes pulse': {
@@ -599,7 +601,7 @@ export default function UserChatShow() {
                                             sx={{
                                                 p: 0.55,
                                                 borderRadius: 1.25,
-                                                borderColor: 'rgba(233, 30, 99, 0.22)',
+                                                borderColor: alpha(theme.palette.primary.main, 0.22),
                                                 position: 'relative',
                                                 overflow: 'hidden',
                                             }}
@@ -656,7 +658,7 @@ export default function UserChatShow() {
                                     sx={{
                                         flexShrink: 0,
                                         zIndex: 6,
-                                        borderTop: '1px solid rgba(233, 30, 99, 0.12)',
+                                        borderTop: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
                                         background: '#fff',
                                         px: { xs: 0.75, sm: 0.95 },
                                         py: { xs: 0.65, sm: 0.75 },
@@ -675,9 +677,9 @@ export default function UserChatShow() {
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                bgcolor: 'rgba(233, 30, 99, 0.10)',
-                                                border: '1px solid rgba(233, 30, 99, 0.18)',
-                                                '&:hover': { bgcolor: 'rgba(233, 30, 99, 0.16)' },
+                                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                                border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
+                                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.16) },
                                                 '& .MuiSvgIcon-root': { display: 'block', fontSize: 18 },
                                             }}
                                             aria-label="Upload image"
@@ -738,11 +740,11 @@ export default function UserChatShow() {
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                background: 'linear-gradient(135deg, #FF5C8A 0%, #E91E63 100%)',
+                                                background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
                                                 color: '#fff',
-                                                boxShadow: '0 8px 18px rgba(233, 30, 99, 0.24)',
+                                                boxShadow: `0 8px 18px ${alpha(theme.palette.primary.main, 0.24)}`,
                                                 '&:hover': {
-                                                    background: 'linear-gradient(135deg, #FF6F98 0%, #E91E63 100%)',
+                                                    background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
                                                 },
                                                 '&.Mui-disabled': {
                                                     background: 'rgba(0,0,0,0.08)',

@@ -17,7 +17,7 @@ const emptyMethod = {
     is_active: true,
 };
 
-export default function PaymentMethodsIndex({ methods, filters, activeCount = 0 }) {
+export default function PaymentMethodsIndex({ methods, filters }) {
     const { app_base, flash } = usePage().props;
     const [search, setSearch] = useState(filters.q ?? '');
     const [open, setOpen] = useState(false);
@@ -127,7 +127,7 @@ export default function PaymentMethodsIndex({ methods, filters, activeCount = 0 
 
             <section className="panel glass">
                 <PanelHeading eyebrow="Manual transfer accounts" title="Payment methods" />
-                <form className="filter-toolbar" onSubmit={handleSearch}>
+                <form className="filter-toolbar payment-method-filter" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input
@@ -154,17 +154,6 @@ export default function PaymentMethodsIndex({ methods, filters, activeCount = 0 
                         Reset filters
                     </button>
                 )}
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 160px))', gap: 10, marginBottom: 12 }}>
-                    <div>
-                        <span>Total methods</span>
-                        <strong>{methods.total}</strong>
-                    </div>
-                    <div>
-                        <span>Active on checkout</span>
-                        <strong>{activeCount}</strong>
-                    </div>
-                </div>
 
                 <div className="table-wrap">
                     <table>

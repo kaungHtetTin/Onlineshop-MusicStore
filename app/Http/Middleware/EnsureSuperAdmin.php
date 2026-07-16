@@ -11,7 +11,7 @@ class EnsureSuperAdmin
     {
         $user = $request->user();
 
-        if ($user && $user->role === 'super_admin' && $user->status === 'active') {
+        if ($user && $user->isSuperAdmin() && $user->status === 'active') {
             return $next($request);
         }
 

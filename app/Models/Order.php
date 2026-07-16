@@ -16,6 +16,13 @@ class Order extends Model
         'coupon_id',
         'coupon_code',
         'order_number',
+        'sales_channel',
+        'location_id',
+        'register_id',
+        'shift_id',
+        'served_by',
+        'receipt_number',
+        'pos_tender_summary',
         'voucher_public_token',
         'total_amount',
         'discount_amount',
@@ -59,6 +66,7 @@ class Order extends Model
         'payment_reviewed_at' => 'datetime',
         'status_updated_at' => 'datetime',
         'payment_method_snapshot' => 'array',
+        'pos_tender_summary' => 'array',
     ];
 
     protected $appends = [
@@ -80,6 +88,26 @@ class Order extends Model
         return $this->belongsTo(PaymentMethod::class);
     }
 
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    public function register(): BelongsTo
+    {
+        return $this->belongsTo(PosRegister::class, 'register_id');
+    }
+
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(PosShift::class, 'shift_id');
+    }
+
+    public function server(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'served_by');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
@@ -88,6 +116,16 @@ class Order extends Model
     public function returns(): HasMany
     {
         return $this->hasMany(OrderReturn::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(InventoryReservation::class);
     }
 
     public function paymentReviewer(): BelongsTo

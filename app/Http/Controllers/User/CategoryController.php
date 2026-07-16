@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\FlashSalePricingService;
+use App\Services\Inventory\StorefrontInventoryService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -48,7 +49,12 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $slug, FlashSalePricingService $flashSalePricing)
+    public function show(
+        Request $request,
+        string $slug,
+        FlashSalePricingService $flashSalePricing,
+        StorefrontInventoryService $storefrontInventory
+    )
     {
         $category = Category::query()
             ->where('slug', $slug)
@@ -75,6 +81,7 @@ class CategoryController extends Controller
             ->paginate(12)
             ->withQueryString();
         $flashSalePricing->attachToProducts($products->getCollection());
+        $storefrontInventory->attachAvailableQuantities($products->getCollection());
 
         return Inertia::render('User/Categories/Show', [
             'category' => $category,

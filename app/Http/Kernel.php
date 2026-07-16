@@ -74,5 +74,6 @@ class Kernel extends HttpKernel
         'order.staff' => \App\Http\Middleware\EnsureOrderStaff::class,
         'super_admin' => \App\Http\Middleware\EnsureSuperAdmin::class,
         'admin.permission' => \App\Http\Middleware\EnsureAdminPermission::class,
+        'admin.any_permission' => \App\Http\Middleware\EnsureAnyAdminPermission::class,
     ];
 }

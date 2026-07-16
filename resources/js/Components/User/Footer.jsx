@@ -15,7 +15,10 @@ import {
 } from '@mui/icons-material';
 import { routeWithBase } from '@/Utils/url';
 
-const asArray = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
+const asArray = (value) =>
+    Array.isArray(value)
+        ? value.map((item) => (item == null ? '' : String(item).trim())).filter(Boolean)
+        : [];
 
 const socialHref = (value, platform) => {
     if (!value) return '#';
@@ -75,10 +78,10 @@ export default function Footer() {
     const phones = asArray(contacts.phone);
     const facebook = asArray(contacts.facebook);
     const tiktok = asArray(contacts.tiktok);
-    const hasContacts = emails.length || phones.length || facebook.length || tiktok.length;
+    const hasContacts = [emails, phones, facebook, tiktok].some((items) => items.length > 0);
 
     return (
-        <Box component="footer" sx={{ bgcolor: 'primary.main', color: 'white', py: { xs: 3, md: 4 }, mt: 4 }}>
+        <Box component="footer" sx={{ bgcolor: 'primary.main', color: 'white', py: { xs: 3, md: 4 }, mt: 'auto' }}>
             <Container maxWidth="lg">
                 <Box
                     sx={{

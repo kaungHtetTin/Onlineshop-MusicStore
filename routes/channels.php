@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Location;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -15,4 +16,17 @@ use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
+});
+
+Broadcast::channel('inventory.location.{locationId}', function ($user, $locationId) {
+    $location = Location::query()->find((int) $locationId);
+
+    return $location
+        && $user->hasAdminPermission('inventory.view')
+        && $user->canAccessLocation($location);
+});
+
+Broadcast::channel('inventory.all', function ($user) {
+    return $user->hasAdminPermission('inventory.view')
+        && $user->hasAdminPermission('locations.manage');
 });

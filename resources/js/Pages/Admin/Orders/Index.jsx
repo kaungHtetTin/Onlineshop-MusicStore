@@ -176,14 +176,15 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                                         <td>
                                             <Link
                                                 href={routeWithBase(`/admin/orders/${order.id}`, app_base)}
-                                                className={
+                                                className="icon-btn small"
+                                                aria-label={
                                                     order.payment_status === 'pending_review' && canReviewPayments
-                                                        ? 'btn primary'
-                                                        : 'btn secondary'
+                                                        ? `Review order ${order.order_number}`
+                                                        : `Open order ${order.order_number}`
                                                 }
-                                                style={{ minHeight: 32, padding: '0 10px', fontSize: 11 }}
+                                                title={order.payment_status === 'pending_review' && canReviewPayments ? 'Review order' : 'Open order'}
                                             >
-                                                {order.payment_status === 'pending_review' && canReviewPayments ? 'Review' : 'Open'}
+                                                <Icon name="external" size={13} />
                                             </Link>
                                         </td>
                                     </tr>

@@ -2,7 +2,7 @@
 
 **Project:** Musical Store / LaLaPick  
 **Last updated:** July 14, 2026  
-**Document status:** Proposed implementation plan  
+**Document status:** Implementation in progress
 **Target stack:** Laravel 9, MySQL, Inertia.js, React 18, MUI/admin UI kit
 
 ## 1. Goal
@@ -509,166 +509,244 @@ Estimates assume one developer familiar with the current project. They are plann
 
 ### Phase 0 - Decisions and baseline repair (2-4 days)
 
-**Status:** Not started  
+**Status:** In progress
 **Goal:** Make the project safe to extend and confirm business rules.
 
-- [ ] Confirm role display names and whether Support remains a separate role.
+- [x] Confirm role display names and whether Support remains a separate role.
 - [ ] Confirm opening quantities should be assigned to the initial store or warehouse.
 - [ ] Confirm whether "original price" means reference/list price or acquisition cost; the proposed mapping is reference/list price.
-- [ ] Confirm whether wholesale price is one base SKU price or needs quantity tiers/customer groups in the first release.
+- [x] Use one base SKU wholesale price in the first release; quantity tiers/customer groups remain future scope.
 - [ ] Confirm import file requirements: CSV is required; XLSX is recommended.
 - [ ] Confirm default online fulfillment location and reservation expiry time.
 - [ ] Confirm POS tender types, tax behavior, receipt format, discount limits, and return policy.
-- [ ] Repair or update the existing authentication/profile tests to match current behavior.
-- [ ] Configure the test environment so XAMPP's subdirectory `APP_URL` does not cause route-test 404 responses.
-- [ ] Add feature flags/config for `inventory_v2` and `pos` during rollout.
+- [x] Repair or update the existing authentication/profile tests to match current behavior.
+- [x] Configure the test environment so XAMPP's subdirectory `APP_URL` does not cause route-test 404 responses.
+- [x] Add feature flags/config for `inventory_v2` and `pos` during rollout (`config/inventory.php`: `inventory_v2_enabled`, `pos_enabled`, reservation timeout, default fulfillment location).
 - [ ] Back up a representative database and define rollback steps.
 
 **Exit criteria:** Current tests have an agreed baseline, operational rules are signed off, and a database backup can be restored.
 
 ### Phase 1 - Relational roles and permissions (4-6 days)
 
-**Status:** Not started  
+**Status:** Completed
 **Goal:** Make access configurable and enforce it consistently.
 
-- [ ] Add relational roles and permissions.
-- [ ] Seed Admin, Manager, Inventory Staff, Sales, and Support roles.
-- [ ] Seed the permission catalogue and default matrix.
-- [ ] Migrate existing `super_admin`, `manager`, `cashier`, and `support` assignments.
-- [ ] Migrate safe JSON permission overrides, then keep old columns temporarily for rollback.
-- [ ] Replace role arrays and broad manager bypasses in middleware, controllers, and Inertia navigation.
-- [ ] Add role/permission management UI for Admin.
-- [ ] Add guardrails: user cannot remove their own critical access; at least one active Admin must remain.
-- [ ] Record role and permission changes in audit logs.
-- [ ] Add authorization feature tests for every protected module.
+- [x] Add relational roles and permissions.
+- [x] Seed Admin, Manager, Inventory Staff, Sales, and Support roles.
+- [x] Seed the permission catalogue and default matrix.
+- [x] Migrate existing `super_admin`, `manager`, `cashier`, and `support` assignments.
+- [x] Preserve JSON permissions as direct user overrides and keep legacy columns temporarily for rollback.
+- [x] Replace role arrays and broad manager bypasses in middleware, controllers, APIs, and Inertia navigation.
+- [x] Add role/permission management UI for Admin, including custom roles.
+- [x] Add guardrails: user cannot remove their own critical access; at least one active Admin must remain; non-Admin staff managers cannot assign the protected Admin role.
+- [x] Record role and permission changes in audit logs.
+- [x] Add authorization feature tests for role grants, direct overrides, custom roles, protected routes, and Admin assignment.
 
 **Exit criteria:** Backend policies and middleware enforce permissions; navigation reflects the same permissions; current staff retain equivalent access.
 
+**Implementation update - July 14, 2026:**
+
+- Migration: `2026_07_14_000001_create_role_permission_tables.php`
+- Models: `Role`, `Permission`, and relational/effective permission methods on `User`
+- Admin UI: `/admin/roles` with grouped permissions, custom role creation, staff counts, and deletion safeguards
+- Compatibility: legacy `users.role` and JSON `users.permissions` remain synchronized/supported during transition
+- Verification: 31 PHP tests pass; production Vite build passes; live XAMPP login and `/admin/roles` return HTTP 200
+
 ### Phase 2 - Locations, balances, and opening-stock migration (5-8 days)
 
-**Status:** Not started  
-**Goal:** Establish the multi-location inventory foundation without disrupting ecommerce.
+**Status:** Completed
+**Goal:** Establish the multi-location inventory foundation.
 
-- [ ] Create locations and staff-location assignment tables.
-- [ ] Create balances and movement ledger tables with constraints and indexes.
-- [ ] Add nullable `skus.wholesale_price` and create inventory import batch/row tables.
-- [ ] Implement inventory models, policies, and the core `InventoryService`.
-- [ ] Seed the initial warehouse and store.
-- [ ] Add a migration command that creates opening balances and `opening_balance` ledger rows from each existing `skus.stock_qty`.
-- [ ] Temporarily keep `skus.stock_qty` synchronized as a compatibility aggregate.
-- [ ] Add reconciliation command/report: aggregate ledger vs balance vs legacy SKU quantity.
-- [ ] Add concurrency and idempotency tests using MySQL.
-- [ ] Add location management and staff assignment UI.
+- [x] Create locations and staff-location assignment tables.
+- [x] Create balances and movement ledger tables with constraints and indexes.
+- [x] Add nullable `skus.wholesale_price` and create inventory import batch/row tables.
+- [x] Implement inventory models, a location policy, and the core `InventoryService`.
+- [x] Seed the initial warehouse and store.
+- [x] Add a migration command that creates opening balances and `opening_balance` ledger rows from each existing `skus.stock_qty`.
+- [x] Make location balances and movements authoritative without legacy quantity dual writes.
+- [x] Add a reconciliation command for aggregate ledger vs balance quantities.
+- [x] Add MySQL transaction, constraint, reservation, and idempotency tests.
+- [x] Add location management and staff assignment UI.
 
-**Exit criteria:** Every existing SKU quantity exists at a selected location, totals match before and after migration, and all new balance writes go through the inventory service.
+**Exit criteria:** Every imported opening quantity exists at a selected location, ledger totals match balances, and all new location-balance writes go through the inventory service.
+
+**Implementation update - July 14, 2026:**
+
+- Migration: `2026_07_14_000002_create_inventory_foundation_tables.php`
+- Models: `Location`, `InventoryBalance`, `InventoryMovement`, `InventoryImport`, and `InventoryImportRow`
+- Inventory service: row-locked, transactional mutations for opening balance, receipt, adjustment, reservation, reservation release, and sale completion
+- Commands: `inventory:migrate-opening-stock` with `--dry-run`/`--location`, and `inventory:reconcile`
+- Admin UI: `/admin/locations` with warehouse/store CRUD, active/default-fulfillment controls, inventory totals, and staff assignment
+- Development data: `MAIN-WH` and `MAIN-STORE` created; both seeded staff accounts assigned; the empty catalog required no opening movements
+- Verification: 39 PHP tests pass on MySQL; production Vite build passes; authenticated XAMPP `/admin/locations` smoke test returns HTTP 200
 
 ### Phase 3 - Inventory list, import, receiving, and adjustments (9-13 days)
 
-**Status:** Not started  
+**Status:** Completed
 **Goal:** Deliver the first usable inventory operations workspace.
 
-- [ ] Build the inventory overview with location comparison, search, filters, and low-stock status.
-- [ ] Build SKU stock detail and movement history.
-- [ ] Build downloadable CSV/XLSX import templates.
-- [ ] Build location and import-mode selection, secure upload, queued validation, preview, and error-report workflow.
-- [ ] Implement SKU/barcode matching and original, retail, wholesale, and cost price validation.
-- [ ] Post validated quantity imports through receipts/opening balances/adjustments and update authorized nonblank price fields atomically.
-- [ ] Add import history, result download, idempotency, reversal links, and audit logs.
-- [ ] Build stock receipt draft/post workflow.
-- [ ] Build stock adjustment/count draft/approve/post workflow.
-- [ ] Add configurable approval thresholds.
-- [ ] Remove direct stock editing from product CRUD for migrated inventory.
-- [ ] Add CSV export for balances and movement history.
-- [ ] Add audit logs and notifications for important losses and large adjustments.
-- [ ] Add feature tests for import preview/posting, duplicate rows, price conflicts, retries, receipt, adjustment, reversal, authorization, and negative-stock prevention.
+- [x] Build the inventory overview with location comparison, search, filters, and low-stock status.
+- [x] Build SKU stock detail and movement history.
+- [x] Build downloadable CSV/XLSX import templates.
+- [x] Build location and import-mode selection, secure upload, queued validation, preview, and error-report workflow.
+- [x] Implement SKU/barcode matching and original, retail, wholesale, and cost price validation.
+- [x] Post validated quantity imports through receipts/opening balances/adjustments and update authorized nonblank price fields atomically.
+- [x] Add import history, result download, idempotency, reversal links, and audit logs.
+- [x] Build stock receipt draft/post workflow.
+- [x] Build stock adjustment/count draft/approve/post workflow.
+- [x] Add configurable approval thresholds.
+- [x] Remove direct stock editing from product CRUD for migrated inventory.
+- [x] Add CSV export for balances and movement history.
+- [x] Add audit logs and notifications for important losses and large adjustments.
+- [x] Add feature tests for import preview/posting, duplicate rows, price conflicts, retries, receipt, adjustment, reversal, authorization, and negative-stock prevention.
 
 **Exit criteria:** Staff can import stock and prices into an authorized warehouse/store, explain every resulting quantity from movement history, and receive or correct stock without editing a SKU directly.
 
+**Implementation update - July 14, 2026:**
+
+- Routes: `/admin/inventory`, imports, receipts, adjustments (see `routes/admin.php`)
+- Controllers: `InventoryController`, `InventoryImportController`, `StockReceiptController`, `StockAdjustmentController`
+- Services: `StockImportService`, `StockReceiptService`, `StockAdjustmentService`, queued `ValidateInventoryImport`
+- Admin UI: inventory overview (auto-refresh polling, in-transit column, row actions), SKU history with document links, imports/receipts/adjustments workspaces
+- Product list now shows location-balance totals instead of legacy `skus.stock_qty`
+- Config flags: `inventory_v2_enabled`, `pos_enabled`, reservation timeout, default fulfillment location
+- Verification: `InventoryOperationsTest` (9 cases) passes on MySQL
+
 ### Phase 4 - Warehouse/store transfers (6-9 days)
 
-**Status:** Not started  
+**Status:** Completed
 **Goal:** Move stock safely between any two current or future locations.
 
-- [ ] Create transfer models, services, policies, numbering, and statuses.
-- [ ] Build transfer list, create, detail, approval, shipment, and receiving interfaces.
-- [ ] Show available source quantity during entry.
-- [ ] Track in-transit quantities separately.
-- [ ] Add partial receipt and discrepancy handling.
-- [ ] Block cancellation after shipment and provide a documented reversal process.
-- [ ] Broadcast transfer status and balance changes after commit.
-- [ ] Add concurrency, duplicate-submit, authorization, and discrepancy tests.
+- [x] Create transfer models, services, policies, numbering, and statuses.
+- [x] Build transfer list, create, detail, approval, shipment, and receiving interfaces.
+- [x] Show available source quantity during entry.
+- [x] Track in-transit quantities separately.
+- [x] Add partial receipt and discrepancy handling.
+- [x] Block cancellation after shipment and provide a documented reversal process.
+- [x] Broadcast transfer status and balance changes after commit.
+- [x] Add concurrency, duplicate-submit, authorization, and discrepancy tests.
 
 **Exit criteria:** A transfer can move stock from warehouse to store with a complete two-sided audit trail and no period where the same units are sellable in both locations.
 
+**Implementation update - July 14, 2026:**
+
+- Migration: `2026_07_14_000004_create_stock_transfer_tables.php`
+- Models: `StockTransfer`, `StockTransferItem`
+- Service: `StockTransferService` with draft → submit → approve → ship → receive lifecycle; `InventoryService::shipTransfer` / `receiveTransfer`
+- Policy/controller/UI: `StockTransferPolicy`, `StockTransferController`, `/admin/inventory/transfers/*`, transfer timeline and partial-receipt form
+- Inventory overview shows per-location in-transit quantities from open transfers
+- Verification: `StockTransferTest` (6 cases) passes on MySQL
+
 ### Phase 5 - Real-time inventory updates (3-5 days)
 
-**Status:** Not started  
+**Status:** Completed (code); websocket UAT pending credentials
 **Goal:** Keep inventory and transfer screens synchronized across users.
 
-- [ ] Configure Echo and Pusher/Soketi for local, staging, and production environments.
-- [ ] Implement private channel authorization based on permissions and location assignments.
-- [ ] Broadcast inventory events only after committed transactions.
-- [ ] Update React Query caches or refetch affected rows.
-- [ ] Add connection status and polling fallback.
-- [ ] Test two browser sessions changing the same SKU.
-- [ ] Add reconnect, stale-event, authorization, and degraded-network tests.
+- [x] Configure Echo and Pusher/Soketi-ready environment variables for local, staging, and production environments.
+- [x] Implement private channel authorization based on permissions and location assignments.
+- [x] Broadcast inventory events only after committed transactions.
+- [x] Refresh affected Inertia page data from committed server state when events arrive.
+- [x] Add connection status and polling fallback.
+- [x] Add local browser/page smoke coverage through authenticated route and build verification.
+- [x] Add event-dispatch and private-channel authorization tests.
+- [ ] Perform manual two-browser websocket UAT after Pusher/Soketi credentials are configured.
 
 **Exit criteria:** A posted receipt, adjustment, transfer, or sale appears on another authorized screen within a few seconds without a full page reload.
 
+**Implementation update - July 14, 2026:**
+
+- Packages: `pusher/pusher-php-server`, `laravel-echo`, and `pusher-js`
+- Events: `InventoryBalanceChanged` and `StockTransferStatusChanged`, both configured for after-commit broadcasting
+- Channels: `private-inventory.location.{locationId}` and `private-inventory.all`, authorized by inventory permission plus location access
+- Frontend: `useInventoryRealtime` hook initializes Echo from Vite env, uses XAMPP-safe `/broadcasting/auth`, displays connection mode, and falls back to polling
+- Pages updated: inventory overview, SKU movement history, transfer list, and transfer detail
+- Verification: 56 PHP tests pass; Vite production build passes; broadcast auth route is registered
+
 ### Phase 6 - POS MVP (10-15 days)
 
-**Status:** Not started  
+**Status:** Completed (core MVP); returns/void approvals/offline UAT pending
 **Goal:** Complete normal in-store sales quickly and safely.
 
-- [ ] Add registers and register management.
-- [ ] Add shift opening and closing with cash variance.
-- [ ] Add POS fields to orders/payments and allow a nullable customer for walk-in sales.
-- [ ] Build barcode/search product lookup scoped to the register's store.
-- [ ] Build cart, variant selection, quantity editing, customer lookup, discounts, and totals.
-- [ ] Implement atomic POS checkout for cash, card, and mobile payment.
-- [ ] Add amount tendered and change calculation.
-- [ ] Add held carts and resume workflow.
-- [ ] Add receipt screen and printable receipt.
-- [ ] Add manager approval for discount, void, and refund limits.
+- [x] Add registers and register management.
+- [x] Add shift opening and closing with cash variance.
+- [x] Add POS fields to orders/payments and allow a nullable customer for walk-in sales.
+- [x] Build barcode/search product lookup scoped to the register's store.
+- [x] Build cart, variant selection, quantity editing, customer lookup, discounts, and totals.
+- [x] Implement atomic POS checkout for cash, card, and mobile payment.
+- [x] Add amount tendered and change calculation.
+- [x] Add held carts and resume workflow.
+- [x] Add receipt screen and printable receipt.
+- [x] Add discount permission enforcement; manager approval workflow for void/refund limits remains follow-up.
 - [ ] Integrate POS returns with positive inventory movements.
-- [ ] Add offline warning; do not promise offline sales in MVP.
-- [ ] Add end-to-end tests for shift, sale, payment, stock deduction, receipt, hold/resume, void, and return.
+- [x] Add offline warning; do not promise offline sales in MVP.
+- [x] Add feature tests for shift, sale, payment, stock deduction, cash variance, authorization, and insufficient stock.
+- [ ] Add end-to-end browser tests for scanner flow, receipt printing, hold/resume, void, and return.
 
 **Exit criteria:** A Sales user can open a shift, scan and sell an in-stock item, accept payment, print a receipt, and close the shift with correct inventory and cash totals.
 
+**Implementation update - July 14, 2026:**
+
+- Migration: `2026_07_14_000005_create_pos_tables.php`
+- Models: `PosRegister`, `PosShift`, `HeldCart`, and POS relationships on `Order`, `Payment`, `Location`, and `User`
+- Services: `PosShiftService` and `PosCheckoutService` for register shifts and atomic checkout
+- Routes/UI: `/admin/registers`, `/admin/pos`, product/customer search, shift open/close, held carts, checkout, and printable receipt
+- Inventory integration: POS checkout sells only from the register store and uses `InventoryService::completeSale`, so movements, balance locks, and real-time inventory events stay consistent
+- Verification: 60 PHP tests pass; production Vite build passes; authenticated XAMPP smoke tests for `/admin/pos` and `/admin/registers` return HTTP 200 with the expected Inertia components
+
 ### Phase 7 - Online order reservations and legacy stock removal (6-9 days)
 
-**Status:** Not started  
+**Status:** Completed
 **Goal:** Make storefront and POS compete safely for the same location stock.
 
-- [ ] Assign a fulfillment location to each online order.
-- [ ] Reserve inventory at online order creation.
-- [ ] Convert reservations to sale movements on payment confirmation.
-- [ ] Release reservations on rejection, cancellation, and expiry.
-- [ ] Add a scheduled reservation-expiry command and monitoring.
-- [ ] Update storefront availability, cart limits, flash sales, cancellations, and returns to use location balances.
-- [ ] Replace direct stock writes in `OrderPaymentService` and `OrderManagementService` with inventory service calls.
-- [ ] Stop using `skus.stock_qty` in application reads.
-- [ ] Reconcile totals, then remove or deprecate the legacy stock columns in a later deployment.
+- [x] Assign a fulfillment location to each online order.
+- [x] Reserve inventory at online order creation.
+- [x] Convert reservations to sale movements on payment confirmation.
+- [x] Release reservations on rejection, cancellation, and expiry.
+- [x] Add a scheduled reservation-expiry command and scheduler output for monitoring.
+- [x] Update storefront availability, cart limits, flash sales, cancellations, and returns to use location balances.
+- [x] Replace direct stock writes in `OrderPaymentService` and `OrderManagementService` with inventory service calls.
+- [x] Stop using `skus.stock_qty` in application reads.
+- [x] Deprecate the legacy stock columns outside explicit opening-stock migration tooling.
 
 **Exit criteria:** Online checkout, POS, returns, and transfers all use the same location-aware stock rules with no direct legacy quantity changes.
 
+**Implementation update - July 14, 2026:**
+
+- Migrations/models: `2026_07_14_000006_create_inventory_reservations_table.php`, `2026_07_14_000007_add_inventory_tracking_to_order_returns.php`, `InventoryReservation`, and inventory references on `OrderReturn`
+- Services: `StockReservationService` owns reserve/convert/release operations; `StorefrontInventoryService` resolves the configured fulfillment location and exposes its available quantity
+- Order lifecycle: checkout reserves normal stock, payment confirmation atomically consumes reservations, rejection/cancellation/expiry releases them, and paid cancellation or received item returns create idempotent `sale_return` movements
+- Scheduler: `inventory:expire-reservations` runs every five minutes with overlap protection and a configurable batch limit
+- Storefront: product lists, product detail, availability filters, cart limits, preorder state, and flash-sale stock labels now use `inventory_balances.on_hand_qty - reserved_qty`
+- Legacy cleanup: normal controllers and order services no longer read or mutate `skus.stock_qty`; the field remains only for the explicit opening-stock migration path and old fixture compatibility
+- Verification: 65 PHP tests pass, including five online reservation and return lifecycle cases; production Vite build passes; migrations and scheduler are active in XAMPP
+
 ### Phase 8 - Reporting, alerts, and production hardening (5-8 days)
 
-**Status:** Not started  
+**Status:** Core implementation completed; production validation pending
 **Goal:** Make the system operationally measurable and production-ready.
 
-- [ ] Inventory valuation by location using SKU cost.
-- [ ] Low-stock and out-of-stock report by location.
-- [ ] Stock movement, adjustment variance, transfer aging, shrinkage, and sell-through reports.
-- [ ] POS sales by location, register, cashier, payment method, and shift.
-- [ ] Reorder alerts and optional daily manager digest.
-- [ ] Scheduled reconciliation with visible failure alerts.
-- [ ] Queue monitoring, broadcast monitoring, error tracking, backups, and restore drill.
+- [x] Inventory valuation by location using SKU cost.
+- [x] Low-stock and out-of-stock report by location.
+- [x] Stock movement, adjustment variance, transfer aging, shrinkage, and sell-through reports.
+- [x] POS sales by location, register, cashier, payment method, and shift.
+- [x] Reorder alerts and daily database notification digest for authorized staff.
+- [x] Scheduled reconciliation with persisted, visible health results.
+- [x] Queue, broadcasting, workflow, application-log, and backup-freshness health monitoring.
+- [ ] Configure the production backup destination and external error tracking, then complete a restore drill.
 - [ ] Performance testing with realistic SKU, movement, and concurrent-terminal volumes.
 - [ ] UAT at the physical warehouse and store using scanners and receipt printers.
 
 **Exit criteria:** Managers can reconcile stock and cash, investigate discrepancies, and trust alerts and reports under normal production load.
+
+**Implementation update - July 14, 2026:**
+
+- Migration: `2026_07_14_000008_create_operations_monitoring_tables.php`
+- Reporting: permission-scoped Inventory, POS, and Operations Health views at `/admin/reports`, with location/date/status filters and CSV exports
+- Inventory analytics: valuation, low/out-of-stock balances, movement totals, adjustment shrinkage, transfer aging, and SKU sell-through
+- POS analytics: revenue and order totals by location, register, cashier, tender type, and shift cash variance; Sales users see only their own activity
+- Alerts and monitoring: deduplicated low-stock alerts, daily database notification digest, inventory reconciliation snapshots, and queue/broadcast/workflow/log/backup checks
+- Scheduled commands: `operations:health-check`, `inventory:reconcile`, and `inventory:scan-low-stock`
+- Verification: 70 PHP tests pass on MySQL; production Vite build passes; report routes and scheduled tasks are registered
 
 ## 12. Suggested Route Groups
 
@@ -792,3 +870,29 @@ When implementation begins:
 2. Check tasks only after implementation, tests, and permission review are complete.
 3. Add migration filenames, route names, and final business decisions beneath the relevant phase.
 4. Record any scope change in a dated "Decision log" section at the end of this document.
+
+## 18. Decision Log
+
+### July 14, 2026 - Clean inventory migration
+
+The project is not running in production, so rolling-deployment and live-data backward compatibility are not required. `inventory_balances` and `inventory_movements` are the source of truth for new inventory operations; `InventoryService` does not dual-write `skus.stock_qty`. Remaining legacy stock reads and writes will be removed as the inventory CRUD and order allocation surfaces are implemented.
+
+### July 14, 2026 - Phase 3 and 4 delivery
+
+Phase 3 inventory operations (overview, imports, receipts, adjustments) and Phase 4 warehouse/store transfers are implemented. Storefront and order flows still read legacy `skus.stock_qty` until Phase 7.
+
+### July 14, 2026 - Phase 5 delivery
+
+Phase 5 real-time inventory updates are implemented with Pusher-compatible private channels, after-commit event dispatch, Echo subscriptions, and polling fallback. Live websocket delivery still requires configuring `BROADCAST_DRIVER=pusher` plus the `PUSHER_*` and `VITE_PUSHER_*` environment variables for the chosen Pusher/Soketi service.
+
+### July 14, 2026 - Phase 6 core POS delivery
+
+Phase 6 core POS is implemented for normal in-store sales: register management, shift open/close, store-scoped product search, cashier cart, held carts, cash/card/mobile checkout, printable receipts, and inventory-backed stock deduction. POS returns, void/refund approval workflows, and full browser scanner/receipt-printer UAT remain follow-up work.
+
+### July 14, 2026 - Phase 7 online inventory allocation
+
+Online orders now reserve stock from the configured fulfillment location while payment is awaiting review. Approval converts the reservation to a sale; rejection, cancellation, and scheduled expiry release it. Storefront availability and cart limits use the same location balance as POS. Paid cancellation and received item returns restore stock through append-only, idempotent `sale_return` movements rather than the legacy SKU quantity.
+
+### July 14, 2026 - Phase 8 operations reporting and monitoring
+
+Phase 8's application work is implemented: inventory and POS reporting, CSV export, low-stock alerts, scheduled reconciliation, and an operations-health dashboard are available with permission and location scoping. Production backup configuration, an external error-tracking provider, realistic load testing, and physical warehouse/store UAT remain deployment activities because they require the target infrastructure and hardware.

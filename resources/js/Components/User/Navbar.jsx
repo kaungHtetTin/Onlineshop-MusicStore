@@ -40,7 +40,7 @@ const SearchIconWrapper = styled('button')(({ theme }) => ({
     background: 'transparent',
     cursor: 'pointer',
     '&:hover': {
-        color: theme.palette.secondary.main,
+        color: theme.palette.primary.dark,
     },
 }));
 
@@ -190,7 +190,7 @@ const Navbar = () => {
                         >
                             <Badge
                                 badgeContent={chat_unread_count || 0}
-                                color="secondary"
+                                color="primary"
                                 invisible={!chat_unread_count}
                                 sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem', height: 16, minWidth: 16 } }}
                             >
@@ -207,7 +207,7 @@ const Navbar = () => {
                         >
                             <Badge
                                 badgeContent={wishCount}
-                                color="secondary"
+                                color="primary"
                                 invisible={wishCount === 0}
                                 sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem', height: 16, minWidth: 16 } }}
                             >
@@ -222,7 +222,7 @@ const Navbar = () => {
                         >
                             <Badge
                                 badgeContent={cartCount}
-                                color="secondary"
+                                color="primary"
                                 invisible={cartCount === 0}
                                 sx={{ '& .MuiBadge-badge': { fontSize: '0.65rem', height: 16, minWidth: 16 } }}
                             >

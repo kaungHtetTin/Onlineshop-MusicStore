@@ -1,8 +1,11 @@
 import { Link } from '@inertiajs/react';
 import { Box, Button } from '@mui/material';
 import { ArrowBackRounded } from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
 
 export default function BackLink({ href, children = 'Back', sx = {} }) {
+    const theme = useTheme();
+
     return (
         <Button
             component={Link}
@@ -17,7 +20,7 @@ export default function BackLink({ href, children = 'Back', sx = {} }) {
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        bgcolor: 'rgba(233, 30, 99, 0.10)',
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
                         color: 'primary.main',
                     }}
                 >
@@ -35,8 +38,8 @@ export default function BackLink({ href, children = 'Back', sx = {} }) {
                 borderRadius: 999,
                 color: 'text.primary',
                 bgcolor: 'rgba(255, 255, 255, 0.82)',
-                border: '1px solid rgba(233, 30, 99, 0.16)',
-                boxShadow: '0 10px 28px rgba(233, 30, 99, 0.08)',
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                boxShadow: `0 10px 28px ${alpha(theme.palette.primary.main, 0.08)}`,
                 backdropFilter: 'blur(12px)',
                 textTransform: 'none',
                 fontWeight: 850,
@@ -47,8 +50,8 @@ export default function BackLink({ href, children = 'Back', sx = {} }) {
                 },
                 '&:hover': {
                     bgcolor: 'rgba(255, 255, 255, 0.96)',
-                    borderColor: 'rgba(233, 30, 99, 0.28)',
-                    boxShadow: '0 14px 34px rgba(233, 30, 99, 0.13)',
+                    borderColor: alpha(theme.palette.primary.main, 0.28),
+                    boxShadow: `0 14px 34px ${alpha(theme.palette.primary.main, 0.13)}`,
                     transform: 'translateY(-1px)',
                 },
                 ...sx,

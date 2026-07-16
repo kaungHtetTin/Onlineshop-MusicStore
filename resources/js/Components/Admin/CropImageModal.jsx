@@ -80,8 +80,8 @@ export default function CropImageModal({
     if (!open) return null;
 
     return (
-        <div className="modal-backdrop" onClick={onCancel}>
-            <div className="operation-modal compact glass" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop crop-modal-backdrop" onClick={onCancel}>
+            <div className="operation-modal compact glass crop-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="drawer-header">
                     <div>
                         <p className="eyebrow">Media</p>

@@ -22,8 +22,10 @@ import {
     VisibilityOff as VisibilityOffIcon,
     Google as GoogleIcon,
 } from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
 
 export default function Login({ status, error, isAdminLogin = false, googleAuthAvailable = false }) {
+    const theme = useTheme();
     const { url, props } = usePage();
     const { app_base } = props;
     const isAdmin = isAdminLogin || (typeof url === 'string' && url.includes('/admin/login'));
@@ -65,7 +67,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                     bgcolor: 'rgba(255, 255, 255, 0.7)',
                     backdropFilter: 'blur(20px)',
                     border: '1px solid rgba(255, 255, 255, 0.3)',
-                    boxShadow: '0 20px 40px rgba(233, 30, 99, 0.1)',
+                    boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.1)}`,
                     textAlign: 'center',
                 }}>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', mb: 1 }}>
@@ -183,7 +185,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                 sx={{
                                     borderColor: '#ddd',
                                     color: 'text.primary',
-                                    '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(233, 30, 99, 0.05)' },
+                                    '&:hover': { borderColor: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.05) },
                                 }}
                             >
                                 Google

@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { ArticleOutlined, ArrowBack, ArrowForward } from '@mui/icons-material';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 
@@ -55,7 +55,7 @@ export default function BlogShow({ post, related = [] }) {
     const { app_base } = usePage().props;
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 10, md: 0 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title={post.title} />
             <Head title={post.title} />
             <Navbar />
@@ -152,6 +152,7 @@ export default function BlogShow({ post, related = [] }) {
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

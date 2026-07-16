@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\FlashSaleItem;
-use App\Models\Sku;
+use App\Models\FinancialEntry;
+use App\Models\InventoryReservation;
 use App\Models\User;
+use App\Services\Inventory\InventoryService;
+use App\Services\Inventory\StockReservationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -15,7 +18,12 @@ class OrderManagementService
 
     private AuditLogService $auditLogService;
 
-    public function __construct(LoyaltyService $loyaltyService, AuditLogService $auditLogService)
+    public function __construct(
+        LoyaltyService $loyaltyService,
+        AuditLogService $auditLogService,
+        private InventoryService $inventoryService,
+        private StockReservationService $stockReservations
+    )
     {
         $this->loyaltyService = $loyaltyService;
         $this->auditLogService = $auditLogService;
@@ -97,7 +105,13 @@ class OrderManagementService
         });
     }
 
-    public function cancelOrder(Order $order, ?User $actor = null, ?string $reason = null, bool $restoreStock = true): Order
+    public function cancelOrder(
+        Order $order,
+        ?User $actor = null,
+        ?string $reason = null,
+        bool $restoreStock = true,
+        string $reservationStatus = InventoryReservation::STATUS_RELEASED
+    ): Order
     {
         if ($order->status === 'cancelled') {
             throw ValidationException::withMessages([
@@ -105,9 +119,9 @@ class OrderManagementService
             ]);
         }
 
-        return DB::transaction(function () use ($order, $actor, $reason, $restoreStock) {
+        return DB::transaction(function () use ($order, $actor, $reason, $restoreStock, $reservationStatus) {
             $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
-            $order->load('items');
+            $order->load(['location', 'items.sku']);
 
             if ($order->status === 'cancelled') {
                 throw ValidationException::withMessages([
@@ -115,10 +129,30 @@ class OrderManagementService
                 ]);
             }
 
+            if ($order->payment_status === 'pending_review') {
+                $this->stockReservations->releaseOrder(
+                    $order,
+                    $actor,
+                    $reason ?: 'Order cancelled',
+                    $reservationStatus
+                );
+            }
+
             if ($restoreStock && $order->payment_status === 'paid') {
+                if (! $order->location) {
+                    throw ValidationException::withMessages(['order' => 'This order has no inventory location.']);
+                }
+
                 foreach ($order->items as $item) {
-                    if ($item->sku_id) {
-                        Sku::query()->whereKey($item->sku_id)->increment('stock_qty', $item->quantity);
+                    if ($item->sku) {
+                        $this->inventoryService->returnSale(
+                            $order->location,
+                            $item->sku,
+                            $item->quantity,
+                            $actor,
+                            "order:return:item:{$item->id}",
+                            $order
+                        );
                     }
                 }
             }
@@ -160,6 +194,98 @@ class OrderManagementService
 
             return $order->fresh(['items.product', 'items.sku', 'user', 'paymentReviewer']);
         });
+    }
+
+    public function expireReservation(Order $order): Order
+    {
+        return $this->cancelOrder(
+            $order,
+            null,
+            'Inventory reservation expired before payment review.',
+            restoreStock: false,
+            reservationStatus: InventoryReservation::STATUS_EXPIRED
+        );
+    }
+
+    public function deleteOrderAsReturn(Order $order, ?User $actor = null, ?string $reason = null): void
+    {
+        DB::transaction(function () use ($order, $actor, $reason) {
+            $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            $order->load(['location', 'items.sku', 'returns', 'user']);
+
+            $financialReferences = array_values(array_filter([
+                $order->receipt_number,
+                $order->order_number,
+            ]));
+
+            $deletedFinancialEntries = $financialReferences
+                ? FinancialEntry::query()
+                    ->where('type', 'income')
+                    ->where('category', FinancialEntry::CATEGORY_POS_SALE)
+                    ->whereIn('reference', $financialReferences)
+                    ->delete()
+                : 0;
+
+            $restoredStock = 0;
+
+            if ($order->payment_status === 'pending_review') {
+                $this->stockReservations->releaseOrder(
+                    $order,
+                    $actor,
+                    $reason ?: 'Order deleted as return'
+                );
+            }
+
+            if ($order->payment_status === 'paid') {
+                if (! $order->location) {
+                    throw ValidationException::withMessages(['order' => 'This order has no inventory location.']);
+                }
+
+                foreach ($order->items as $item) {
+                    if (! $item->sku) {
+                        continue;
+                    }
+
+                    $alreadyRestocked = (int) $order->returns
+                        ->filter(fn ($return) => (int) $return->order_item_id === (int) $item->id && $return->restocked_at)
+                        ->sum('quantity');
+                    $quantityToRestore = max(0, (int) $item->quantity - $alreadyRestocked);
+
+                    if ($quantityToRestore > 0) {
+                        $this->inventoryService->returnSale(
+                            $order->location,
+                            $item->sku,
+                            $quantityToRestore,
+                            $actor,
+                            "order:return:item:{$item->id}",
+                            $order
+                        );
+                        $restoredStock += $quantityToRestore;
+                    }
+                }
+            }
+
+            foreach ($order->items as $item) {
+                $flashSaleItemId = $item->variants['__flash_sale_item_id'] ?? null;
+                if ($flashSaleItemId) {
+                    FlashSaleItem::query()
+                        ->whereKey($flashSaleItemId)
+                        ->where('sold_count', '>=', $item->quantity)
+                        ->decrement('sold_count', $item->quantity);
+                }
+            }
+
+            $this->loyaltyService->restoreRedeemedPoints($order, 'Order deleted as return');
+            $this->auditLogService->record('order.deleted_as_return', $order, [
+                'reason' => $reason,
+                'order_number' => $order->order_number,
+                'receipt_number' => $order->receipt_number,
+                'restored_stock' => $restoredStock,
+                'deleted_financial_entries' => $deletedFinancialEntries,
+            ]);
+
+            $order->delete();
+        }, 3);
     }
 
     public function updateAdminNotes(Order $order, ?string $notes): Order

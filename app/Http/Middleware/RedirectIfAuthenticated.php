@@ -24,11 +24,10 @@ class RedirectIfAuthenticated
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
                 $user = Auth::guard($guard)->user();
-                $adminRoles = ['super_admin', 'manager', 'cashier', 'support'];
                 $isAdminRoute = $request->routeIs('admin.*') || $request->is('admin/*');
 
                 if ($isAdminRoute) {
-                    if ($user && in_array($user->role, $adminRoles, true) && $user->status === 'active') {
+                    if ($user && $user->isAdminStaff() && $user->status === 'active') {
                         return redirect('/admin/dashboard');
                     }
 
@@ -38,7 +37,7 @@ class RedirectIfAuthenticated
                     return $next($request);
                 }
 
-                if ($user && in_array($user->role, $adminRoles, true)) {
+                if ($user && $user->isAdminStaff()) {
                     Auth::guard($guard)->logout();
                     $request->session()->regenerateToken();
 

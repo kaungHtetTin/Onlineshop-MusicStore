@@ -4,17 +4,12 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import CropImageModal from '@/Components/Admin/CropImageModal';
 import ProductFormUI from '@/Components/Admin/ProductFormUI';
-import {
-    buildCombinations,
-    generateSkuCode,
-    normalizeOptionKey,
-    signatureForAttributes,
-} from '@/Components/Admin/productFormUtils';
+import { normalizeOptionKey, refreshAutoSkuCodes } from '@/Components/Admin/productFormUtils';
 import { routeWithBase } from '@/Utils/url';
 
 export default function Edit({ product, categories, app_base }) {
     const { app_url } = usePage().props;
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, transform, post, processing, errors } = useForm({
         _method: 'PATCH',
         category_id: product.category_id,
         name: product.name,
@@ -25,16 +20,21 @@ export default function Edit({ product, categories, app_base }) {
         metadata: product.metadata || { options: [] },
         mainImageAttachmentId: product.images.find((img) => img.is_primary)?.id || null,
         imageAttachmentIds: product.images.map((img) => img.id),
-        skus: product.skus || [],
+        skus: (product.skus || []).map((sku) => ({
+            ...sku,
+            sku_code_auto: false,
+            cost: sku.cost ?? sku.market_price ?? '',
+            wholesale_price: sku.wholesale_price ?? '',
+        })),
         images: [],
     });
 
     const [previews, setPreviews] = useState([]);
-    const [options, setOptions] = useState(
-        (product.metadata?.options || []).map((o) => ({ ...o, id: `${Date.now()}-${Math.random()}` })) || [
-            { id: Date.now(), name: '', values: [] },
-        ],
-    );
+    const [options, setOptions] = useState(() => (
+        Array.isArray(product.metadata?.options)
+            ? product.metadata.options.map((option) => ({ ...option, id: `${Date.now()}-${Math.random()}` }))
+            : []
+    ));
     const [selectedSkuImageId, setSelectedSkuImageId] = useState(
         data.skus[0]?.image_attachment_id || data.mainImageAttachmentId,
     );
@@ -46,47 +46,39 @@ export default function Edit({ product, categories, app_base }) {
         [options],
     );
 
-    const generateVariants = () => {
-        const combos = buildCombinations(options);
-        if (combos.length === 0) return;
+    const namesFromOptions = (nextOptions) => nextOptions
+        .map((option) => option.name)
+        .filter((name) => name && name.trim() !== '' && normalizeOptionKey(name) !== '');
 
-        const bySig = new Map();
-        for (const v of data.skus) {
-            bySig.set(signatureForAttributes(v.attributes, optionNames), v);
-        }
-
-        const skuCodes = new Set(data.skus.map((v) => v.sku_code).filter(Boolean));
-        const next = [...data.skus];
-
-        for (const attrs of combos) {
-            const sig = signatureForAttributes(attrs, optionNames);
-            if (!bySig.has(sig)) {
-                next.push({
-                    sku_code: generateSkuCode({ title: data.name, attrs, optionNames, existing: skuCodes }),
-                    barcode: '',
-                    price: 0,
-                    stock_qty: 0,
-                    is_active: true,
-                    attributes: attrs,
-                    image_attachment_id: selectedSkuImageId,
-                });
-            }
-        }
-
-        setData({
-            ...data,
-            metadata: { options: options.filter((o) => o.name && o.values.length > 0) },
-            skus: next,
-        });
-    };
+    const refreshSkuCodes = (skus, title = data.name, names = optionNames) => (
+        refreshAutoSkuCodes(skus, title, names)
+    );
 
     const updateSku = (index, patch) => {
         const newSkus = [...data.skus];
         newSkus[index] = { ...newSkus[index], ...patch };
-        setData('skus', newSkus);
+        setData('skus', refreshSkuCodes(newSkus));
     };
 
-    const removeSku = (index) => setData('skus', data.skus.filter((_, i) => i !== index));
+    const addSku = () => {
+        const nextSkus = [
+            ...data.skus,
+            {
+                sku_code: '',
+                sku_code_auto: true,
+                barcode: '',
+                price: 0,
+                wholesale_price: '',
+                cost: '',
+                is_active: true,
+                attributes: {},
+                image_attachment_id: selectedSkuImageId,
+            },
+        ];
+        setData('skus', refreshSkuCodes(nextSkus));
+    };
+
+    const removeSku = (index) => setData('skus', refreshSkuCodes(data.skus.filter((_, i) => i !== index)));
 
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
@@ -142,6 +134,14 @@ export default function Edit({ product, categories, app_base }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        transform((current) => ({
+            ...current,
+            metadata: {
+                options: options
+                    .map((option) => ({ name: option.name.trim() }))
+                    .filter((option) => option.name),
+            },
+        }));
         post(routeWithBase(`/admin/products/${product.id}`, app_base));
     };
 
@@ -194,29 +194,23 @@ export default function Edit({ product, categories, app_base }) {
                     app_url={app_url}
                     selectedSkuImageKey={selectedSkuImageId}
                     setSelectedSkuImageKey={setSelectedSkuImageId}
-                    onGenerateVariants={generateVariants}
                     onUpdateSku={updateSku}
                     onRemoveSku={removeSku}
-                    onAddSku={() =>
-                        setData('skus', [
-                            ...data.skus,
-                            {
-                                sku_code: '',
-                                barcode: '',
-                                price: 0,
-                                stock_qty: 0,
-                                is_active: true,
-                                attributes: {},
-                                image_attachment_id: selectedSkuImageId,
-                            },
-                        ])
-                    }
+                    onAddSku={addSku}
                     onImageChange={handleImageChange}
                     onRemoveNewPreview={removeNewPreview}
                     onRemoveExistingImage={removeExistingImage}
                     onSetCover={setCover}
                     imageKeyForSku={(sku) => sku.image_attachment_id ?? null}
                     setImageKeyForSku={(key) => ({ image_attachment_id: key })}
+                    onProductNameChange={(name) => setData({ ...data, name, skus: refreshSkuCodes(data.skus, name) })}
+                    onRegenerateSku={(index) => {
+                        const nextSkus = data.skus.map((sku, skuIndex) => (
+                            skuIndex === index ? { ...sku, sku_code_auto: true } : sku
+                        ));
+                        setData('skus', refreshSkuCodes(nextSkus));
+                    }}
+                    onSkuStructureChange={(skus, nextOptions) => setData('skus', refreshSkuCodes(skus, data.name, namesFromOptions(nextOptions)))}
                 />
             </form>
 

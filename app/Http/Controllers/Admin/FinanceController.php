@@ -25,7 +25,10 @@ class FinanceController extends Controller
             ->where('status', 'approved')
             ->whereBetween('entry_date', [$from->toDateString(), $to->toDateString()]);
 
-        $approvedManualIncome = (clone $approvedEntries)->where('type', 'income')->sum('amount');
+        $approvedManualIncome = (clone $approvedEntries)
+            ->where('type', 'income')
+            ->where('category', '!=', FinancialEntry::CATEGORY_POS_SALE)
+            ->sum('amount');
         $approvedExpenses = (clone $approvedEntries)->where('type', 'expense')->sum('amount');
         $paidRevenue = (clone $paidOrders)->sum('final_amount');
 
@@ -43,6 +46,7 @@ class FinanceController extends Controller
             'net_profit' => round((float) $paidRevenue + (float) $approvedManualIncome - (float) $approvedExpenses, 2),
             'pending_income' => (float) FinancialEntry::query()
                 ->where('type', 'income')
+                ->where('category', '!=', FinancialEntry::CATEGORY_POS_SALE)
                 ->where('status', 'pending')
                 ->whereBetween('entry_date', [$from->toDateString(), $to->toDateString()])
                 ->sum('amount'),
@@ -88,6 +92,7 @@ class FinanceController extends Controller
 
         $dailyEntries = FinancialEntry::query()
             ->where('status', 'approved')
+            ->where('category', '!=', FinancialEntry::CATEGORY_POS_SALE)
             ->whereBetween('entry_date', [$from->toDateString(), $to->toDateString()])
             ->selectRaw('entry_date as day, type, SUM(amount) as amount')
             ->groupBy('entry_date', 'type')
@@ -96,7 +101,11 @@ class FinanceController extends Controller
         $trend = $this->makeTrend($from, $to, $dailyOrders, $dailyEntries);
 
         return Inertia::render('Admin/Finance/Index', [
-            'entries' => $entryQuery->paginate(15)->withQueryString(),
+            'entries' => $entryQuery->paginate(15)
+                ->withQueryString()
+                ->through(fn (FinancialEntry $entry) => array_merge($entry->toArray(), [
+                    'is_stock_receipt_entry' => $entry->isStockReceiptEntry(),
+                ])),
             'summary' => $summary,
             'trend' => $trend,
             'filters' => [
@@ -133,6 +142,10 @@ class FinanceController extends Controller
 
     public function update(Request $request, FinancialEntry $entry, AuditLogService $auditLogService)
     {
+        if ($entry->isStockReceiptEntry()) {
+            return back()->with('error', 'Stock receipt ledger entries are managed from the stock receipt record.');
+        }
+
         $entry->update($this->validated($request));
 
         $auditLogService->record('finance.entry.updated', $entry, [
@@ -146,6 +159,10 @@ class FinanceController extends Controller
 
     public function destroy(Request $request, FinancialEntry $entry, AuditLogService $auditLogService)
     {
+        if ($entry->isStockReceiptEntry()) {
+            return back()->with('error', 'Delete the stock receipt record to remove this ledger entry.');
+        }
+
         $auditLogService->record('finance.entry.deleted', $entry, [
             'type' => $entry->type,
             'amount' => $entry->amount,
@@ -171,14 +188,8 @@ class FinanceController extends Controller
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $validCategories = array_keys(
-            $validated['type'] === 'income'
-                ? FinancialEntry::INCOME_CATEGORIES
-                : FinancialEntry::EXPENSE_CATEGORIES
-        );
-
         validator($validated, [
-            'category' => [Rule::in($validCategories)],
+            'category' => [Rule::in(FinancialEntry::categoryValuesFor($validated['type']))],
         ])->validate();
 
         return $validated;

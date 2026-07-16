@@ -15,6 +15,7 @@ class Sku extends Model
         'barcode',
         'title',
         'price',
+        'wholesale_price',
         'market_price',
         'cost',
         'stock_qty',
@@ -26,6 +27,7 @@ class Sku extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'wholesale_price' => 'decimal:2',
         'market_price' => 'decimal:2',
         'cost' => 'decimal:2',
         'stock_qty' => 'integer',
@@ -52,5 +54,20 @@ class Sku extends Model
     public function flashSaleItems()
     {
         return $this->hasMany(FlashSaleItem::class);
+    }
+
+    public function inventoryBalances()
+    {
+        return $this->hasMany(InventoryBalance::class);
+    }
+
+    public function inventoryMovements()
+    {
+        return $this->hasMany(InventoryMovement::class);
+    }
+
+    public function inventoryReservations()
+    {
+        return $this->hasMany(InventoryReservation::class);
     }
 }

@@ -63,7 +63,7 @@ export default function BlogsIndex({ posts, filters, categories, statuses }) {
             <section className="panel glass">
                 <PanelHeading eyebrow="Content marketing" title="Blog posts" />
 
-                <form className="filter-toolbar compact flash-sales-filter" onSubmit={handleSearch}>
+                <form className="filter-toolbar blog-filter" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input
@@ -92,7 +92,10 @@ export default function BlogsIndex({ posts, filters, categories, statuses }) {
                         type="button"
                         className="text-btn"
                         style={{ marginBottom: 10 }}
-                        onClick={() => router.get(routeWithBase('/admin/blogs', app_base))}
+                        onClick={() => {
+                            setSearch('');
+                            router.get(routeWithBase('/admin/blogs', app_base));
+                        }}
                     >
                         Reset filters
                     </button>

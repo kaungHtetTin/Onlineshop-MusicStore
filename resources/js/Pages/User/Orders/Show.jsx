@@ -17,7 +17,7 @@ import {
 import { Close } from '@mui/icons-material';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase, storageUrl } from '@/Utils/url';
@@ -52,7 +52,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
     const proofUrl = order.payment_proof_url || storageUrl(order.payment_proof_path, app_url);
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 12, md: 4 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title={`Order ${order.order_number}`} />
             <Navbar />
 
@@ -247,6 +247,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
             </Dialog>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

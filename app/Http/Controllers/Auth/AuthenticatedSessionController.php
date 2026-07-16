@@ -37,12 +37,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $adminRoles = ['super_admin', 'manager', 'cashier', 'support'];
         $user = $request->user();
         $isAdminLogin = $request->routeIs('admin.*') || $request->is('admin/*');
 
         if ($isAdminLogin) {
-            if (! in_array($user->role, $adminRoles, true)) {
+            if (! $user->isAdminStaff()) {
                 Auth::guard('web')->logout();
                 $request->session()->regenerateToken();
 
@@ -63,7 +62,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended('/admin/dashboard');
         }
 
-        if (in_array($user->role, $adminRoles, true)) {
+        if ($user->isAdminStaff()) {
             Auth::guard('web')->logout();
             $request->session()->regenerateToken();
 

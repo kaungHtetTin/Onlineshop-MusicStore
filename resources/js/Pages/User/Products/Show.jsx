@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import ProductCard from '@/Components/User/ProductCard';
 import UserBrandHead from '@/Components/User/UserBrandHead';
@@ -35,7 +35,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [cartToast, setCartToast] = useState(false);
     const addItem = useCartStore((s) => s.addItem);
-    const isSelectedSkuPreorder = Number(selectedSku?.stock_qty ?? 0) <= 0;
+    const isSelectedSkuPreorder = Number(selectedSku?.available_qty ?? 0) <= 0;
     const reviewRows = reviews.data || product.reviews || [];
     const { data, setData, post, processing, errors } = useForm({
         rating: 5,
@@ -76,7 +76,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
             originalPrice: skuOriginalPrice(selectedSku),
             flashSale: selectedSku.flash_sale || null,
             imagePath: img,
-            maxQty: selectedSku.stock_qty,
+            maxQty: selectedSku.available_qty,
             isPreorder: isSelectedSkuPreorder,
             qty: quantity,
         });
@@ -99,7 +99,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 12, md: 4 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title={product.name} />
             
             <Navbar />
@@ -111,7 +111,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
 
                 <Box sx={{ 
                     display: 'grid', 
-                    gridTemplateColumns: { xs: '1fr', md: '0.4fr 0.6fr' }, 
+                    gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 0.4fr) minmax(0, 0.6fr)' }, 
                     gap: { xs: 4, md: 8 },
                     alignItems: 'start'
                 }}>
@@ -141,7 +141,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                     </Stack>
 
                     {/* Product Info */}
-                    <Stack spacing={3.5}>
+                    <Stack spacing={3.5} sx={{ minWidth: 0 }}>
                         <Box>
                             <Typography variant="caption" color="primary" sx={{ fontWeight: 700, mb: 1.5, display: 'block', letterSpacing: 1 }}>
                                 {product.category?.name || 'Uncategorized'}
@@ -172,9 +172,9 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                     </Typography>
                                 </Stack>
                             )}
-                            {selectedSku?.stock_qty > 0 ? (
+                            {selectedSku?.available_qty > 0 ? (
                                 <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>
-                                    In Stock ({selectedSku.stock_qty} available)
+                                    In Stock ({selectedSku.available_qty} available)
                                 </Typography>
                             ) : (
                                 <Typography variant="caption" color="warning.main" sx={{ fontWeight: 700 }}>
@@ -249,15 +249,23 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                         )}
 
                         {/* Quantity & Actions */}
-                        <Stack direction="row" spacing={3} alignItems="center" sx={{ pt: 2 }}>
+                        <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={1.25}
+                            alignItems={{ xs: 'stretch', sm: 'center' }}
+                            sx={{ pt: 2, width: '100%', minWidth: 0 }}
+                        >
                             <Box sx={{ 
                                 display: 'flex', 
                                 alignItems: 'center', 
+                                justifyContent: 'space-between',
                                 border: '1px solid', 
                                 borderColor: 'divider', 
                                 borderRadius: 2,
                                 bgcolor: 'white',
-                                p: 0.5
+                                p: 0.5,
+                                width: { xs: '100%', sm: 120 },
+                                flex: { xs: '0 0 auto', sm: '0 0 120px' },
                             }}>
                                 <IconButton size="small" onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1}>
                                     <RemoveIcon fontSize="small" />
@@ -273,15 +281,32 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             </Box>
                             <Button 
                                 variant="contained" 
-                                fullWidth 
                                 startIcon={<ShoppingBag />}
                                 disabled={!selectedSku}
                                 onClick={handleAddToCart}
-                                sx={{ py: 1.75, fontWeight: 800, borderRadius: 2, fontSize: '1rem' }}
+                                sx={{
+                                    py: 1.75,
+                                    fontWeight: 800,
+                                    borderRadius: 2,
+                                    fontSize: '1rem',
+                                    flex: { xs: '0 0 auto', sm: '1 1 0' },
+                                    minWidth: 0,
+                                    whiteSpace: 'nowrap',
+                                }}
                             >
                                 {isSelectedSkuPreorder ? 'Pre-order now' : 'Add to Cart'}
                             </Button>
-                            <IconButton sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 1.5 }}>
+                            <IconButton
+                                sx={{
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: 2,
+                                    p: 1.5,
+                                    width: { xs: '100%', sm: 56 },
+                                    height: 56,
+                                    flex: { xs: '0 0 auto', sm: '0 0 56px' },
+                                }}
+                            >
                                 <FavoriteBorder color="primary" />
                             </IconButton>
                         </Stack>
@@ -422,6 +447,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
             </Container>
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
 
             <Snackbar

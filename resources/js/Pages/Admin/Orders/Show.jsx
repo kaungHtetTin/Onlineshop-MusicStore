@@ -21,10 +21,11 @@ function activeStepIndex(status, paymentStatus) {
     return idx >= 0 ? idx : 0;
 }
 
-export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments, canManageOrders, canCancelOrders, canManageReturns }) {
+export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments, canManageOrders, canCancelOrders }) {
     const { app_base, app_url, flash } = usePage().props;
     const [rejectOpen, setRejectOpen] = useState(false);
     const [cancelOpen, setCancelOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
     const [linkCopied, setLinkCopied] = useState(false);
 
     const rejectForm = useForm({ reason: '' });
@@ -35,16 +36,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
     const statusForm = useForm({ status: '' });
     const notesForm = useForm({ admin_notes: order.admin_notes ?? '' });
     const cancelForm = useForm({ reason: '' });
-    const returnForm = useForm({
-        type: 'return',
-        status: 'requested',
-        order_item_id: '',
-        quantity: 1,
-        amount: '',
-        reason: '',
-        admin_notes: '',
-    });
-    const returnStatusForm = useForm({ status: 'requested', amount: '', admin_notes: '' });
+    const deleteForm = useForm({ reason: '' });
 
     const proofUrl = order.payment_proof_url || storageUrl(order.payment_proof_path, app_url);
     const paymentAccount = order.payment_method_snapshot || order.selected_payment_method || (order.payment_method ? { banking_service: order.payment_method } : null);
@@ -105,23 +97,11 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
         });
     };
 
-    const handleReturnCreate = (e) => {
+    const handleDelete = (e) => {
         e.preventDefault();
-        returnForm.post(routeWithBase(`/admin/orders/${order.id}/returns`, app_base), {
+        deleteForm.delete(routeWithBase(`/admin/orders/${order.id}`, app_base), {
             preserveScroll: true,
-            onSuccess: () => returnForm.reset(),
-        });
-    };
-
-    const updateReturnStatus = (record, status) => {
-        returnStatusForm.transform(() => ({
-            status,
-            amount: record.amount || 0,
-            admin_notes: record.admin_notes || '',
-        }));
-        returnStatusForm.patch(routeWithBase(`/admin/order-returns/${record.id}`, app_base), {
-            preserveScroll: true,
-            onFinish: () => returnStatusForm.transform((data) => data),
+            onSuccess: () => setDeleteOpen(false),
         });
     };
 
@@ -149,7 +129,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
             <AdminFlash
                 flash={flash}
                 errors={{
-                    order: confirmForm.errors.order || cancelForm.errors.order,
+                    order: confirmForm.errors.order || cancelForm.errors.order || deleteForm.errors.order,
                     status: statusForm.errors.status,
                 }}
             />
@@ -253,25 +233,46 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                             </div>
                         )}
                     </section>
-
                     <section className="panel glass">
                         <PanelHeading eyebrow="Items" title="Line items" />
-                        <div className="stack-sm">
-                            {order.items.map((item) => (
-                                <div key={item.id} className="stack-row" style={{ alignItems: 'flex-start' }}>
-                                    <div style={{ minWidth: 0, flex: 1 }}>
-                                        <strong>{item.product?.name}</strong>
-                                        <small>
-                                            {item.sku?.sku_code ? `SKU ${item.sku.sku_code} · ` : ''}
-                                            Qty {item.quantity} × ${Number(item.unit_price).toFixed(2)}
-                                        </small>
-                                        {item.variants?.__preorder && (
-                                            <StatusBadge status="warning" label="Pre-order" />
-                                        )}
-                                    </div>
-                                    <strong>${Number(item.total_price).toFixed(2)}</strong>
-                                </div>
-                            ))}
+                        <div className="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>SKU</th>
+                                        <th style={{ textAlign: 'right' }}>Qty</th>
+                                        <th style={{ textAlign: 'right' }}>Unit price</th>
+                                        <th style={{ textAlign: 'right' }}>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {order.items.map((item) => (
+                                        <tr key={item.id}>
+                                            <td>
+                                                <strong>{item.product?.name || 'Product'}</strong>
+                                                {item.variants?.__preorder && (
+                                                    <div style={{ marginTop: 4 }}>
+                                                        <StatusBadge status="warning" label="Pre-order" />
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <small>{item.sku?.sku_code || '-'}</small>
+                                            </td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                <strong>{item.quantity}</strong>
+                                            </td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                ${Number(item.unit_price).toFixed(2)}
+                                            </td>
+                                            <td style={{ textAlign: 'right' }}>
+                                                <strong>${Number(item.total_price).toFixed(2)}</strong>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                         <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--color-border)' }}>
                             <div className="detail-row">
@@ -333,101 +334,6 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                 </button>
                             )}
                         </form>
-                    </section>
-
-                    <section className="panel glass">
-                        <PanelHeading eyebrow="After sales" title="Returns and refunds" />
-                        <div className="stack-sm">
-                            {(order.returns || []).length === 0 ? (
-                                <p className="muted">No return, refund, or exchange records yet.</p>
-                            ) : order.returns.map((record) => (
-                                <div key={record.id} className="stack-row" style={{ alignItems: 'flex-start', borderBottom: '1px solid var(--color-border)', paddingBottom: 10 }}>
-                                    <div style={{ minWidth: 0, flex: 1 }}>
-                                        <strong>{record.type} · ${Number(record.amount || 0).toFixed(2)}</strong>
-                                        <small>
-                                            {record.item?.product?.name || 'Whole order'}
-                                            {record.item?.sku?.sku_code ? ` · ${record.item.sku.sku_code}` : ''}
-                                            {` · Qty ${record.quantity}`}
-                                        </small>
-                                        {record.reason && <p style={{ marginTop: 4 }}>{record.reason}</p>}
-                                        {record.admin_notes && <small>{record.admin_notes}</small>}
-                                    </div>
-                                    <div style={{ display: 'grid', gap: 8, justifyItems: 'end' }}>
-                                        <StatusBadge status={record.status} label={record.status} />
-                                        {canManageReturns && !['rejected', 'refunded', 'completed'].includes(record.status) && (
-                                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                                <button type="button" className="btn secondary" style={{ minHeight: 28, fontSize: 10 }} onClick={() => updateReturnStatus(record, 'approved')}>
-                                                    Approve
-                                                </button>
-                                                <button type="button" className="btn secondary" style={{ minHeight: 28, fontSize: 10 }} onClick={() => updateReturnStatus(record, 'refunded')}>
-                                                    Refunded
-                                                </button>
-                                                <button type="button" className="btn danger" style={{ minHeight: 28, fontSize: 10 }} onClick={() => updateReturnStatus(record, 'rejected')}>
-                                                    Reject
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {canManageReturns && (
-                            <form onSubmit={handleReturnCreate} className="crud-grid" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--color-border)' }}>
-                                <label className="form-field">
-                                    <span>Type</span>
-                                    <select value={returnForm.data.type} onChange={(e) => returnForm.setData('type', e.target.value)}>
-                                        <option value="return">Return</option>
-                                        <option value="refund">Refund</option>
-                                        <option value="exchange">Exchange</option>
-                                    </select>
-                                </label>
-                                <label className="form-field">
-                                    <span>Status</span>
-                                    <select value={returnForm.data.status} onChange={(e) => returnForm.setData('status', e.target.value)}>
-                                        <option value="requested">Requested</option>
-                                        <option value="approved">Approved</option>
-                                        <option value="received">Received</option>
-                                        <option value="refunded">Refunded</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="rejected">Rejected</option>
-                                    </select>
-                                </label>
-                                <label className="form-field span-2">
-                                    <span>Order item</span>
-                                    <select value={returnForm.data.order_item_id} onChange={(e) => returnForm.setData('order_item_id', e.target.value)}>
-                                        <option value="">Whole order</option>
-                                        {order.items.map((item) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.product?.name} {item.sku?.sku_code ? `· ${item.sku.sku_code}` : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                                <label className="form-field">
-                                    <span>Quantity</span>
-                                    <input type="number" min="1" value={returnForm.data.quantity} onChange={(e) => returnForm.setData('quantity', e.target.value)} />
-                                </label>
-                                <label className="form-field">
-                                    <span>Amount</span>
-                                    <input type="number" min="0" step="0.01" value={returnForm.data.amount} onChange={(e) => returnForm.setData('amount', e.target.value)} placeholder="0.00" />
-                                </label>
-                                <label className="form-field span-2">
-                                    <span>Reason</span>
-                                    <textarea value={returnForm.data.reason} onChange={(e) => returnForm.setData('reason', e.target.value)} />
-                                </label>
-                                <label className="form-field span-2">
-                                    <span>Admin notes</span>
-                                    <textarea value={returnForm.data.admin_notes} onChange={(e) => returnForm.setData('admin_notes', e.target.value)} />
-                                </label>
-                                <div className="span-2">
-                                    <button type="submit" className="btn primary" disabled={returnForm.processing}>
-                                        <Icon name="check" size={13} />
-                                        Add record
-                                    </button>
-                                </div>
-                            </form>
-                        )}
                     </section>
                 </div>
 
@@ -605,6 +511,13 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                         </button>
                     )}
 
+                    {canCancelOrders && (
+                        <button type="button" className="btn danger full" onClick={() => setDeleteOpen(true)}>
+                            <Icon name="trash" size={14} />
+                            Delete & return stock
+                        </button>
+                    )}
+
                 </div>
             </div>
 
@@ -673,6 +586,42 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                             </button>
                             <button type="submit" className="btn danger" disabled={cancelForm.processing}>
                                 Cancel order
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {deleteOpen && (
+                <div className="modal-backdrop" onClick={() => setDeleteOpen(false)}>
+                    <form className="operation-modal compact glass" onSubmit={handleDelete} onClick={(e) => e.stopPropagation()}>
+                        <div className="drawer-header">
+                            <div>
+                                <p className="eyebrow">Order return</p>
+                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>Delete order</h2>
+                            </div>
+                            <button type="button" className="icon-btn small" onClick={() => setDeleteOpen(false)}>
+                                <Icon name="close" size={14} />
+                            </button>
+                        </div>
+                        <div className="crud-grid">
+                            <p className="span-2">
+                                This permanently removes the order. Paid order stock will be returned, active reservations will be released, and any POS sale finance entry will be deleted.
+                            </p>
+                            <label className="form-field span-2">
+                                <span>Reason (optional)</span>
+                                <textarea
+                                    value={deleteForm.data.reason}
+                                    onChange={(e) => deleteForm.setData('reason', e.target.value)}
+                                />
+                            </label>
+                        </div>
+                        <div className="modal-actions">
+                            <button type="button" className="btn secondary" onClick={() => setDeleteOpen(false)}>
+                                Close
+                            </button>
+                            <button type="submit" className="btn danger" disabled={deleteForm.processing}>
+                                Delete order
                             </button>
                         </div>
                     </form>

@@ -8,6 +8,7 @@ use App\Models\FlashSaleItem;
 use App\Models\Product;
 use App\Models\Sku;
 use App\Services\AuditLogService;
+use App\Services\Inventory\StorefrontInventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,10 @@ use Inertia\Inertia;
 
 class FlashSaleController extends Controller
 {
+    public function __construct(private StorefrontInventoryService $storefrontInventory)
+    {
+    }
+
     public function index(Request $request)
     {
         $query = FlashSale::query()
@@ -216,11 +221,15 @@ class FlashSaleController extends Controller
 
     private function productOptions(): array
     {
-        return Product::query()
+        $products = Product::query()
             ->where('status', 'active')
             ->with(['category:id,name', 'skus' => fn ($query) => $query->where('is_active', true)->orderBy('sku_code')])
             ->orderBy('name')
-            ->get(['id', 'category_id', 'name'])
+            ->get(['id', 'category_id', 'name']);
+
+        $this->storefrontInventory->attachAvailableQuantities($products);
+
+        return $products
             ->map(fn (Product $product) => [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -230,7 +239,7 @@ class FlashSaleController extends Controller
                     'sku_code' => $sku->sku_code,
                     'title' => $sku->title,
                     'price' => (float) $sku->price,
-                    'stock_qty' => $sku->stock_qty,
+                    'available_qty' => $sku->available_qty,
                     'attributes' => $sku->attributes ?? [],
                 ])->values(),
             ])

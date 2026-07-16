@@ -16,10 +16,10 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        $adminRoles = ['super_admin', 'manager', 'cashier', 'support'];
+        $user = $request->user();
 
-        if (auth()->check() && in_array(auth()->user()->role, $adminRoles)) {
-            if (auth()->user()->status !== 'active') {
+        if ($user && $user->isAdminStaff()) {
+            if ($user->status !== 'active') {
                 auth()->logout();
                 if ($request->expectsJson() || $request->wantsJson()) {
                     return response()->json(['message' => 'Your account has been suspended.'], 403);

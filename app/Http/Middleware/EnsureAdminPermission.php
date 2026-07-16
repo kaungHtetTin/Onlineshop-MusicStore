@@ -14,7 +14,7 @@ class EnsureAdminPermission
         if (
             $user
             && $user->status === 'active'
-            && ($user->role === 'super_admin' || $user->role === 'manager' || $user->hasAdminPermission($permission))
+            && $user->hasAdminPermission($permission)
         ) {
             return $next($request);
         }

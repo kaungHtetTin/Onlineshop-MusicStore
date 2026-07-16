@@ -126,10 +126,8 @@ return [
     |
     */
 
-    'cookie' => env(
-        'SESSION_COOKIE',
-        Str::slug(env('APP_NAME', 'laravel'), '_').'_session'
-    ),
+    'cookie' => env('SESSION_COOKIE')
+        ?: (Str::slug(env('APP_NAME', 'laravel'), '_') ?: 'laravel').'_session',
 
     /*
     |--------------------------------------------------------------------------
@@ -141,10 +139,8 @@ return [
     |
     */
 
-    'admin_cookie' => env(
-        'ADMIN_SESSION_COOKIE',
-        Str::slug(env('APP_NAME', 'laravel'), '_').'_admin_session'
-    ),
+    'admin_cookie' => env('ADMIN_SESSION_COOKIE')
+        ?: (Str::slug(env('APP_NAME', 'laravel'), '_') ?: 'laravel').'_admin_session',
 
     /*
     |--------------------------------------------------------------------------

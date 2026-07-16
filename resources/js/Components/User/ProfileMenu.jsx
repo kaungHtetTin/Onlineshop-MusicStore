@@ -23,19 +23,19 @@ import {
     Settings,
     ShoppingBag,
 } from '@mui/icons-material';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { useWishlistStore } from '@/stores/wishlistStore';
 
-const menuPaperSx = {
+const menuPaperSx = (theme) => ({
     mt: 1,
     minWidth: { xs: 260, sm: 280 },
     maxWidth: 320,
     borderRadius: 2,
     overflow: 'visible',
     border: '1px solid',
-    borderColor: alpha('#E91E63', 0.12),
-    boxShadow: '0 12px 40px rgba(233, 30, 99, 0.14), 0 4px 12px rgba(0,0,0,0.06)',
+    borderColor: alpha(theme.palette.primary.main, 0.12),
+    boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.14)}, 0 4px 12px rgba(0,0,0,0.06)`,
     '&::before': {
         content: '""',
         display: 'block',
@@ -49,11 +49,11 @@ const menuPaperSx = {
         zIndex: 0,
         borderLeft: '1px solid',
         borderTop: '1px solid',
-        borderColor: alpha('#E91E63', 0.12),
+        borderColor: alpha(theme.palette.primary.main, 0.12),
     },
-};
+});
 
-const menuItemSx = {
+const menuItemSx = (theme) => ({
     py: 1.25,
     px: 2,
     mx: 1,
@@ -62,19 +62,21 @@ const menuItemSx = {
     fontSize: '0.875rem',
     fontWeight: 600,
     '&:hover': {
-        bgcolor: alpha('#E91E63', 0.08),
+        bgcolor: alpha(theme.palette.primary.main, 0.08),
     },
-};
+});
 
 const iconSx = { minWidth: 36, color: 'primary.main' };
 
 function MenuLinkItem({ href, icon, label, secondary, badge, onClose }) {
+    const theme = useTheme();
+
     return (
         <MenuItem
             component={Link}
             href={href}
             onClick={onClose}
-            sx={menuItemSx}
+            sx={menuItemSx(theme)}
         >
             <ListItemIcon sx={iconSx}>{icon}</ListItemIcon>
             <ListItemText
@@ -91,8 +93,8 @@ function MenuLinkItem({ href, icon, label, secondary, badge, onClose }) {
                         px: 0.75,
                         py: 0.15,
                         borderRadius: 1,
-                        bgcolor: 'secondary.main',
-                        color: 'secondary.contrastText',
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
                         fontSize: '0.65rem',
                         fontWeight: 800,
                         lineHeight: 1.4,
@@ -106,6 +108,7 @@ function MenuLinkItem({ href, icon, label, secondary, badge, onClose }) {
 }
 
 export default function ProfileMenu() {
+    const theme = useTheme();
     const { app_base, app_url, auth, chat_unread_count, app_settings } = usePage().props;
     const appName = app_settings?.app_name || 'LaLaPick';
     const wishCount = useWishlistStore((s) => s.count());
@@ -135,10 +138,10 @@ export default function ProfileMenu() {
                 sx={{
                     p: user?.avatar ? '2px' : undefined,
                     borderRadius: 2,
-                    border: open ? `1px solid ${alpha('#E91E63', 0.35)}` : '1px solid transparent',
-                    bgcolor: open ? alpha('#E91E63', 0.06) : 'transparent',
+                    border: open ? `1px solid ${alpha(theme.palette.primary.main, 0.35)}` : '1px solid transparent',
+                    bgcolor: open ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
                     transition: 'border-color 0.2s, background-color 0.2s',
-                    '&:hover': { bgcolor: alpha('#E91E63', 0.08) },
+                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.08) },
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
@@ -149,7 +152,7 @@ export default function ProfileMenu() {
                             sx={{
                                 width: 30,
                                 height: 30,
-                                border: '1px solid rgba(233, 30, 99, 0.25)',
+                                border: `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
                             }}
                         />
                     ) : (
@@ -175,7 +178,7 @@ export default function ProfileMenu() {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 slotProps={{
-                    paper: { sx: menuPaperSx },
+                    paper: { sx: menuPaperSx(theme) },
                     list: { sx: { py: 1, position: 'relative', zIndex: 1 } },
                 }}
             >
@@ -189,7 +192,7 @@ export default function ProfileMenu() {
                                 mx: 1,
                                 mb: 0.5,
                                 borderRadius: 1.5,
-                                background: `linear-gradient(135deg, ${alpha('#E91E63', 0.1)} 0%, ${alpha('#FF8DA1', 0.14)} 100%)`,
+                                background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.primary.light, 0.14)} 100%)`,
                             }}
                         >
                             <StackRow user={user} app_url={app_url} />
@@ -229,7 +232,7 @@ export default function ProfileMenu() {
                             onClose={handleClose}
                         />
                         <Divider sx={{ mx: 2, my: 0.75, opacity: 0.6 }} />
-                        <MenuItem onClick={handleLogout} sx={{ ...menuItemSx, color: 'error.main' }} disabled={logoutForm.processing}>
+                        <MenuItem onClick={handleLogout} sx={{ ...menuItemSx(theme), color: 'error.main' }} disabled={logoutForm.processing}>
                             <ListItemIcon sx={{ ...iconSx, color: 'error.main' }}>
                                 <Logout fontSize="small" />
                             </ListItemIcon>
@@ -276,6 +279,8 @@ export default function ProfileMenu() {
 }
 
 function StackRow({ user, app_url }) {
+    const theme = useTheme();
+
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
             <Avatar
@@ -288,7 +293,7 @@ function StackRow({ user, app_url }) {
                     fontWeight: 800,
                     fontSize: '1rem',
                     border: '2px solid rgba(255,255,255,0.9)',
-                    boxShadow: '0 2px 8px rgba(233, 30, 99, 0.2)',
+                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.2)}`,
                 }}
             >
                 {!user.avatar && (user.name?.charAt(0)?.toUpperCase() || '?')}

@@ -121,6 +121,7 @@ if (el && el.dataset.page) {
             props.initialPage.url = normalizeDuplicatedBase(props.initialPage.url, base);
             normalizeCurrentBrowserUrl(base);
             registerUserServiceWorker(base);
+            window.configureRealtime?.(base);
 
             if (!window.__forceBrowserGetNavigation && typeof router.visit === 'function') {
                 const originalVisit = router.visit.bind(router);

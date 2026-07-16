@@ -19,8 +19,9 @@ import {
     PlayCircle,
     AccountBalanceWallet,
 } from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
 import Navbar from '@/Components/User/Navbar';
-import MobileBottomNav from '@/Components/User/MobileBottomNav';
+import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import ProductCard from '@/Components/User/ProductCard';
 import UserBrandHead from '@/Components/User/UserBrandHead';
@@ -49,7 +50,7 @@ const fallbackPromos = [
         title: "Editor's Picks",
         subtitle: 'Handpicked favorites',
         link_url: '/products',
-        accent_color: '#FCE4EC',
+        accent_color: null,
         image_url: null,
     },
     {
@@ -57,7 +58,7 @@ const fallbackPromos = [
         title: 'New Arrivals',
         subtitle: 'Latest drops',
         link_url: '/products?sort=newest',
-        accent_color: '#F3E5F5',
+        accent_color: null,
         image_url: null,
     },
 ];
@@ -128,6 +129,7 @@ function BlogPreviewCard({ post }) {
 }
 
 const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale = null, storefront = {}, latestBlogs = [], paymentMethods = [] }) => {
+    const theme = useTheme();
     const { app_base, app_settings } = usePage().props;
     const sections = { ...defaultSections, ...(storefront.sections || {}) };
     const hasConfiguredPromos = Array.isArray(storefront.promos) && storefront.promos.length > 0;
@@ -136,16 +138,17 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
         ? storefront.promos.filter((promo) => promo.is_active !== false)
         : fallbackPromos;
     const themeColor = app_settings?.theme_color || '#087f74';
+    const defaultAccent = alpha(theme.palette.primary.main, 0.12);
 
     const displayCategories = categories.map((cat) => ({
         ...cat,
         icon: cat.metadata?.icon || cat.icon || '🛍️',
         imageUrl: cat.icon_image_url,
-        color: cat.metadata?.color || '#FCE4EC',
+        color: cat.metadata?.color || defaultAccent,
     }));
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', pb: { xs: 12, md: 4 } }}>
+        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title="Home" />
 
             <Navbar />
@@ -330,7 +333,7 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                                     minHeight: 92,
                                     p: 2,
                                     borderRadius: 1,
-                                    bgcolor: promo.accent_color || 'primary.light',
+                                    bgcolor: promo.accent_color || defaultAccent,
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
@@ -438,7 +441,7 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                                         width: 40,
                                         height: 40,
                                         borderRadius: 1,
-                                        bgcolor: 'rgba(8, 127, 116, 0.08)',
+                                        bgcolor: alpha(theme.palette.primary.main, 0.08),
                                         display: 'grid',
                                         placeItems: 'center',
                                         overflow: 'hidden',
@@ -469,6 +472,7 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
             )}
 
             <Footer />
+            <MobileBottomNavSpacer />
             <MobileBottomNav />
         </Box>
     );

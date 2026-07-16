@@ -13,11 +13,15 @@ use App\Models\OrderItem;
 use App\Models\PaymentMethod;
 use App\Models\StorefrontBlock;
 use App\Services\FlashSalePricingService;
+use App\Services\Inventory\StorefrontInventoryService;
 use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
-    public function index(FlashSalePricingService $flashSalePricing)
+    public function index(
+        FlashSalePricingService $flashSalePricing,
+        StorefrontInventoryService $storefrontInventory
+    )
     {
         $latestProducts = Product::with(['category', 'primaryImage', 'skus.image'])
             ->where('status', 'active')
@@ -65,6 +69,8 @@ class HomeController extends Controller
 
         $flashSalePricing->attachToProducts($products);
         $flashSalePricing->attachToProducts($flashSaleProducts);
+        $storefrontInventory->attachAvailableQuantities($products);
+        $storefrontInventory->attachAvailableQuantities($flashSaleProducts);
 
         $categories = Category::where('is_active', true)
             ->orderBy('sort_order')

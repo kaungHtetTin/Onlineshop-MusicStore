@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\CouponService;
 use App\Services\FlashSalePricingService;
+use App\Services\Inventory\StockReservationService;
+use App\Services\Inventory\StorefrontInventoryService;
 use App\Services\LoyaltyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +67,8 @@ class CheckoutController extends Controller
         LoyaltyService $loyaltyService,
         FlashSalePricingService $flashSalePricing,
         AuditLogService $auditLogService,
+        StorefrontInventoryService $storefrontInventory,
+        StockReservationService $stockReservations,
     )
     {
         $validated = $request->validate([
@@ -92,6 +96,8 @@ class CheckoutController extends Controller
             ]);
         }
 
+        $fulfillmentLocation = $storefrontInventory->fulfillmentLocation();
+
         $proofPath = $request->file('payment_proof')->store('payment-proofs', 'public');
 
         $shop = config('shop');
@@ -107,6 +113,8 @@ class CheckoutController extends Controller
                 $flashSalePricing,
                 $auditLogService,
                 $paymentMethod,
+                $fulfillmentLocation,
+                $stockReservations,
             ) {
                 $user = User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
                 $linesInput = collect($validated['lines'])->keyBy('sku_id');
@@ -136,12 +144,6 @@ class CheckoutController extends Controller
 
                     $qty = (int) $row['quantity'];
                     $isPreorder = (bool) ($row['is_preorder'] ?? false);
-
-                    if (! $isPreorder && $sku->stock_qty < $qty) {
-                        throw ValidationException::withMessages([
-                            'lines' => "Not enough stock for \"{$sku->product->name}\".",
-                        ]);
-                    }
 
                     $saleItem = $saleItems->get($sku->id);
                     if ($saleItem && $saleItem->remainingQuantity() !== null && $saleItem->remainingQuantity() < $qty) {
@@ -182,6 +184,8 @@ class CheckoutController extends Controller
                     'coupon_id' => $coupon?->id,
                     'coupon_code' => $coupon?->code,
                     'order_number' => $this->makeOrderNumber(),
+                    'sales_channel' => 'online',
+                    'location_id' => $fulfillmentLocation->id,
                     'total_amount' => $subtotal,
                     'discount_amount' => $discount,
                     'redeemed_points' => $redeemedPoints,
@@ -209,7 +213,7 @@ class CheckoutController extends Controller
                         $variants['__flash_sale_item_id'] = $row['flash_sale_item_id'];
                     }
 
-                    $order->items()->create([
+                    $orderItem = $order->items()->create([
                         'sku_id' => $sku->id,
                         'product_id' => $sku->product_id,
                         'quantity' => $row['quantity'],
@@ -217,6 +221,10 @@ class CheckoutController extends Controller
                         'total_price' => $row['total_price'],
                         'variants' => $variants,
                     ]);
+
+                    if (! $row['is_preorder']) {
+                        $stockReservations->reserveOrderItem($orderItem, $fulfillmentLocation, $user);
+                    }
 
                     if ($row['flash_sale_item_id']) {
                         $saleItems->firstWhere('id', $row['flash_sale_item_id'])?->increment('sold_count', $row['quantity']);

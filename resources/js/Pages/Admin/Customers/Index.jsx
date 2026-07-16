@@ -10,23 +10,43 @@ export default function CustomersIndex({ customers, filters, tiers }) {
     const { app_base } = usePage().props;
     const [search, setSearch] = useState(filters.q ?? '');
     const applyFilters = (patch) => router.get(routeWithBase('/admin/customers', app_base), { ...filters, ...patch }, { preserveState: true, replace: true });
+    const hasActiveFilters = Boolean(filters.q || filters.tier);
+    const handleSearch = (e) => {
+        e.preventDefault();
+        applyFilters({ q: search.trim() || undefined });
+    };
 
     return (
         <AdminLayout title="Customers" eyebrow="Shopper management">
             <Head title="Customers" />
             <section className="panel glass">
                 <PanelHeading eyebrow="Customer base" title="Registered shoppers" />
-                <form className="filter-toolbar compact" onSubmit={(e) => { e.preventDefault(); applyFilters({ q: search || undefined }); }}>
+                <form className="filter-toolbar customer-filter" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
-                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search customers..." />
+                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, or phone..." />
                     </div>
                     <select value={filters.tier || ''} onChange={(e) => applyFilters({ tier: e.target.value || undefined })}>
                         <option value="">All tiers</option>
                         {tiers.map((tier) => <option key={tier} value={tier}>{tier}</option>)}
                     </select>
-                    <button type="submit" className="btn primary">Search</button>
+                    <button type="submit" className="btn primary">
+                        Search
+                    </button>
                 </form>
+                {hasActiveFilters && (
+                    <button
+                        type="button"
+                        className="text-btn"
+                        style={{ marginBottom: 10 }}
+                        onClick={() => {
+                            setSearch('');
+                            router.get(routeWithBase('/admin/customers', app_base));
+                        }}
+                    >
+                        Reset filters
+                    </button>
+                )}
                 <div className="table-wrap">
                     <table>
                         <thead>

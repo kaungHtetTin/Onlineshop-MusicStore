@@ -88,7 +88,7 @@ export default function CouponsIndex({ coupons, filters }) {
 
             <section className="panel glass">
                 <PanelHeading eyebrow="Checkout discounts" title="Promo codes" />
-                <form className="filter-toolbar" onSubmit={handleSearch}>
+                <form className="filter-toolbar compact flash-sales-filter" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input

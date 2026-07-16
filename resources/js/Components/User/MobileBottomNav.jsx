@@ -8,6 +8,18 @@ import { useCartStore } from '@/stores/cartStore';
 /** BottomNavigation height — use for chat layout padding above fixed nav */
 export const MOBILE_BOTTOM_NAV_HEIGHT = 56;
 
+export function MobileBottomNavSpacer() {
+    return (
+        <Box
+            sx={{
+                display: { xs: 'block', md: 'none' },
+                height: `calc(${MOBILE_BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px))`,
+                flexShrink: 0,
+            }}
+        />
+    );
+}
+
 /**
  * Strip app subdirectory from Inertia `url` so matching works (e.g. `/larlarpick/public/products` → `/products`).
  */
@@ -79,7 +91,7 @@ const MobileBottomNav = () => {
                         href={routeWithBase('/cart', app_base)}
                         icon={
                             <Badge
-                                color="secondary"
+                                color="primary"
                                 badgeContent={cartCount}
                                 invisible={cartCount === 0}
                                 sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 } }}
