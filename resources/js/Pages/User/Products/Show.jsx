@@ -18,6 +18,7 @@ import {
     Star,
     StarBorder
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
@@ -28,8 +29,17 @@ import { storageUrl, routeWithBase } from '@/Utils/url';
 import { productListGridSx } from '@/Utils/productListGrid';
 import { useCartStore } from '@/stores/cartStore';
 import { formatMoney, hasFlashSale, skuOriginalPrice, skuPrice } from '@/Utils/pricing';
+import {
+    eyebrowSxForTheme,
+    getMusicStoreColors,
+    sectionShellSxForTheme,
+    storefrontBackgroundSx,
+} from '@/Components/User/musicStoreDesign';
 
 const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBoughtTogether = [], reviews = { data: [] } }) => {
+    const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
+    const sectionShellSx = sectionShellSxForTheme(theme);
     const ORDER_QTY_MAX = 999;
     const { app_url, app_base, auth } = usePage().props;
     const [selectedSku, setSelectedSku] = useState(product.skus[0] || null);
@@ -101,7 +111,15 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Box
+            className="user-storefront"
+            sx={{
+                minHeight: '100dvh',
+                display: 'flex',
+                flexDirection: 'column',
+                ...storefrontBackgroundSx(theme),
+            }}
+        >
             <UserBrandHead title={product.name} />
             
             <Navbar />
@@ -125,7 +143,9 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             borderRadius: 2, 
                             overflow: 'hidden',
                             border: '1px solid',
-                            borderColor: 'divider'
+                            borderColor: 'rgba(36,27,24,0.1)',
+                            bgcolor: musicColors.sheet,
+                            boxShadow: '0 22px 58px rgba(36,27,24,0.14)',
                         }}>
                             <Box 
                                 component="img" 
@@ -145,10 +165,10 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                     {/* Product Info */}
                     <Stack spacing={3.5} sx={{ minWidth: 0 }}>
                         <Box>
-                            <Typography variant="caption" color="primary" sx={{ fontWeight: 700, mb: 1.5, display: 'block', letterSpacing: 1 }}>
+                            <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 1.5 }}>
                                 {product.category?.name || 'Uncategorized'}
                             </Typography>
-                            <Typography variant="h4" sx={{ fontWeight: 800, mb: 2, lineHeight: 1.2 }}>
+                            <Typography variant="h3" sx={{ fontWeight: 950, mb: 2, lineHeight: 1.08, color: musicColors.ink }}>
                                 {product.name}
                             </Typography>
                             <Stack direction="row" spacing={1.5} alignItems="center">
@@ -160,7 +180,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                         </Box>
 
                         <Box sx={{ py: 1 }}>
-                            <Typography variant="h3" color="primary" sx={{ fontWeight: 800, mb: 1 }}>
+                            <Typography variant="h3" sx={{ fontWeight: 950, mb: 1, color: musicColors.rosin }}>
                                 {formatMoney(skuPrice(selectedSku))}
                             </Typography>
                             {hasFlashSale(selectedSku) && (
@@ -214,7 +234,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                         {/* Variants Selection */}
                         {product.skus.length > 1 && (
                             <Box sx={{ py: 1 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, letterSpacing: 0.5 }}>Select Variant</Typography>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 2 }}>Choose finish / variant</Typography>
                                 <ToggleButtonGroup
                                     value={selectedSku?.id}
                                     exclusive
@@ -258,7 +278,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                 border: '1px solid', 
                                 borderColor: 'divider', 
                                 borderRadius: 2,
-                                bgcolor: 'white',
+                                bgcolor: musicColors.sheet,
                                 p: 0.5,
                                 width: { xs: '100%', sm: 120 },
                                 flex: { xs: '0 0 auto', sm: '0 0 120px' },
@@ -307,8 +327,9 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             </IconButton>
                         </Stack>
 
-                        <Box sx={{ bgcolor: 'rgba(0,0,0,0.02)', p: 4, borderRadius: 3, mt: 4 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, letterSpacing: 0.5 }}>Product Description</Typography>
+                        <Box sx={{ ...sectionShellSx, p: { xs: 2.5, md: 4 }, mt: 4 }}>
+                            <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>Details</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>Product description</Typography>
                             <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, opacity: 0.9 }}>
                                 {product.description || 'No description available.'}
                             </Typography>
@@ -324,12 +345,15 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                 </Box>
 
                 <Box sx={{ mt: 8 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>
+                    <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
+                        Feedback
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>
                         Ratings & Reviews
                     </Typography>
                     <Stack spacing={2}>
                         {auth?.user ? (
-                            <Box component="form" onSubmit={submitReview} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
+                            <Box component="form" onSubmit={submitReview} sx={{ ...sectionShellSx, p: 2 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
                                     Rate this product
                                 </Typography>

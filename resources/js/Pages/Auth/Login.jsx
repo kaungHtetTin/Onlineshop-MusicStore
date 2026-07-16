@@ -23,11 +23,14 @@ import {
     Google as GoogleIcon,
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
+import { getMusicStoreColors, musicGradientForTheme } from '@/Components/User/musicStoreDesign';
+import PwaHeadTags from '@/Components/User/PwaHeadTags';
 
 export default function Login({ status, error, isAdminLogin = false, googleAuthAvailable = false }) {
     const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
     const { url, props } = usePage();
-    const { app_base } = props;
+    const { app_base, app_settings } = props;
     const isAdmin = isAdminLogin || (typeof url === 'string' && url.includes('/admin/login'));
     const [showPassword, setShowPassword] = React.useState(false);
 
@@ -55,26 +58,28 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, #FFF1F5 0%, #F8BBD0 100%)',
+            background: isAdmin ? 'linear-gradient(135deg, #FFF1F5 0%, #F8BBD0 100%)' : musicGradientForTheme(theme),
             py: 4,
         }}>
-            <Head title="Log in" />
+            <Head title="Log in">
+                {!isAdmin && <PwaHeadTags />}
+            </Head>
 
             <Container maxWidth="xs">
                 <Paper elevation={0} sx={{
                     p: 4,
-                    borderRadius: 5,
-                    bgcolor: 'rgba(255, 255, 255, 0.7)',
+                    borderRadius: isAdmin ? 5 : 2,
+                    bgcolor: isAdmin ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 253, 248, 0.92)',
                     backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.1)}`,
+                    border: isAdmin ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid rgba(244, 194, 103, 0.26)',
+                    boxShadow: isAdmin ? `0 20px 40px ${alpha(theme.palette.primary.main, 0.1)}` : '0 24px 70px rgba(23,19,18,0.24)',
                     textAlign: 'center',
                 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', mb: 1 }}>
-                        {isAdmin ? 'Staff Login' : 'Welcome Back'}
+                    <Typography variant="h4" sx={{ fontWeight: 950, color: isAdmin ? 'primary.main' : musicColors.ink, mb: 1 }}>
+                        {isAdmin ? 'Staff Login' : `Welcome to ${app_settings?.app_name || 'the music shop'}`}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                        {isAdmin ? 'Sign in to manage LaLaPick' : 'Log in to your lovely account'}
+                        {isAdmin ? 'Sign in to manage LaLaPick' : 'Log in to save instruments, track orders, and chat with the shop team.'}
                     </Typography>
 
                     {status && (

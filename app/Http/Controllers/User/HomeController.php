@@ -46,6 +46,16 @@ class HomeController extends Controller
             ->all();
 
         $products = $latestProducts;
+        $productSection = [
+            'source' => $latestProducts->isNotEmpty() ? 'new_arrivals' : 'empty',
+            'title' => $latestProducts->isNotEmpty() ? 'New arrivals on the wall' : 'Ready for your first products',
+            'subtitle' => $latestProducts->isNotEmpty()
+                ? 'No paid sales history yet, so we are featuring the newest instruments and gear in stock.'
+                : 'Add instruments, accessories, and stock from the admin panel to start filling this section.',
+            'empty_title' => 'No products are ready for the storefront yet',
+            'empty_subtitle' => 'Create active products with available stock to show a polished customer-facing selection here.',
+        ];
+
         if (! empty($bestSellerIds)) {
             $bestSellerProducts = Product::with($productRelations)
                 ->whereIn('id', $bestSellerIds)
@@ -56,6 +66,13 @@ class HomeController extends Controller
 
             if ($bestSellerProducts->isNotEmpty()) {
                 $products = $bestSellerProducts;
+                $productSection = [
+                    'source' => 'best_sellers',
+                    'title' => 'Stage-tested favorites',
+                    'subtitle' => 'Reliable picks customers keep coming back for.',
+                    'empty_title' => 'No best sellers yet',
+                    'empty_subtitle' => 'Paid orders will automatically shape this section over time.',
+                ];
             }
         }
 
@@ -147,6 +164,7 @@ class HomeController extends Controller
 
         return Inertia::render('User/Welcome', [
             'products' => $products,
+            'productSection' => $productSection,
             'flashSaleProducts' => $flashSaleProducts,
             'activeFlashSale' => $activeFlashSale ? [
                 'id' => $activeFlashSale['id'],

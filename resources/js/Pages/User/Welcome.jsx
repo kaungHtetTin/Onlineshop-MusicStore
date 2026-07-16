@@ -14,10 +14,15 @@ import {
     ArrowForward,
     LocalFireDepartment,
     AutoAwesome,
-    ShoppingBag,
     ArticleOutlined,
     PlayCircle,
     AccountBalanceWallet,
+    Piano,
+    GraphicEq,
+    Headphones,
+    Speaker,
+    LibraryMusic,
+    MusicNote,
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import Navbar from '@/Components/User/Navbar';
@@ -26,19 +31,27 @@ import Footer from '@/Components/User/Footer';
 import ProductCard from '@/Components/User/ProductCard';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { productListGridSx } from '@/Utils/productListGrid';
+import {
+    eyebrowSx,
+    eyebrowSxForTheme,
+    getMusicStoreColors,
+    musicGradientForTheme,
+    sectionShellSxForTheme,
+    storefrontBackgroundSx,
+} from '@/Components/User/musicStoreDesign';
 
 const defaultSections = {
-    categories: { title: 'Categories', is_active: true },
+    categories: { title: 'Shop by sound', subtitle: 'Find the right instrument family for your next session.', is_active: true },
     flash_sale: { title: null, is_active: true },
     promos: { title: null, is_active: true },
-    best_sellers: { title: 'Best Sellers', is_active: true },
-    blogs: { title: 'Ideas and guides', subtitle: 'Fresh shopping inspiration from our team.', is_active: true },
+    best_sellers: { title: null, subtitle: null, is_active: true },
+    blogs: { title: 'Player guides', subtitle: 'Care tips, buying advice, and setup ideas from the shop.', is_active: true },
 };
 
 const defaultHero = {
-    title: 'Fresh picks for every occasion',
-    subtitle: 'Discover customer favorites, seasonal gifts, and new arrivals curated for today.',
-    button_label: 'Shop now',
+    title: 'Tune up your next performance',
+    subtitle: 'Shop instruments, accessories, and studio-ready gear selected for players at every level.',
+    button_label: 'Explore the shop',
     link_url: '/products',
     accent_color: null,
     image_url: null,
@@ -47,21 +60,23 @@ const defaultHero = {
 const fallbackPromos = [
     {
         id: 'editors-picks',
-        title: "Editor's Picks",
-        subtitle: 'Handpicked favorites',
+        title: 'For the rehearsal room',
+        subtitle: 'Strings, picks, sticks, cables, and everyday essentials',
         link_url: '/products',
         accent_color: null,
         image_url: null,
     },
     {
         id: 'new-arrivals',
-        title: 'New Arrivals',
-        subtitle: 'Latest drops',
+        title: 'New on the wall',
+        subtitle: 'Fresh guitars, keyboards, percussion, and recording tools',
         link_url: '/products?sort=newest',
         accent_color: null,
         image_url: null,
     },
 ];
+
+const categoryIconCycle = [Piano, GraphicEq, Headphones, Speaker, LibraryMusic, MusicNote];
 
 const isExternal = (href) => /^https?:\/\//i.test(href || '');
 const blockHref = (href, appBase) => {
@@ -83,8 +98,60 @@ const formatBlogDate = (value) => {
     return new Date(value).toLocaleDateString([], { month: 'short', day: 'numeric' });
 };
 
+function SectionHeader({ eyebrow, title, subtitle, action }) {
+    const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
+
+    return (
+        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1.25} sx={{ mb: 2 }}>
+            <Box>
+                {eyebrow && <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>{eyebrow}</Typography>}
+                <Typography variant="h5" sx={{ fontWeight: 950, color: musicColors.ink, lineHeight: 1.12 }}>
+                    {title}
+                </Typography>
+                {subtitle && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 560, fontWeight: 650 }}>
+                        {subtitle}
+                    </Typography>
+                )}
+            </Box>
+            {action}
+        </Stack>
+    );
+}
+
+function HeroInstrumentArt() {
+    const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
+
+    return (
+        <Box
+            sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 2,
+                p: 3,
+                opacity: 0.98,
+            }}
+        >
+            <Box sx={{ alignSelf: 'end', transform: 'rotate(-8deg)', color: musicColors.amber }}>
+                <Piano sx={{ fontSize: 154, filter: 'drop-shadow(0 20px 24px rgba(0,0,0,0.28))' }} />
+            </Box>
+            <Stack spacing={2} sx={{ justifyContent: 'center', color: 'rgba(255,255,255,0.9)' }}>
+                <GraphicEq sx={{ fontSize: 92, color: musicColors.amber }} />
+                <Headphones sx={{ fontSize: 110, ml: 5, filter: 'drop-shadow(0 18px 20px rgba(0,0,0,0.24))' }} />
+                <MusicNote sx={{ fontSize: 66, color: musicColors.amber, ml: 2 }} />
+            </Stack>
+        </Box>
+    );
+}
+
 function BlogPreviewCard({ post }) {
     const { app_base } = usePage().props;
+    const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
 
     return (
         <Box
@@ -94,20 +161,21 @@ function BlogPreviewCard({ post }) {
                 display: 'grid',
                 gridTemplateRows: 'auto 1fr',
                 bgcolor: 'white',
-                border: '1px solid rgba(0,0,0,0.06)',
-                borderRadius: 1,
+                border: '1px solid rgba(36,27,24,0.08)',
+                borderRadius: 2,
                 overflow: 'hidden',
                 color: 'inherit',
                 textDecoration: 'none',
                 minHeight: 260,
-                '&:hover': { borderColor: 'primary.main' },
+                boxShadow: '0 14px 34px rgba(36,27,24,0.06)',
+                '&:hover': { borderColor: musicColors.brass },
             }}
         >
-            <Box sx={{ aspectRatio: '16 / 9', bgcolor: 'primary.light', display: 'grid', placeItems: 'center', overflow: 'hidden', position: 'relative' }}>
+            <Box sx={{ aspectRatio: '16 / 9', bgcolor: 'rgba(244,194,103,0.2)', display: 'grid', placeItems: 'center', overflow: 'hidden', position: 'relative' }}>
                 {post.cover_image_url ? (
                     <Box component="img" src={post.cover_image_url} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                    <ArticleOutlined sx={{ fontSize: 42, color: 'primary.main', opacity: 0.55 }} />
+                    <ArticleOutlined sx={{ fontSize: 42, color: musicColors.rosin, opacity: 0.65 }} />
                 )}
                 {post.youtube_video_id && (
                     <PlayCircle sx={{ position: 'absolute', right: 10, bottom: 10, color: 'white', filter: 'drop-shadow(0 1px 4px rgba(0,0,0,.45))' }} />
@@ -128,16 +196,77 @@ function BlogPreviewCard({ post }) {
     );
 }
 
-const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale = null, flashSaleEvents = [], storefront = {}, latestBlogs = [], paymentMethods = [] }) => {
+function ProductSectionEmpty({ title, subtitle }) {
+    const { app_base } = usePage().props;
     const theme = useTheme();
-    const { app_base, app_settings } = usePage().props;
+    const musicColors = getMusicStoreColors(theme);
+    const sectionShellSx = sectionShellSxForTheme(theme);
+
+    return (
+        <Box
+            sx={{
+                ...sectionShellSx,
+                p: { xs: 3, md: 4 },
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'auto 1fr auto' },
+                gap: { xs: 2, md: 3 },
+                alignItems: 'center',
+            }}
+        >
+            <Box
+                sx={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 2,
+                    display: 'grid',
+                    placeItems: 'center',
+                    bgcolor: alpha(musicColors.rosin, 0.1),
+                    color: musicColors.rosin,
+                }}
+            >
+                <MusicNote sx={{ fontSize: 34 }} />
+            </Box>
+            <Box>
+                <Typography variant="h6" sx={{ fontWeight: 950, color: musicColors.ink, mb: 0.5 }}>
+                    {title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 650, maxWidth: 620 }}>
+                    {subtitle}
+                </Typography>
+            </Box>
+            <Button
+                component={Link}
+                href={routeWithBase('/products', app_base)}
+                variant="contained"
+                endIcon={<ArrowForward />}
+                sx={{ fontWeight: 900, justifySelf: { xs: 'stretch', md: 'end' } }}
+            >
+                Browse catalog
+            </Button>
+        </Box>
+    );
+}
+
+const Welcome = ({ products = [], productSection = null, categories, flashSaleProducts = [], activeFlashSale = null, flashSaleEvents = [], storefront = {}, latestBlogs = [], paymentMethods = [] }) => {
+    const theme = useTheme();
+    const { app_base } = usePage().props;
+    const musicColors = getMusicStoreColors(theme);
+    const sectionShellSx = sectionShellSxForTheme(theme);
     const sections = { ...defaultSections, ...(storefront.sections || {}) };
+    const featuredProducts = Array.isArray(products) ? products : [];
+    const productSectionMeta = {
+        source: 'new_arrivals',
+        title: 'New arrivals on the wall',
+        subtitle: 'Fresh instruments and gear ready for players to discover.',
+        empty_title: 'No products are ready for the storefront yet',
+        empty_subtitle: 'Create active products with available stock to show a polished customer-facing selection here.',
+        ...(productSection || {}),
+    };
     const hasConfiguredPromos = Array.isArray(storefront.promos) && storefront.promos.length > 0;
     const hero = storefront.hero || defaultHero;
     const promos = hasConfiguredPromos
         ? storefront.promos.filter((promo) => promo.is_active !== false)
         : fallbackPromos;
-    const themeColor = app_settings?.theme_color || '#087f74';
     const defaultAccent = alpha(theme.palette.primary.main, 0.12);
     const visibleFlashSaleEvents = Array.isArray(flashSaleEvents) && flashSaleEvents.length > 0
         ? flashSaleEvents
@@ -145,36 +274,55 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
             ? [{ ...activeFlashSale, products: flashSaleProducts }]
             : [];
 
-    const displayCategories = categories.map((cat) => ({
+    const displayCategories = categories.map((cat, index) => ({
         ...cat,
-        icon: cat.metadata?.icon || cat.icon || '🛍️',
+        Icon: categoryIconCycle[index % categoryIconCycle.length],
+        icon: cat.metadata?.icon || cat.icon || null,
         imageUrl: cat.icon_image_url,
         color: cat.metadata?.color || defaultAccent,
     }));
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Box
+            className="user-storefront"
+            sx={{
+                minHeight: '100dvh',
+                display: 'flex',
+                flexDirection: 'column',
+                ...storefrontBackgroundSx(theme),
+            }}
+        >
             <UserBrandHead title="Home" />
 
             <Navbar />
 
             {hero.is_active !== false && (
-                <Container maxWidth="lg" sx={{ mt: 2 }}>
+                <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 3 } }}>
                     <Box
                         sx={{
                             display: 'grid',
                             gridTemplateColumns: { xs: '1fr', md: hero.image_url ? '1.05fr 0.95fr' : '1fr' },
                             gap: 0,
-                            borderRadius: 1,
+                            borderRadius: 2,
                             overflow: 'hidden',
-                            bgcolor: hero.accent_color || themeColor,
-                            minHeight: { xs: 180, sm: 240, md: 330 },
+                            background: hero.accent_color || musicGradientForTheme(theme),
+                            minHeight: { xs: 270, sm: 320, md: 390 },
                             position: 'relative',
+                            boxShadow: '0 24px 70px rgba(36, 27, 24, 0.22)',
+                            border: '1px solid rgba(244,194,103,0.24)',
                         }}
                     >
                         <Box
                             sx={{
-                                p: { xs: 3, md: 6 },
+                                position: 'absolute',
+                                inset: 0,
+                                opacity: 0.16,
+                                backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 58px, rgba(255,255,255,0.55) 58px 59px), repeating-linear-gradient(0deg, transparent 0 34px, rgba(255,255,255,0.28) 34px 35px)',
+                            }}
+                        />
+                        <Box
+                            sx={{
+                                p: { xs: 3, sm: 4, md: 7 },
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'center',
@@ -183,37 +331,78 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                                 zIndex: 1,
                             }}
                         >
-                            <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: '1.55rem', md: '2.65rem' }, mb: 1, lineHeight: 1.05 }}>
+                            <Typography sx={{ ...eyebrowSx, color: musicColors.amber, mb: 1 }}>
+                                Musical instrument store
+                            </Typography>
+                            <Typography variant="h2" sx={{ fontWeight: 950, fontSize: { xs: '2rem', sm: '2.6rem', md: '4rem' }, mb: 1.25, lineHeight: 0.98, maxWidth: 620 }}>
                                 {hero.title || defaultHero.title}
                             </Typography>
-                            <Typography variant="body2" sx={{ opacity: 0.9, mb: 2, maxWidth: 460, display: { xs: 'none', sm: 'block' } }}>
+                            <Typography variant="body1" sx={{ opacity: 0.88, mb: 3, maxWidth: 500, fontWeight: 600 }}>
                                 {hero.subtitle || defaultHero.subtitle}
                             </Typography>
-                            <Box>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} alignItems={{ xs: 'stretch', sm: 'center' }}>
                                 <Button
                                     {...blockLinkProps(hero.link_url || '/products', app_base)}
                                     variant="contained"
-                                    sx={{ bgcolor: 'white', color: 'primary.main', px: 3, '&:hover': { bgcolor: '#f5f5f5' } }}
+                                    endIcon={<ArrowForward />}
+                                    sx={{
+                                        bgcolor: musicColors.amber,
+                                        color: musicColors.ink,
+                                        px: 3,
+                                        py: 1.25,
+                                        fontWeight: 900,
+                                        '&:hover': { bgcolor: musicColors.amber },
+                                    }}
                                 >
                                     {hero.button_label || defaultHero.button_label}
                                 </Button>
-                            </Box>
+                                <Button
+                                    component={Link}
+                                    href={routeWithBase('/categories', app_base)}
+                                    variant="outlined"
+                                    sx={{
+                                        borderColor: 'rgba(255,255,255,0.36)',
+                                        color: 'white',
+                                        px: 2.5,
+                                        py: 1.25,
+                                        fontWeight: 850,
+                                        '&:hover': { borderColor: musicColors.amber, bgcolor: alpha(musicColors.amber, 0.08) },
+                                    }}
+                                >
+                                    Browse categories
+                                </Button>
+                            </Stack>
+                            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 3 }}>
+                                {['Guitars', 'Keys', 'Drums', 'Audio'].map((label) => (
+                                    <Chip
+                                        key={label}
+                                        label={label}
+                                        size="small"
+                                        sx={{
+                                            color: 'white',
+                                            border: '1px solid rgba(255,255,255,0.2)',
+                                            bgcolor: 'rgba(255,255,255,0.08)',
+                                            fontWeight: 800,
+                                        }}
+                                    />
+                                ))}
+                            </Stack>
                         </Box>
                         <Box
                             sx={{
                                 display: { xs: 'none', md: 'flex' },
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                bgcolor: hero.image_url ? 'transparent' : 'primary.light',
+                                bgcolor: hero.image_url ? 'transparent' : 'rgba(0,0,0,0.1)',
                                 position: 'relative',
                                 overflow: 'hidden',
-                                minHeight: 260,
+                                minHeight: 340,
                             }}
                         >
                             {hero.image_url ? (
                                 <Box component="img" src={hero.image_url} alt="" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
-                                <ShoppingBag sx={{ fontSize: 200, color: 'primary.main', opacity: 0.2 }} />
+                                <HeroInstrumentArt />
                             )}
                         </Box>
                     </Box>
@@ -222,25 +411,22 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
 
             {sections.categories?.is_active !== false && (
                 <Container maxWidth="lg" sx={{ mt: 4 }}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1} sx={{ mb: 1.5 }}>
-                        <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                {sections.categories?.title || 'Categories'}
-                            </Typography>
-                            {sections.categories?.subtitle && (
-                                <Typography variant="caption" color="text.secondary">{sections.categories.subtitle}</Typography>
-                            )}
-                        </Box>
-                        <Button
-                            component={Link}
-                            href={routeWithBase('/categories', app_base)}
-                            size="small"
-                            endIcon={<ArrowForward />}
-                            sx={{ color: 'primary.main', fontSize: '0.75rem' }}
-                        >
-                            View All
-                        </Button>
-                    </Stack>
+                    <SectionHeader
+                        eyebrow="Departments"
+                        title={sections.categories?.title || 'Shop by sound'}
+                        subtitle={sections.categories?.subtitle}
+                        action={(
+                            <Button
+                                component={Link}
+                                href={routeWithBase('/categories', app_base)}
+                                size="small"
+                                endIcon={<ArrowForward />}
+                                sx={{ color: musicColors.rosin, fontWeight: 900 }}
+                            >
+                                View all
+                            </Button>
+                        )}
+                    />
                     <Box
                         sx={{
                             display: 'grid',
@@ -256,8 +442,15 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                             <Stack
                                 key={cat.id}
                                 alignItems="center"
-                                spacing={0.5}
-                                sx={{ cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}
+                                spacing={0.75}
+                                sx={{
+                                    cursor: 'pointer',
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                    p: 1,
+                                    borderRadius: 2,
+                                    '&:hover': { bgcolor: 'rgba(36,27,24,0.04)' },
+                                }}
                                 component={Link}
                                 href={routeWithBase(`/categories/${cat.slug}`, app_base)}
                             >
@@ -266,14 +459,16 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                                     sx={{
                                         width: { xs: 48, md: 64 },
                                         height: { xs: 48, md: 64 },
-                                        bgcolor: cat.color,
+                                        bgcolor: cat.color || 'rgba(244,194,103,0.2)',
                                         fontSize: '1.25rem',
-                                        borderRadius: 1,
+                                        borderRadius: 2,
+                                        color: musicColors.rosin,
+                                        border: '1px solid rgba(36,27,24,0.08)',
                                         '& img': { objectFit: 'cover' },
                                         '&:hover': { transform: 'translateY(-2px)', transition: '0.2s' },
                                     }}
                                 >
-                                    {cat.icon}
+                                    {cat.icon || <cat.Icon fontSize="small" />}
                                 </Avatar>
                                 <Typography
                                     variant="caption"
@@ -303,12 +498,12 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
 
                 return (
                     <Container key={sale.id || sale.name} maxWidth="lg" sx={{ mt: 4 }}>
-                        <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, border: '1px solid rgba(0,0,0,0.05)' }}>
+                        <Box sx={{ ...sectionShellSx, p: { xs: 1.5, sm: 2.25 } }}>
                             <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1.25} sx={{ mb: 2 }}>
                                 <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-                                    <LocalFireDepartment color="primary" sx={{ fontSize: '1.25rem' }} />
+                                    <LocalFireDepartment sx={{ fontSize: '1.35rem', color: musicColors.rosin }} />
                                     <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                        {sale.name || sections.flash_sale?.title || 'Flash Sale'}
+                                        {sale.name || sections.flash_sale?.title || 'Limited-time gear deals'}
                                     </Typography>
                                     {sale.ends_at && (
                                         <Chip
@@ -319,8 +514,8 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                                         />
                                     )}
                                 </Stack>
-                                <Button component={Link} href={routeWithBase('/products?flash_sale=1', app_base)} size="small" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                                    More
+                                <Button component={Link} href={routeWithBase('/products?flash_sale=1', app_base)} size="small" endIcon={<ArrowForward />} sx={{ color: musicColors.rosin, fontWeight: 900 }}>
+                                    More deals
                                 </Button>
                             </Stack>
                             <Box sx={{ ...productListGridSx }}>
@@ -342,10 +537,12 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                                 {...blockLinkProps(promo.link_url || '/products', app_base)}
                                 sx={{
                                     position: 'relative',
-                                    minHeight: 92,
-                                    p: 2,
-                                    borderRadius: 1,
-                                    bgcolor: promo.accent_color || defaultAccent,
+                                    minHeight: 132,
+                                    p: { xs: 2, md: 2.5 },
+                                    borderRadius: 2,
+                                    bgcolor: promo.accent_color || musicColors.sheet,
+                                    border: '1px solid rgba(36,27,24,0.08)',
+                                    boxShadow: '0 16px 44px rgba(36, 27, 24, 0.07)',
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
@@ -355,14 +552,15 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                                     overflow: 'hidden',
                                 }}
                             >
-                                {promo.image_url && (
-                                    <Box component="img" src={promo.image_url} alt="" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.22 }} />
-                                )}
+                                {promo.image_url ? (
+                                    <Box component="img" src={promo.image_url} alt="" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.24 }} />
+                                ) : null}
                                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary' }}>{promo.title}</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>{promo.subtitle}</Typography>
+                                    <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>Curated set</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 950, color: musicColors.ink, lineHeight: 1.1 }}>{promo.title}</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 650, mt: 0.75, maxWidth: 350 }}>{promo.subtitle}</Typography>
                                 </Box>
-                                <AutoAwesome sx={{ position: 'relative', zIndex: 1, fontSize: 32, color: 'primary.main' }} />
+                                <AutoAwesome sx={{ position: 'relative', zIndex: 1, fontSize: 34, color: musicColors.brass }} />
                             </Box>
                         ))}
                     </Box>
@@ -371,41 +569,44 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
 
             {sections.best_sellers?.is_active !== false && (
                 <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.25 }}>
-                        {sections.best_sellers?.title || 'Best Sellers'}
-                    </Typography>
-                    {sections.best_sellers?.subtitle && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{sections.best_sellers.subtitle}</Typography>
+                    <SectionHeader
+                        eyebrow={productSectionMeta.source === 'best_sellers' ? 'Best sellers' : 'Shop highlights'}
+                        title={sections.best_sellers?.title || productSectionMeta.title}
+                        subtitle={sections.best_sellers?.subtitle || productSectionMeta.subtitle}
+                    />
+                    {featuredProducts.length > 0 ? (
+                        <Box sx={{ ...productListGridSx }}>
+                            {featuredProducts.map((product) => (
+                                <ProductCard key={product.id} product={product} />
+                            ))}
+                        </Box>
+                    ) : (
+                        <ProductSectionEmpty
+                            title={productSectionMeta.empty_title}
+                            subtitle={productSectionMeta.empty_subtitle}
+                        />
                     )}
-                    <Box sx={{ ...productListGridSx }}>
-                        {products.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </Box>
                 </Container>
             )}
 
             {sections.blogs?.is_active !== false && latestBlogs.length > 0 && (
                 <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1} sx={{ mb: 1.5 }}>
-                        <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                {sections.blogs?.title || 'Ideas and guides'}
-                            </Typography>
-                            {sections.blogs?.subtitle && (
-                                <Typography variant="caption" color="text.secondary">{sections.blogs.subtitle}</Typography>
-                            )}
-                        </Box>
-                        <Button
-                            component={Link}
-                            href={routeWithBase('/blogs', app_base)}
-                            size="small"
-                            endIcon={<ArrowForward />}
-                            sx={{ color: 'primary.main', fontSize: '0.75rem' }}
-                        >
-                            View All
-                        </Button>
-                    </Stack>
+                    <SectionHeader
+                        eyebrow="Learn"
+                        title={sections.blogs?.title || 'Player guides'}
+                        subtitle={sections.blogs?.subtitle}
+                        action={(
+                            <Button
+                                component={Link}
+                                href={routeWithBase('/blogs', app_base)}
+                                size="small"
+                                endIcon={<ArrowForward />}
+                                sx={{ color: musicColors.rosin, fontWeight: 900 }}
+                            >
+                                View all
+                            </Button>
+                        )}
+                    />
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
                         {latestBlogs.slice(0, 3).map((post) => <BlogPreviewCard key={post.id} post={post} />)}
                     </Box>
@@ -414,25 +615,22 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
 
             {paymentMethods.length > 0 && (
                 <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1} sx={{ mb: 1.5 }}>
-                        <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                Payment methods
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Manual transfer accounts available at checkout.
-                            </Typography>
-                        </Box>
-                        <Button
-                            component={Link}
-                            href={routeWithBase('/checkout', app_base)}
-                            size="small"
-                            endIcon={<ArrowForward />}
-                            sx={{ color: 'primary.main', fontSize: '0.75rem' }}
-                        >
-                            Checkout
-                        </Button>
-                    </Stack>
+                    <SectionHeader
+                        eyebrow="Checkout"
+                        title="Easy payment options"
+                        subtitle="Manual transfer accounts are available at checkout."
+                        action={(
+                            <Button
+                                component={Link}
+                                href={routeWithBase('/checkout', app_base)}
+                                size="small"
+                                endIcon={<ArrowForward />}
+                                sx={{ color: musicColors.rosin, fontWeight: 900 }}
+                            >
+                                Checkout
+                            </Button>
+                        )}
+                    />
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
                         {paymentMethods.map((method) => (
                             <Stack
@@ -441,9 +639,9 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                                 spacing={1.25}
                                 alignItems="center"
                                 sx={{
-                                    bgcolor: 'white',
-                                    border: '1px solid rgba(0,0,0,0.06)',
-                                    borderRadius: 1,
+                                    bgcolor: musicColors.sheet,
+                                    border: '1px solid rgba(36,27,24,0.08)',
+                                    borderRadius: 2,
                                     p: 1.25,
                                     minWidth: 0,
                                 }}

@@ -26,6 +26,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { useWishlistStore } from '@/stores/wishlistStore';
+import { getMusicStoreColors } from '@/Components/User/musicStoreDesign';
 
 const menuPaperSx = (theme) => ({
     mt: 1,
@@ -109,8 +110,9 @@ function MenuLinkItem({ href, icon, label, secondary, badge, onClose }) {
 
 export default function ProfileMenu() {
     const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
     const { app_base, app_url, auth, chat_unread_count, app_settings } = usePage().props;
-    const appName = app_settings?.app_name || 'LaLaPick';
+    const appName = app_settings?.app_name || 'Harmony House';
     const wishCount = useWishlistStore((s) => s.count());
     const [anchorEl, setAnchorEl] = useState(null);
     const logoutForm = useForm({});
@@ -245,11 +247,11 @@ export default function ProfileMenu() {
                 ) : (
                     <>
                         <Box sx={{ px: 2.5, pt: 1.5, pb: 1 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: musicColors.rosin }}>
                                 Welcome to {appName}
                             </Typography>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                Sign in to save orders, chat with support, and manage your profile.
+                                Sign in to save gear, track orders, and chat with the shop team.
                             </Typography>
                         </Box>
                         <Divider sx={{ mx: 2, mb: 0.5, opacity: 0.6 }} />

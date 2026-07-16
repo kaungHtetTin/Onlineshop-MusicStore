@@ -4,6 +4,8 @@ import { Home, ShoppingBag, ShoppingCart, ReceiptLong, Person } from '@mui/icons
 import { Link, usePage } from '@inertiajs/react';
 import { routeWithBase } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
+import { useTheme } from '@mui/material/styles';
+import { getMusicStoreColors } from '@/Components/User/musicStoreDesign';
 
 /** BottomNavigation height — use for chat layout padding above fixed nav */
 export const MOBILE_BOTTOM_NAV_HEIGHT = 56;
@@ -54,6 +56,8 @@ function bottomNavIndex(path) {
 }
 
 const MobileBottomNav = () => {
+    const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
     const page = usePage();
     const { app_base, auth } = page.props;
     const cartCount = useCartStore((s) => s.itemCount());
@@ -62,14 +66,27 @@ const MobileBottomNav = () => {
 
     return (
         <Box sx={{ display: { xs: 'block', md: 'none' }, position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1200 }}>
-            <Paper elevation={3} sx={{ borderRadius: '12px 12px 0 0', overflow: 'hidden', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+            <Paper
+                elevation={3}
+                sx={{
+                    borderRadius: '14px 14px 0 0',
+                    overflow: 'hidden',
+                    borderTop: `1px solid ${musicColors.amber}`,
+                    bgcolor: musicColors.sheet,
+                    boxShadow: '0 -12px 34px rgba(36,27,24,0.14)',
+                }}
+            >
                 <BottomNavigation
                     showLabels
                     value={value}
                     onChange={() => {
                         /* Selection is driven by URL; each action uses Inertia <Link> */
                     }}
-                    sx={{ height: MOBILE_BOTTOM_NAV_HEIGHT }}
+                    sx={{
+                        height: MOBILE_BOTTOM_NAV_HEIGHT,
+                        bgcolor: musicColors.sheet,
+                        '& .Mui-selected': { color: `${musicColors.rosin} !important` },
+                    }}
                 >
                     <BottomNavigationAction
                         label="Home"

@@ -10,23 +10,29 @@ class PwaController extends Controller
     public function manifest(AppSettingsService $settingsService): JsonResponse
     {
         $settings = $settingsService->publicSettings();
-        $appName = $settings['app_name'] ?: config('app.name', 'LaLaPick');
-        $themeColor = $settings['theme_color'] ?: '#087f74';
+        $appName = $settings['app_name'] ?: config('app.name', 'Harmony House');
+        $themeColor = $settings['theme_color'] ?: '#9c3f2c';
         $iconUrl = $settings['logo_url'] ?: $settings['favicon_url'] ?: url('/pwa-icon.svg');
+        $fallbackIconUrl = url('/pwa-icon.svg');
 
         return response()
             ->json([
                 'name' => $appName,
                 'short_name' => $this->shortName($appName),
-                'description' => "{$appName} shopping app",
-                'start_url' => url('/'),
+                'description' => "{$appName} musical instrument store app",
+                'id' => url('/'),
+                'start_url' => url('/?source=pwa'),
                 'scope' => url('/'),
                 'display' => 'standalone',
                 'display_override' => ['window-controls-overlay', 'standalone', 'minimal-ui'],
                 'orientation' => 'portrait',
-                'background_color' => '#ffffff',
+                'background_color' => '#fffdf8',
                 'theme_color' => $themeColor,
-                'categories' => ['shopping', 'lifestyle'],
+                'categories' => ['shopping', 'music', 'entertainment'],
+                'prefer_related_applications' => false,
+                'launch_handler' => [
+                    'client_mode' => ['navigate-existing', 'auto'],
+                ],
                 'icons' => [
                     [
                         'src' => $iconUrl,
@@ -39,6 +45,35 @@ class PwaController extends Controller
                         'sizes' => '512x512',
                         'type' => $this->iconType($iconUrl),
                         'purpose' => 'any maskable',
+                    ],
+                    [
+                        'src' => $fallbackIconUrl,
+                        'sizes' => '512x512',
+                        'type' => 'image/svg+xml',
+                        'purpose' => 'any maskable',
+                    ],
+                ],
+                'shortcuts' => [
+                    [
+                        'name' => 'Shop instruments',
+                        'short_name' => 'Shop',
+                        'description' => 'Browse instruments and gear',
+                        'url' => url('/products?source=pwa-shortcut'),
+                        'icons' => [['src' => $fallbackIconUrl, 'sizes' => '192x192', 'type' => 'image/svg+xml']],
+                    ],
+                    [
+                        'name' => 'Categories',
+                        'short_name' => 'Categories',
+                        'description' => 'Shop by instrument department',
+                        'url' => url('/categories?source=pwa-shortcut'),
+                        'icons' => [['src' => $fallbackIconUrl, 'sizes' => '192x192', 'type' => 'image/svg+xml']],
+                    ],
+                    [
+                        'name' => 'Cart',
+                        'short_name' => 'Cart',
+                        'description' => 'Open your shopping cart',
+                        'url' => url('/cart?source=pwa-shortcut'),
+                        'icons' => [['src' => $fallbackIconUrl, 'sizes' => '192x192', 'type' => 'image/svg+xml']],
                     ],
                 ],
             ])

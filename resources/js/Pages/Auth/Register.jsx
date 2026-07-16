@@ -22,10 +22,13 @@ import {
     Google as GoogleIcon,
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
+import { getMusicStoreColors, musicGradientForTheme } from '@/Components/User/musicStoreDesign';
+import PwaHeadTags from '@/Components/User/PwaHeadTags';
 
 export default function Register({ error, googleAuthAvailable = false }) {
     const theme = useTheme();
-    const { app_base } = usePage().props;
+    const musicColors = getMusicStoreColors(theme);
+    const { app_base, app_settings } = usePage().props;
     const [showPassword, setShowPassword] = React.useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -52,26 +55,28 @@ export default function Register({ error, googleAuthAvailable = false }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, #FFF1F5 0%, #F8BBD0 100%)',
+            background: musicGradientForTheme(theme),
             py: 4,
         }}>
-            <Head title="Register" />
+            <Head title="Register">
+                <PwaHeadTags />
+            </Head>
 
             <Container maxWidth="xs">
                 <Paper elevation={0} sx={{
                     p: 4,
-                    borderRadius: 5,
-                    bgcolor: 'rgba(255, 255, 255, 0.7)',
+                    borderRadius: 2,
+                    bgcolor: 'rgba(255, 253, 248, 0.92)',
                     backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.1)}`,
+                    border: '1px solid rgba(244, 194, 103, 0.26)',
+                    boxShadow: '0 24px 70px rgba(23,19,18,0.24)',
                     textAlign: 'center',
                 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'primary.main', mb: 1 }}>
-                        Create Account
+                    <Typography variant="h4" sx={{ fontWeight: 950, color: musicColors.ink, mb: 1 }}>
+                        Join {app_settings?.app_name || 'the music shop'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                        Join our lovely community today
+                        Save instruments, track orders, and keep your gear wishlist close.
                     </Typography>
 
                     {error && (

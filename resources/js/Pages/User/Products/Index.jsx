@@ -29,9 +29,17 @@ import ProductCard from '@/Components/User/ProductCard';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
 import { productListGridSx } from '@/Utils/productListGrid';
+import {
+    eyebrowSxForTheme,
+    getMusicStoreColors,
+    sectionShellSxForTheme,
+    storefrontBackgroundSx,
+} from '@/Components/User/musicStoreDesign';
 
 const Index = ({ products, categories, filters }) => {
     const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
+    const sectionShellSx = sectionShellSxForTheme(theme);
     const isMobileFilters = useMediaQuery(theme.breakpoints.down('md'));
     const { app_base } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
@@ -125,7 +133,7 @@ const Index = ({ products, categories, filters }) => {
     };
 
     const fieldSx = {
-        bgcolor: 'background.paper',
+        bgcolor: musicColors.sheet,
         '& .MuiOutlinedInput-root': {
             borderRadius: 1.5,
         },
@@ -158,7 +166,7 @@ const Index = ({ products, categories, filters }) => {
                 variant={!filters.category ? 'filled' : 'outlined'}
                 color={!filters.category ? 'primary' : 'default'}
                 size="small"
-                sx={{ fontWeight: 600, flexShrink: 0 }}
+                sx={{ fontWeight: 850, flexShrink: 0, borderRadius: 1.5 }}
             />
             {categories.map((cat) => (
                 <Chip
@@ -168,7 +176,7 @@ const Index = ({ products, categories, filters }) => {
                     variant={filters.category === cat.slug ? 'filled' : 'outlined'}
                     color={filters.category === cat.slug ? 'primary' : 'default'}
                     size="small"
-                    sx={{ fontWeight: 600, flexShrink: 0 }}
+                    sx={{ fontWeight: 850, flexShrink: 0, borderRadius: 1.5 }}
                 />
             ))}
         </Box>
@@ -189,7 +197,7 @@ const Index = ({ products, categories, filters }) => {
                 <TextField
                     fullWidth
                     size="small"
-                    placeholder="Search products…"
+                    placeholder="Search guitars, keyboards, microphones..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     InputProps={{
@@ -198,7 +206,7 @@ const Index = ({ products, categories, filters }) => {
                                 <Search fontSize="small" color="action" />
                             </InputAdornment>
                         ),
-                        sx: { borderRadius: 1.5, bgcolor: 'background.paper' },
+                        sx: { borderRadius: 1.5, bgcolor: musicColors.sheet },
                     }}
                     sx={{ flex: 1 }}
                 />
@@ -304,30 +312,42 @@ const Index = ({ products, categories, filters }) => {
     );
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Box
+            className="user-storefront"
+            sx={{
+                minHeight: '100dvh',
+                display: 'flex',
+                flexDirection: 'column',
+                ...storefrontBackgroundSx(theme),
+            }}
+        >
             <UserBrandHead title="Shop All Products" />
 
             <Navbar />
 
             <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 4 }, px: { xs: 2, sm: 3 } }}>
-                {/* Title + mobile filter entry */}
                 <Box
                     sx={{
+                        ...sectionShellSx,
+                        p: { xs: 2, sm: 2.5 },
                         display: 'flex',
                         alignItems: 'flex-start',
                         justifyContent: 'space-between',
                         gap: 1.5,
-                        mb: 2,
+                        mb: 2.5,
                     }}
                 >
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
+                        <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
+                            Instrument catalog
+                        </Typography>
+                        <Typography variant="h4" sx={{ fontWeight: 950, mb: 0.5, color: musicColors.ink, lineHeight: 1.1 }}>
                             {filters.category
                                 ? categories.find((c) => c.slug === filters.category)?.name
-                                : 'All Products'}
+                                : 'All instruments & gear'}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            Showing {products.from || 0}-{products.to || 0} of {products.total} items
+                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 650 }}>
+                            Showing {products.from || 0}-{products.to || 0} of {products.total} items for players, studios, and stage setups.
                         </Typography>
                         {filters.flash_sale ? (
                             <Chip
@@ -397,7 +417,7 @@ const Index = ({ products, categories, filters }) => {
                                 <TextField
                                     fullWidth
                                     size="small"
-                                    placeholder="Search products…"
+                                    placeholder="Search guitars, keyboards, microphones..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     InputProps={{
@@ -406,7 +426,7 @@ const Index = ({ products, categories, filters }) => {
                                                 <Search fontSize="small" color="action" />
                                             </InputAdornment>
                                         ),
-                                        sx: { borderRadius: 1.5, bgcolor: 'background.paper' },
+                                        sx: { borderRadius: 1.5, bgcolor: musicColors.sheet },
                                     }}
                                     sx={{ flex: 1 }}
                                 />
@@ -554,10 +574,10 @@ const Index = ({ products, categories, filters }) => {
                             </Box>
                             <Box>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
-                                    Flash sale products
+                                    Limited-time gear deals
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-                                    Limited-time deals
+                                    Instruments and accessories while stock lasts
                                 </Typography>
                             </Box>
                         </Stack>

@@ -7,6 +7,8 @@ import { useCartStore } from '@/stores/cartStore';
 import { useWishlistStore } from '@/stores/wishlistStore';
 import { pickDefaultSkuForProduct } from '@/Utils/pickDefaultSku';
 import { formatMoney, hasFlashSale, skuOriginalPrice, skuPrice } from '@/Utils/pricing';
+import { useTheme } from '@mui/material/styles';
+import { getMusicStoreColors } from '@/Components/User/musicStoreDesign';
 
 const formatSkuLabel = (sku) => {
     const attrs = sku?.attributes || {};
@@ -24,6 +26,8 @@ const getSkuImageUrl = (sku, fallbackUrl, appUrl) => {
 };
 
 const ProductCard = ({ product }) => {
+    const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
     const ORDER_QTY_MAX = 999;
     const { app_url, app_base } = usePage().props;
     const addToCart = useCartStore((s) => s.addItem);
@@ -142,10 +146,16 @@ const ProductCard = ({ product }) => {
                 flexDirection: 'column',
                 position: 'relative',
                 border: '1px solid',
-                borderColor: 'divider',
-                transition: 'border-color 0.2s',
+                borderColor: 'rgba(36,27,24,0.09)',
+                borderRadius: 2,
+                bgcolor: musicColors.sheet,
+                overflow: 'hidden',
+                boxShadow: '0 14px 34px rgba(36,27,24,0.06)',
+                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                 '&:hover': {
-                    borderColor: 'primary.main',
+                    borderColor: musicColors.brass,
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 20px 44px rgba(36,27,24,0.12)',
                 },
             }}
         >
@@ -165,16 +175,27 @@ const ProductCard = ({ product }) => {
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
+                        bgcolor: '#eee6d8',
+                    }}
+                />
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        inset: 'auto 0 0 0',
+                        height: '38%',
+                        background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(23,19,18,0.38) 100%)',
+                        pointerEvents: 'none',
                     }}
                 />
                 <IconButton
                     sx={{
                         position: 'absolute',
-                        top: 4,
-                        right: 4,
-                        bgcolor: 'rgba(255,255,255,0.9)',
-                        padding: '4px',
+                        top: 8,
+                        right: 8,
+                        bgcolor: 'rgba(255,253,248,0.94)',
+                        padding: '5px',
                         zIndex: 1,
+                        border: '1px solid rgba(36,27,24,0.08)',
                         '&:hover': { bgcolor: 'white' },
                     }}
                     size="small"
@@ -190,11 +211,12 @@ const ProductCard = ({ product }) => {
                 <IconButton
                     sx={{
                         position: 'absolute',
-                        top: 36,
-                        right: 4,
-                        bgcolor: 'rgba(255,255,255,0.9)',
-                        padding: '4px',
+                        top: 44,
+                        right: 8,
+                        bgcolor: 'rgba(255,253,248,0.94)',
+                        padding: '5px',
                         zIndex: 1,
+                        border: '1px solid rgba(36,27,24,0.08)',
                         '&:hover': { bgcolor: 'white' },
                     }}
                     size="small"
@@ -205,8 +227,8 @@ const ProductCard = ({ product }) => {
                     <AddShoppingCart sx={{ fontSize: '1rem' }} color="primary" />
                 </IconButton>
             </Box>
-            <CardContent sx={{ flexGrow: 1, p: '8px !important' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', fontWeight: 500 }}>
+            <CardContent sx={{ flexGrow: 1, p: '10px !important' }}>
+                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: 900, color: musicColors.rosin, textTransform: 'uppercase', letterSpacing: 0 }}>
                     {product.category?.name || 'Uncategorized'}
                 </Typography>
                 <Typography
@@ -214,7 +236,7 @@ const ProductCard = ({ product }) => {
                     component={Link}
                     href={routeWithBase(`/products/${product.slug}`, app_base)}
                     sx={{
-                        fontWeight: 600,
+                        fontWeight: 850,
                         mt: 0.25,
                         mb: 0.5,
                         lineHeight: 1.2,
@@ -225,7 +247,7 @@ const ProductCard = ({ product }) => {
                         WebkitBoxOrient: 'vertical',
                         textDecoration: 'none',
                         color: 'inherit',
-                        '&:hover': { color: 'primary.main' },
+                        '&:hover': { color: musicColors.rosin },
                     }}
                 >
                     {product.name}
@@ -249,9 +271,9 @@ const ProductCard = ({ product }) => {
                             </Typography>
                         )}
                         <Stack direction="row" spacing={0.75} alignItems="baseline" useFlexGap flexWrap="wrap">
-                            <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 700, lineHeight: 1 }}>
-                                {formatMoney(minPrice)}
-                            </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 950, lineHeight: 1, color: musicColors.rosin }}>
+                        {formatMoney(minPrice)}
+                    </Typography>
                             {showFlashPrice && (
                                 <Typography
                                     variant="caption"

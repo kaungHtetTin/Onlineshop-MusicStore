@@ -10,10 +10,13 @@ import {
 import {
     EmailOutlined,
     Facebook,
+    Headphones,
     MusicNote,
     PhoneOutlined,
 } from '@mui/icons-material';
 import { routeWithBase } from '@/Utils/url';
+import { useTheme } from '@mui/material/styles';
+import { getMusicStoreColors, musicGradientForTheme } from '@/Components/User/musicStoreDesign';
 
 const asArray = (value) =>
     Array.isArray(value)
@@ -71,8 +74,10 @@ function ContactList({ title, items, icon, hrefFor }) {
 }
 
 export default function Footer() {
+    const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
     const { app_base, app_settings } = usePage().props;
-    const appName = app_settings?.app_name || 'LaLaPick';
+    const appName = app_settings?.app_name || 'Harmony House';
     const contacts = app_settings?.contacts || {};
     const emails = asArray(contacts.email);
     const phones = asArray(contacts.phone);
@@ -81,7 +86,16 @@ export default function Footer() {
     const hasContacts = [emails, phones, facebook, tiktok].some((items) => items.length > 0);
 
     return (
-        <Box component="footer" sx={{ bgcolor: 'primary.main', color: 'white', py: { xs: 3, md: 4 }, mt: 'auto' }}>
+        <Box
+            component="footer"
+            sx={{
+                background: musicGradientForTheme(theme),
+                color: 'white',
+                py: { xs: 3, md: 4 },
+                mt: 'auto',
+                borderTop: `1px solid ${musicColors.amber}`,
+            }}
+        >
             <Container maxWidth="lg">
                 <Box
                     sx={{
@@ -102,16 +116,31 @@ export default function Footer() {
                                         height: 32,
                                         objectFit: 'contain',
                                         borderRadius: 1,
-                                        bgcolor: 'white',
+                                        bgcolor: musicColors.sheet,
                                     }}
                                 />
+                            )}
+                            {!app_settings?.logo_url && (
+                                <Box
+                                    sx={{
+                                        width: 32,
+                                        height: 32,
+                                        display: 'grid',
+                                        placeItems: 'center',
+                                        borderRadius: 1.5,
+                                        bgcolor: musicColors.amber,
+                                        color: musicColors.ink,
+                                    }}
+                                >
+                                    <MusicNote fontSize="small" />
+                                </Box>
                             )}
                             <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>
                                 {appName}
                             </Typography>
                         </Stack>
                         <Typography variant="caption" sx={{ opacity: 0.82, display: 'block', maxWidth: 280 }}>
-                            Your daily aesthetic boutique.
+                            Instruments, accessories, and essentials for practice rooms, studios, and stages.
                         </Typography>
                     </Box>
 
@@ -142,7 +171,7 @@ export default function Footer() {
                                 variant="caption"
                                 sx={{ opacity: 0.86, color: 'inherit', textDecoration: 'none', '&:hover': { opacity: 1, textDecoration: 'underline' } }}
                             >
-                                Blog
+                                Buying guides
                             </Typography>
                         </Stack>
                     </Box>
@@ -183,9 +212,33 @@ export default function Footer() {
                     )}
                 </Box>
 
-                <Divider sx={{ my: 3, bgcolor: 'rgba(255,255,255,0.14)' }} />
+                <Divider sx={{ my: 3, bgcolor: 'rgba(244,194,103,0.22)' }} />
+                <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ opacity: 0.72, mb: 0.75 }}>
+                    <Headphones sx={{ fontSize: 15 }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                        Built for musicians, teachers, producers, and first-time players.
+                    </Typography>
+                </Stack>
                 <Typography variant="caption" sx={{ textAlign: 'center', display: 'block', opacity: 0.64 }}>
                     Copyright {new Date().getFullYear()} {appName}.
+                </Typography>
+                <Typography
+                    component="a"
+                    href="https://k2softwarestudio.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="caption"
+                    sx={{
+                        mt: 0.5,
+                        textAlign: 'center',
+                        display: 'block',
+                        color: 'inherit',
+                        textDecoration: 'none',
+                        opacity: 0.64,
+                        '&:hover': { opacity: 1, textDecoration: 'underline' },
+                    }}
+                >
+                    Developed by k2softwarestudio.com
                 </Typography>
             </Container>
         </Box>

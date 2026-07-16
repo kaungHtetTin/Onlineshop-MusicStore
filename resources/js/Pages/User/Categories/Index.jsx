@@ -11,7 +11,7 @@ import {
     Button,
     Pagination,
 } from '@mui/material';
-import { ChevronRight } from '@mui/icons-material';
+import { ChevronRight, MusicNote } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
@@ -19,6 +19,11 @@ import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/Mobile
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
+import {
+    eyebrowSxForTheme,
+    getMusicStoreColors,
+    storefrontBackgroundSx,
+} from '@/Components/User/musicStoreDesign';
 
 function categoryVisual(cat) {
     return {
@@ -30,6 +35,7 @@ function categoryVisual(cat) {
 
 export default function CategoriesIndex({ categories = [] }) {
     const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
     const { app_base } = usePage().props;
     const categoryRows = categories.data || categories;
 
@@ -38,7 +44,15 @@ export default function CategoriesIndex({ categories = [] }) {
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Box
+            className="user-storefront"
+            sx={{
+                minHeight: '100dvh',
+                display: 'flex',
+                flexDirection: 'column',
+                ...storefrontBackgroundSx(theme),
+            }}
+        >
             <UserBrandHead title="Categories" />
             <Navbar />
 
@@ -48,11 +62,14 @@ export default function CategoriesIndex({ categories = [] }) {
                 </BackLink>
 
                 <Box sx={{ mb: 3 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: '-0.02em', mb: 0.5 }}>
-                        Shop by category
+                    <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
+                        Departments
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 950, mb: 0.5, color: musicColors.ink, lineHeight: 1.1 }}>
+                        Shop by sound
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, maxWidth: 520 }}>
-                        Browse romantic picks by category — tap a tile to explore, or jump straight to products.
+                        Browse instruments, accessories, studio tools, and stage essentials by department.
                     </Typography>
                 </Box>
 
@@ -83,9 +100,9 @@ export default function CategoriesIndex({ categories = [] }) {
                                     borderRadius: 3,
                                     textDecoration: 'none',
                                     color: 'inherit',
-                                    border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
-                                    background: `linear-gradient(145deg, rgba(255,255,255,0.95) 0%, ${alpha(theme.palette.primary.main, 0.04)} 100%)`,
-                                    boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.06)}`,
+                                    border: '1px solid rgba(36,27,24,0.08)',
+                                    background: `linear-gradient(145deg, ${musicColors.sheet} 0%, ${alpha(musicColors.amber, 0.12)} 100%)`,
+                                    boxShadow: '0 14px 40px rgba(36,27,24,0.07)',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'stretch',
@@ -93,7 +110,7 @@ export default function CategoriesIndex({ categories = [] }) {
                                     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                                     '&:hover': {
                                         transform: 'translateY(-3px)',
-                                        boxShadow: `0 18px 48px ${alpha(theme.palette.primary.main, 0.12)}`,
+                                        boxShadow: '0 20px 48px rgba(36,27,24,0.12)',
                                     },
                                 }}
                             >
@@ -103,14 +120,15 @@ export default function CategoriesIndex({ categories = [] }) {
                                         sx={{
                                             width: { xs: 44, sm: 52 },
                                             height: { xs: 44, sm: 52 },
-                                            bgcolor: v.accent || alpha(theme.palette.primary.main, 0.12),
+                                            bgcolor: v.accent || alpha(musicColors.amber, 0.22),
                                             borderRadius: 2,
                                             fontSize: '1.35rem',
                                             flexShrink: 0,
+                                            color: musicColors.rosin,
                                             '& img': { objectFit: 'cover' },
                                         }}
                                     >
-                                        {v.emoji}
+                                        {v.emoji || <MusicNote fontSize="small" />}
                                     </Avatar>
                                     <Box sx={{ minWidth: 0, flex: 1 }}>
                                         <Typography
@@ -124,7 +142,7 @@ export default function CategoriesIndex({ categories = [] }) {
                                             {count} {count === 1 ? 'item' : 'items'}
                                         </Typography>
                                     </Box>
-                                    <ChevronRight sx={{ fontSize: 20, color: 'primary.main', opacity: 0.7, flexShrink: 0 }} />
+                                    <ChevronRight sx={{ fontSize: 20, color: musicColors.rosin, opacity: 0.7, flexShrink: 0 }} />
                                 </Stack>
 
                                 {cat.description ? (

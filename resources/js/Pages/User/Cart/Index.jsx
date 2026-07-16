@@ -11,6 +11,7 @@ import {
     Typography,
 } from '@mui/material';
 import { Add, DeleteOutlined, Remove } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
@@ -18,8 +19,17 @@ import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
+import {
+    eyebrowSxForTheme,
+    getMusicStoreColors,
+    sectionShellSxForTheme,
+    storefrontBackgroundSx,
+} from '@/Components/User/musicStoreDesign';
 
 export default function CartIndex() {
+    const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
+    const sectionShellSx = sectionShellSxForTheme(theme);
     const ORDER_QTY_MAX = 999;
     const { app_base, app_url, auth } = usePage().props;
     const items = useCartStore((s) => s.items);
@@ -31,10 +41,10 @@ export default function CartIndex() {
     return (
         <Box
             sx={{
-                bgcolor: 'background.default',
                 minHeight: '100dvh',
                 display: 'flex',
                 flexDirection: 'column',
+                ...storefrontBackgroundSx(theme),
             }}
         >
             <UserBrandHead title="Your Cart" />
@@ -45,14 +55,17 @@ export default function CartIndex() {
                     Continue shopping
                 </BackLink>
 
-                <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
+                <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
+                    Your setlist
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>
                     Shopping cart
                 </Typography>
 
                 {items.length === 0 ? (
-                    <Paper elevation={0} sx={{ p: 4, borderRadius: 2, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+                    <Paper elevation={0} sx={{ ...sectionShellSx, p: 4, textAlign: 'center' }}>
                         <Typography color="text.secondary" sx={{ mb: 2 }}>
-                            Your cart is empty.
+                            Your cart is empty. Add an instrument, cable, accessory, or studio essential to get started.
                         </Typography>
                         <Button variant="contained" component={Link} href={routeWithBase('/products', app_base)}>
                             Browse products
@@ -68,7 +81,8 @@ export default function CartIndex() {
                                     p: { xs: 1.25, sm: 1.5 },
                                     borderRadius: 1.5,
                                     border: '1px solid',
-                                    borderColor: 'divider',
+                                    borderColor: 'rgba(36,27,24,0.09)',
+                                    bgcolor: musicColors.sheet,
                                     display: 'flex',
                                     flexDirection: 'row',
                                     alignItems: 'stretch',
@@ -171,7 +185,7 @@ export default function CartIndex() {
                             </Paper>
                         ))}
 
-                        <Paper elevation={0} sx={{ p: 2.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                        <Paper elevation={0} sx={{ ...sectionShellSx, p: 2.5 }}>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                     Subtotal

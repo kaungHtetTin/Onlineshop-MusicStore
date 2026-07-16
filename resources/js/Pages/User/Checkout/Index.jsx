@@ -25,11 +25,19 @@ import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
+import {
+    eyebrowSxForTheme,
+    getMusicStoreColors,
+    sectionShellSxForTheme,
+    storefrontBackgroundSx,
+} from '@/Components/User/musicStoreDesign';
 
 const steps = ['Shipping', 'Payment proof', 'Review'];
 
 export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
     const theme = useTheme();
+    const musicColors = getMusicStoreColors(theme);
+    const sectionShellSx = sectionShellSxForTheme(theme);
     const { app_base, auth } = usePage().props;
     const items = useCartStore((s) => s.items);
     const clearCart = useCartStore((s) => s.clear);
@@ -144,7 +152,15 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Box
+            className="user-storefront"
+            sx={{
+                minHeight: '100dvh',
+                display: 'flex',
+                flexDirection: 'column',
+                ...storefrontBackgroundSx(theme),
+            }}
+        >
             <UserBrandHead title="Checkout" />
             <Navbar />
 
@@ -153,8 +169,11 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                     Back to cart
                 </BackLink>
 
-                <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
-                    Checkout
+                <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
+                    Secure checkout
+                </Typography>
+                <Typography variant="h4" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>
+                    Finish your order
                 </Typography>
 
                 <Stepper
@@ -182,7 +201,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                     </Alert>
                 )}
 
-                <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                <Paper elevation={0} sx={{ ...sectionShellSx, p: { xs: 2, sm: 3 } }}>
                     {activeStep === 0 && (
                         <Stack spacing={2}>
                             <TextField
@@ -324,7 +343,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             {errors.payment_method_id && <FormHelperText error>{errors.payment_method_id}</FormHelperText>}
                             <Alert severity="info" sx={{ borderRadius: 2 }}>
                                 Pay the order total using your bank or wallet, then upload a clear screenshot of the successful
-                                transfer. An admin will verify your payment before the order is processed.
+                                transfer. The shop team will verify your payment before the order is prepared.
                             </Alert>
                             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                 Transaction screenshot (required)

@@ -96,16 +96,42 @@ const registerUserServiceWorker = (base = '') => {
         return;
     }
 
-    if (window.location.pathname.includes('/admin')) {
+    const cleanBase = base && base !== '/' ? `/${String(base).replace(/^\/+|\/+$/g, '')}` : '';
+    const currentPath = normalizeDuplicatedBasePath(window.location.pathname, cleanBase);
+
+    if (currentPath === '/admin' || currentPath.startsWith('/admin/')) {
         return;
     }
 
-    const cleanBase = base && base !== '/' ? `/${String(base).replace(/^\/+|\/+$/g, '')}` : '';
     const workerUrl = `${cleanBase}/sw.js`;
     const scope = `${cleanBase || ''}/`;
+    let refreshing = false;
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+    });
 
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register(workerUrl, { scope }).catch(() => {});
+        navigator.serviceWorker.register(workerUrl, { scope }).then((registration) => {
+            if (registration.waiting) {
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+
+            registration.addEventListener('updatefound', () => {
+                const worker = registration.installing;
+                if (!worker) return;
+
+                worker.addEventListener('statechange', () => {
+                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                        worker.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                });
+            });
+
+            window.setInterval(() => registration.update(), 60 * 60 * 1000);
+        }).catch(() => {});
     });
 };
 

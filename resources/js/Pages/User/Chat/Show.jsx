@@ -59,7 +59,7 @@ function newClientTempId() {
 export default function UserChatShow() {
     const theme = useTheme();
     const { app_base, auth, app_url, app_settings } = usePage().props;
-    const appName = app_settings?.app_name || 'LaLaPick';
+    const appName = app_settings?.app_name || 'Harmony House';
     const queryClient = useQueryClient();
     const pageVisible = usePageVisible();
 
