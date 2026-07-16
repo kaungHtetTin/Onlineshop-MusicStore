@@ -23,8 +23,15 @@ class HomeController extends Controller
         StorefrontInventoryService $storefrontInventory
     )
     {
-        $latestProducts = Product::with(['category', 'primaryImage', 'skus.image'])
-            ->where('status', 'active')
+        $productRelations = [
+            'category',
+            'primaryImage',
+            'skus' => fn ($q) => $q->availableAnywhere()->with('image'),
+        ];
+
+        $latestProducts = Product::with($productRelations)
+            ->active()
+            ->availableAnywhere()
             ->latest()
             ->take(12)
             ->get();
@@ -40,37 +47,63 @@ class HomeController extends Controller
 
         $products = $latestProducts;
         if (! empty($bestSellerIds)) {
-            $products = Product::with(['category', 'primaryImage', 'skus.image'])
+            $bestSellerProducts = Product::with($productRelations)
                 ->whereIn('id', $bestSellerIds)
-                ->where('status', 'active')
+                ->active()
+                ->availableAnywhere()
                 ->orderByRaw('FIELD(id, '.implode(',', array_map('intval', $bestSellerIds)).')')
                 ->get();
-        }
 
-        $activeFlashSale = $flashSalePricing->activeSale();
-        $flashSaleProducts = collect();
-        if ($activeFlashSale) {
-            $flashSaleProductIds = $activeFlashSale->items
-                ->pluck('sku.product_id')
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
-
-            if (! empty($flashSaleProductIds)) {
-                $flashSaleProducts = Product::with(['category', 'primaryImage', 'skus.image'])
-                    ->whereIn('id', $flashSaleProductIds)
-                    ->where('status', 'active')
-                    ->orderByRaw('FIELD(id, '.implode(',', array_map('intval', $flashSaleProductIds)).')')
-                    ->take(8)
-                    ->get();
+            if ($bestSellerProducts->isNotEmpty()) {
+                $products = $bestSellerProducts;
             }
         }
 
+        $activeFlashSales = $flashSalePricing->activeSales();
+        $flashSaleEvents = $activeFlashSales
+            ->map(function ($sale) use ($productRelations, $flashSalePricing, $storefrontInventory) {
+                $flashSaleProductIds = $sale->items
+                    ->pluck('sku.product_id')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $flashSaleProducts = collect();
+                if (! empty($flashSaleProductIds)) {
+                    $productOrder = array_flip($flashSaleProductIds);
+                    $flashSaleProducts = Product::with($productRelations)
+                        ->whereIn('id', $flashSaleProductIds)
+                        ->active()
+                        ->availableAnywhere()
+                        ->get()
+                        ->sortBy(fn (Product $product) => $productOrder[$product->id] ?? PHP_INT_MAX)
+                        ->take(8)
+                        ->values();
+
+                    $flashSalePricing->attachToProducts($flashSaleProducts);
+                    $storefrontInventory->attachAvailableQuantitiesAcrossLocations($flashSaleProducts);
+                }
+
+                return [
+                    'id' => $sale->id,
+                    'name' => $sale->name,
+                    'starts_at' => $sale->starts_at,
+                    'ends_at' => $sale->ends_at,
+                    'products' => $flashSaleProducts,
+                ];
+            })
+            ->filter(fn (array $event) => $event['products']->isNotEmpty())
+            ->values();
+
+        $activeFlashSale = $flashSaleEvents->first();
+        $flashSaleProducts = $flashSaleEvents
+            ->flatMap(fn (array $event) => $event['products'])
+            ->unique('id')
+            ->values();
+
         $flashSalePricing->attachToProducts($products);
-        $flashSalePricing->attachToProducts($flashSaleProducts);
-        $storefrontInventory->attachAvailableQuantities($products);
-        $storefrontInventory->attachAvailableQuantities($flashSaleProducts);
+        $storefrontInventory->attachAvailableQuantitiesAcrossLocations($products);
 
         $categories = Category::where('is_active', true)
             ->orderBy('sort_order')
@@ -116,11 +149,12 @@ class HomeController extends Controller
             'products' => $products,
             'flashSaleProducts' => $flashSaleProducts,
             'activeFlashSale' => $activeFlashSale ? [
-                'id' => $activeFlashSale->id,
-                'name' => $activeFlashSale->name,
-                'starts_at' => $activeFlashSale->starts_at,
-                'ends_at' => $activeFlashSale->ends_at,
+                'id' => $activeFlashSale['id'],
+                'name' => $activeFlashSale['name'],
+                'starts_at' => $activeFlashSale['starts_at'],
+                'ends_at' => $activeFlashSale['ends_at'],
             ] : null,
+            'flashSaleEvents' => $flashSaleEvents,
             'categories' => $categories,
             'storefront' => [
                 'hero' => $hero,

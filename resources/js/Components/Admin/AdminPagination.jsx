@@ -1,10 +1,11 @@
 import { Link } from '@inertiajs/react';
 
 const cleanLabel = (label = '') =>
-    label
-        .replace('&laquo;', 'Previous')
-        .replace('&raquo;', 'Next')
-        .replace(/&amp;/g, '&');
+    label.includes('&laquo;')
+        ? 'Previous'
+        : label.includes('&raquo;')
+            ? 'Next'
+            : label.replace(/&amp;/g, '&');
 
 export default function AdminPagination({ paginator, label = 'records' }) {
     if (!paginator || paginator.last_page <= 1) {

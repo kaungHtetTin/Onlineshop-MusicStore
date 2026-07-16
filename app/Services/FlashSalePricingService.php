@@ -10,13 +10,18 @@ use Illuminate\Support\Collection;
 
 class FlashSalePricingService
 {
-    public function activeSale()
+    public function activeSales()
     {
         return FlashSale::query()
             ->activeNow()
             ->with(['items.sku.product'])
             ->orderByDesc('starts_at')
-            ->first();
+            ->get();
+    }
+
+    public function activeSale()
+    {
+        return $this->activeSales()->first();
     }
 
     /**
@@ -57,19 +62,19 @@ class FlashSalePricingService
      */
     public function activeItemsForSkuIds(array $skuIds, bool $lock = false): Collection
     {
-        $activeSale = FlashSale::query()
-            ->activeNow()
-            ->orderByDesc('starts_at')
-            ->first();
-
-        if (! $activeSale) {
+        if (empty($skuIds)) {
             return collect();
         }
 
         $query = FlashSaleItem::query()
-            ->where('flash_sale_id', $activeSale->id)
-            ->whereIn('sku_id', $skuIds)
-            ->with('flashSale');
+            ->select('flash_sale_items.*')
+            ->join('flash_sales', 'flash_sales.id', '=', 'flash_sale_items.flash_sale_id')
+            ->where('flash_sales.is_active', true)
+            ->where('flash_sales.starts_at', '<=', now())
+            ->where('flash_sales.ends_at', '>=', now())
+            ->whereIn('flash_sale_items.sku_id', $skuIds)
+            ->with('flashSale')
+            ->orderByDesc('flash_sales.starts_at');
 
         if ($lock) {
             $query->lockForUpdate();

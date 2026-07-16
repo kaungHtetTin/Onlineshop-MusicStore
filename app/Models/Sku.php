@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Location;
 
 class Sku extends Model
 {
@@ -39,6 +41,31 @@ class Sku extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeAvailableAt(Builder $query, Location|int $location): Builder
+    {
+        $locationId = $location instanceof Location ? $location->id : $location;
+
+        return $query
+            ->active()
+            ->whereHas('inventoryBalances', fn (Builder $balance) => $balance
+                ->where('location_id', $locationId)
+                ->whereColumn('inventory_balances.on_hand_qty', '>', 'inventory_balances.reserved_qty'));
+    }
+
+    public function scopeAvailableAnywhere(Builder $query): Builder
+    {
+        return $query
+            ->active()
+            ->whereHas('inventoryBalances', fn (Builder $balance) => $balance
+                ->whereColumn('inventory_balances.on_hand_qty', '>', 'inventory_balances.reserved_qty')
+                ->whereHas('location', fn (Builder $location) => $location->where('is_active', true)));
     }
 
     public function image()

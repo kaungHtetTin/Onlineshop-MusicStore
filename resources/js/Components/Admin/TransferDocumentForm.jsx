@@ -5,6 +5,13 @@ import Icon from '@/Components/Admin/icons';
 import { PanelHeading } from '@/Components/Admin/shared';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 
+const cleanPaginationLabel = (label = '') =>
+    label.includes('&laquo;')
+        ? 'Previous'
+        : label.includes('&raquo;')
+            ? 'Next'
+            : label.replace(/&amp;/g, '&');
+
 export default function TransferDocumentForm({ locations, categories = [] }) {
     const { app_base, app_url } = usePage().props;
     const firstSource = locations[0]?.id || '';
@@ -254,8 +261,9 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
                                                 className={link.active ? 'active' : ''}
                                                 disabled={!link.url}
                                                 onClick={() => link.url && search(Number(new URL(link.url, window.location.origin).searchParams.get('page') || 1))}
-                                                dangerouslySetInnerHTML={{ __html: link.label.replace('&laquo;', 'Prev').replace('&raquo;', 'Next') }}
-                                            />
+                                            >
+                                                {cleanPaginationLabel(link.label)}
+                                            </button>
                                         ))}
                                     </div>
                                 </div>

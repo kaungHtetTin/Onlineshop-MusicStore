@@ -22,12 +22,12 @@ class CategoryController extends Controller
                     $q->where('is_active', true)
                         ->orderBy('sort_order')
                         ->withCount([
-                            'products' => fn ($pq) => $pq->where('status', 'active'),
+                            'products' => fn ($pq) => $pq->active()->availableAnywhere(),
                         ]);
                 },
             ])
             ->withCount([
-                'products' => fn ($q) => $q->where('status', 'active'),
+                'products' => fn ($q) => $q->active()->availableAnywhere(),
             ])
             ->orderBy('sort_order');
 
@@ -37,7 +37,7 @@ class CategoryController extends Controller
             $roots = Category::query()
                 ->where('is_active', true)
                 ->withCount([
-                    'products' => fn ($q) => $q->where('status', 'active'),
+                    'products' => fn ($q) => $q->active()->availableAnywhere(),
                 ])
                 ->orderBy('sort_order')
                 ->paginate(12)
@@ -65,23 +65,28 @@ class CategoryController extends Controller
                     $q->where('is_active', true)
                         ->orderBy('sort_order')
                         ->withCount([
-                            'products' => fn ($pq) => $pq->where('status', 'active'),
+                            'products' => fn ($pq) => $pq->active()->availableAnywhere(),
                         ]);
                 },
             ])
             ->withCount([
-                'products' => fn ($q) => $q->where('status', 'active'),
+                'products' => fn ($q) => $q->active()->availableAnywhere(),
             ])
             ->firstOrFail();
 
-        $products = Product::with(['category', 'primaryImage', 'skus.image'])
+        $products = Product::with([
+                'category',
+                'primaryImage',
+                'skus' => fn ($q) => $q->availableAnywhere()->with('image'),
+            ])
             ->where('category_id', $category->id)
-            ->where('status', 'active')
+            ->active()
+            ->availableAnywhere()
             ->latest()
             ->paginate(12)
             ->withQueryString();
         $flashSalePricing->attachToProducts($products->getCollection());
-        $storefrontInventory->attachAvailableQuantities($products->getCollection());
+        $storefrontInventory->attachAvailableQuantitiesAcrossLocations($products->getCollection());
 
         return Inertia::render('User/Categories/Show', [
             'category' => $category,

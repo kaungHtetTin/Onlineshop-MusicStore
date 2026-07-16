@@ -14,7 +14,9 @@ import {
     Remove as RemoveIcon,
     FavoriteBorder,
     Share,
-    ShoppingBag
+    ShoppingBag,
+    Star,
+    StarBorder
 } from '@mui/icons-material';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
@@ -35,7 +37,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [cartToast, setCartToast] = useState(false);
     const addItem = useCartStore((s) => s.addItem);
-    const isSelectedSkuPreorder = Number(selectedSku?.available_qty ?? 0) <= 0;
+    const selectedSkuQtyLimit = Math.min(ORDER_QTY_MAX, Math.max(1, Number(selectedSku?.available_qty ?? 1)));
     const reviewRows = reviews.data || product.reviews || [];
     const { data, setData, post, processing, errors } = useForm({
         rating: 5,
@@ -56,7 +58,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     }, [selectedSku, images, activeImageIndex]);
 
     const handleQuantityChange = (delta) => {
-        setQuantity(prev => Math.max(1, Math.min(ORDER_QTY_MAX, prev + delta)));
+        setQuantity(prev => Math.max(1, Math.min(selectedSkuQtyLimit, prev + delta)));
     };
 
     const handleAddToCart = () => {
@@ -77,8 +79,8 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
             flashSale: selectedSku.flash_sale || null,
             imagePath: img,
             maxQty: selectedSku.available_qty,
-            isPreorder: isSelectedSkuPreorder,
-            qty: quantity,
+            isPreorder: false,
+            qty: Math.min(quantity, Number(selectedSku.available_qty ?? 1)),
         });
         setCartToast(true);
         setQuantity(1);
@@ -172,15 +174,9 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                     </Typography>
                                 </Stack>
                             )}
-                            {selectedSku?.available_qty > 0 ? (
-                                <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>
-                                    In Stock ({selectedSku.available_qty} available)
-                                </Typography>
-                            ) : (
-                                <Typography variant="caption" color="warning.main" sx={{ fontWeight: 700 }}>
-                                    Out of Stock - Preorder available
-                                </Typography>
-                            )}
+                            <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>
+                                In Stock ({selectedSku?.available_qty ?? 0} available)
+                            </Typography>
                         </Box>
 
                         {/* Image Selector moved here */}
@@ -274,7 +270,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                 <IconButton
                                     size="small"
                                     onClick={() => handleQuantityChange(1)}
-                                    disabled={quantity >= ORDER_QTY_MAX}
+                                    disabled={quantity >= selectedSkuQtyLimit}
                                 >
                                     <AddIcon fontSize="small" />
                                 </IconButton>
@@ -294,7 +290,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                     whiteSpace: 'nowrap',
                                 }}
                             >
-                                {isSelectedSkuPreorder ? 'Pre-order now' : 'Add to Cart'}
+                                Add to Cart
                             </Button>
                             <IconButton
                                 sx={{
@@ -337,11 +333,38 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
                                     Rate this product
                                 </Typography>
-                                <Rating
-                                    value={Number(data.rating)}
-                                    onChange={(_, value) => setData('rating', value || 1)}
-                                    sx={{ mb: 1 }}
-                                />
+                                <Stack
+                                    direction={{ xs: 'column', sm: 'row' }}
+                                    spacing={1}
+                                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                    sx={{ mb: 1.5 }}
+                                >
+                                    <Rating
+                                        name="product-rating"
+                                        value={Number(data.rating)}
+                                        onChange={(_, value) => setData('rating', value || 1)}
+                                        icon={<Star fontSize="inherit" />}
+                                        emptyIcon={<StarBorder fontSize="inherit" />}
+                                        size="large"
+                                        sx={{
+                                            color: 'primary.main',
+                                            '& .MuiRating-icon': {
+                                                width: 34,
+                                                height: 34,
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                            },
+                                            '& .MuiSvgIcon-root': {
+                                                display: 'block',
+                                                fontSize: 30,
+                                            },
+                                        }}
+                                    />
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                                        Your rating: {Number(data.rating) || 1} / 5
+                                    </Typography>
+                                </Stack>
                                 <TextField
                                     fullWidth
                                     multiline
@@ -458,7 +481,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                 sx={{ bottom: { xs: 72, sm: 24 } }}
             >
                 <Alert severity="success" variant="filled" onClose={() => setCartToast(false)} sx={{ width: '100%' }}>
-                    {isSelectedSkuPreorder ? 'Pre-order added to your cart' : 'Added to your cart'}
+                    Added to your cart
                 </Alert>
             </Snackbar>
         </Box>

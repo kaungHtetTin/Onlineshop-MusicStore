@@ -21,7 +21,7 @@ import {
     useMediaQuery,
     useTheme,
 } from '@mui/material';
-import { Search, Clear, Tune, Close } from '@mui/icons-material';
+import { Search, Clear, Tune, Close, LocalFireDepartment } from '@mui/icons-material';
 import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
@@ -58,11 +58,10 @@ const Index = ({ products, categories, filters }) => {
         if (filters.sort && filters.sort !== 'newest') n += 1;
         if (filters.min_price) n += 1;
         if (filters.max_price) n += 1;
-        if (filters.availability) n += 1;
         if (filters.min_rating) n += 1;
         if (filters.flash_sale) n += 1;
         return n;
-    }, [filters.category, filters.search, filters.sort, filters.min_price, filters.max_price, filters.availability, filters.min_rating, filters.flash_sale]);
+    }, [filters.category, filters.search, filters.sort, filters.min_price, filters.max_price, filters.min_rating, filters.flash_sale]);
 
     const applyFilters = (newFilters) => {
         router.get(
@@ -123,6 +122,13 @@ const Index = ({ products, categories, filters }) => {
         if (isMobileFilters) {
             setFilterDrawerOpen(false);
         }
+    };
+
+    const fieldSx = {
+        bgcolor: 'background.paper',
+        '& .MuiOutlinedInput-root': {
+            borderRadius: 1.5,
+        },
     };
 
     const categoryChips = (
@@ -239,27 +245,15 @@ const Index = ({ products, categories, filters }) => {
                     xs: '1fr',
                     sm: 'repeat(2, minmax(0, 1fr))',
                     md: isMobileFilters ? '1fr' : 'repeat(3, minmax(0, 1fr))',
-                    lg: isMobileFilters ? '1fr' : 'repeat(6, minmax(0, 1fr))',
+                    lg: isMobileFilters ? '1fr' : 'minmax(150px, 1fr) minmax(150px, 1fr) minmax(180px, 1fr) auto auto',
                 },
                 gap: 1.25,
+                alignItems: 'stretch',
             }}
         >
-            <TextField size="small" type="number" label="Min price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} sx={{ bgcolor: 'background.paper' }} />
-            <TextField size="small" type="number" label="Max price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} sx={{ bgcolor: 'background.paper' }} />
-            <FormControl size="small" sx={{ bgcolor: 'background.paper' }}>
-                <InputLabel id={isMobileFilters ? 'availability-filter-label-mobile' : 'availability-filter-label'}>Availability</InputLabel>
-                <Select
-                    labelId={isMobileFilters ? 'availability-filter-label-mobile' : 'availability-filter-label'}
-                    label="Availability"
-                    value={filters.availability || ''}
-                    onChange={(e) => applyFilters({ availability: e.target.value || undefined })}
-                >
-                    <MenuItem value="">Any stock</MenuItem>
-                    <MenuItem value="in_stock">In stock</MenuItem>
-                    <MenuItem value="out_of_stock">Out of stock</MenuItem>
-                </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ bgcolor: 'background.paper' }}>
+            <TextField size="small" type="number" label="Min price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} sx={fieldSx} />
+            <TextField size="small" type="number" label="Max price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} sx={fieldSx} />
+            <FormControl size="small" sx={fieldSx}>
                 <InputLabel id={isMobileFilters ? 'rating-filter-label-mobile' : 'rating-filter-label'}>Rating</InputLabel>
                 <Select
                     labelId={isMobileFilters ? 'rating-filter-label-mobile' : 'rating-filter-label'}
@@ -272,10 +266,40 @@ const Index = ({ products, categories, filters }) => {
                     <MenuItem value="3">3 stars & up</MenuItem>
                 </Select>
             </FormControl>
-            <Button variant={filters.flash_sale ? 'contained' : 'outlined'} onClick={() => applyFilters({ flash_sale: filters.flash_sale ? undefined : 1 })}>
+            <Button
+                variant="outlined"
+                startIcon={<LocalFireDepartment />}
+                onClick={() => applyFilters({ flash_sale: filters.flash_sale ? undefined : 1 })}
+                sx={{
+                    minHeight: 40,
+                    px: 2,
+                    borderRadius: 1.5,
+                    fontWeight: 900,
+                    whiteSpace: 'nowrap',
+                    color: filters.flash_sale ? 'primary.main' : 'text.primary',
+                    borderColor: filters.flash_sale ? 'primary.main' : 'divider',
+                    bgcolor: filters.flash_sale ? 'primary.light' : 'background.paper',
+                    '&:hover': {
+                        borderColor: 'primary.main',
+                        bgcolor: filters.flash_sale ? 'primary.light' : 'primary.light',
+                    },
+                }}
+            >
                 Flash sale
             </Button>
-            <Button type="submit" variant="contained">Apply</Button>
+            <Button
+                type="submit"
+                variant="contained"
+                sx={{
+                    minHeight: 40,
+                    px: 3,
+                    borderRadius: 1.5,
+                    fontWeight: 900,
+                    whiteSpace: 'nowrap',
+                }}
+            >
+                Apply
+            </Button>
         </Box>
     );
 
@@ -305,6 +329,16 @@ const Index = ({ products, categories, filters }) => {
                         <Typography variant="caption" color="text.secondary">
                             Showing {products.from || 0}-{products.to || 0} of {products.total} items
                         </Typography>
+                        {filters.flash_sale ? (
+                            <Chip
+                                icon={<LocalFireDepartment />}
+                                label="Flash sale"
+                                color="primary"
+                                size="small"
+                                onDelete={() => applyFilters({ flash_sale: undefined })}
+                                sx={{ mt: 1, fontWeight: 800 }}
+                            />
+                        ) : null}
                     </Box>
 
                     {isMobileFilters ? (
@@ -468,7 +502,7 @@ const Index = ({ products, categories, filters }) => {
                         <Divider sx={{ my: 2 }} />
 
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>
-                            Price & availability
+                            Price & rating
                         </Typography>
                         {advancedFilters}
 
@@ -486,6 +520,58 @@ const Index = ({ products, categories, filters }) => {
                         </Button>
                     </Box>
                 </Drawer>
+
+                {filters.flash_sale ? (
+                    <Box
+                        sx={{
+                            mb: 2.5,
+                            p: { xs: 1.5, sm: 2 },
+                            borderRadius: 2,
+                            border: '1px solid',
+                            borderColor: 'primary.main',
+                            bgcolor: 'primary.light',
+                            display: 'flex',
+                            alignItems: { xs: 'flex-start', sm: 'center' },
+                            justifyContent: 'space-between',
+                            gap: 1.5,
+                            flexDirection: { xs: 'column', sm: 'row' },
+                        }}
+                    >
+                        <Stack direction="row" spacing={1.25} alignItems="center">
+                            <Box
+                                sx={{
+                                    width: 34,
+                                    height: 34,
+                                    borderRadius: 1.5,
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                    bgcolor: 'background.paper',
+                                    color: 'primary.main',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <LocalFireDepartment fontSize="small" />
+                            </Box>
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                                    Flash sale products
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                                    Limited-time deals
+                                </Typography>
+                            </Box>
+                        </Stack>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            color="primary"
+                            onClick={() => applyFilters({ flash_sale: undefined })}
+                            sx={{ borderRadius: 1.5, fontWeight: 900, bgcolor: 'background.paper' }}
+                        >
+                            Show all
+                        </Button>
+                    </Box>
+                ) : null}
 
                 {products.data.length > 0 ? (
                     <Box

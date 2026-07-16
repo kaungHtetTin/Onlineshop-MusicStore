@@ -9,11 +9,11 @@ export function pickDefaultSkuForProduct(product) {
         return null;
     }
 
-    const active = skus.filter((s) => s.is_active !== false);
-    const pool = active.length ? active : skus;
+    const pickFrom = skus.filter((s) => s.is_active !== false && Number(s.available_qty ?? 0) > 0);
 
-    const inStock = pool.filter((s) => Number(s.available_qty ?? 0) > 0);
-    const pickFrom = inStock.length ? inStock : pool;
+    if (!pickFrom.length) {
+        return null;
+    }
 
     return pickFrom.reduce((best, s) => {
         const p = parseFloat(s.flash_sale?.sale_price ?? s.effective_price ?? s.price);

@@ -170,9 +170,11 @@ function LedgerPagination({ paginator }) {
             </small>
             <div className="pagination-links">
                 {paginator.links.map((link, index) => {
-                    const label = link.label
-                        .replace('&laquo;', 'Previous')
-                        .replace('&raquo;', 'Next');
+                    const label = link.label.includes('&laquo;')
+                        ? 'Previous'
+                        : link.label.includes('&raquo;')
+                            ? 'Next'
+                            : link.label.replace(/&amp;/g, '&');
 
                     if (!link.url) {
                         return (

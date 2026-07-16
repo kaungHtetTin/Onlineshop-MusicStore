@@ -27,13 +27,17 @@ function wishlistItemToProduct(w) {
 export default function WishlistIndex() {
     const { app_base } = usePage().props;
     const items = useWishlistStore((s) => s.items);
+    const visibleItems = useMemo(
+        () => items.filter((item) => (item.skus || []).some((sku) => sku.is_active !== false && Number(sku.available_qty ?? 0) > 0)),
+        [items]
+    );
     const perPage = 12;
     const [page, setPage] = useState(1);
-    const pageCount = Math.max(1, Math.ceil(items.length / perPage));
+    const pageCount = Math.max(1, Math.ceil(visibleItems.length / perPage));
     const paginatedItems = useMemo(() => {
         const start = (page - 1) * perPage;
-        return items.slice(start, start + perPage);
-    }, [items, page]);
+        return visibleItems.slice(start, start + perPage);
+    }, [visibleItems, page]);
 
     useEffect(() => {
         if (page > pageCount) {
@@ -55,7 +59,7 @@ export default function WishlistIndex() {
                     Wishlist
                 </Typography>
 
-                {items.length === 0 ? (
+                {visibleItems.length === 0 ? (
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 2, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
                         <Typography color="text.secondary" sx={{ mb: 2 }}>
                             Save items you love — tap the heart on any product card.

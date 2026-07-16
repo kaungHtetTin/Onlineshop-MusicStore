@@ -134,7 +134,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
 
     const selectedItems = useMemo(
         () => form.data.items
-            .map((item) => ({ item, sku: skuMap.get(Number(item.sku_id)) }))
+            .map((item, index) => ({ item, index, sku: skuMap.get(Number(item.sku_id)) }))
             .filter((row) => row.sku),
         [form.data.items, skuMap],
     );
@@ -189,18 +189,11 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
     };
 
     const removeSku = (skuId) => {
+        form.clearErrors();
         form.setData('items', form.data.items.filter((item) => Number(item.sku_id) !== Number(skuId)));
     };
 
-    const submit = (e) => {
-        e.preventDefault();
-
-        if (mode === 'edit') {
-            form.patch(routeWithBase(`/admin/flash-sales/${flashSale.id}`, app_base), { preserveScroll: true });
-        } else {
-            form.post(routeWithBase('/admin/flash-sales', app_base), { preserveScroll: true });
-        }
-    };
+    const itemErrorFor = (index) => form.errors[`items.${index}.sku_id`] || form.errors[`items.${index}`];
 
     const canGoNext =
         tab === 0
@@ -216,6 +209,32 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
         && form.data.ends_at
         && form.data.items.length > 0
         && form.data.items.every((item) => item.discount_value && Number(item.discount_value) > 0);
+
+    const submitFlashSale = () => {
+        if (mode === 'edit') {
+            form.patch(routeWithBase(`/admin/flash-sales/${flashSale.id}`, app_base), { preserveScroll: true });
+        } else {
+            form.post(routeWithBase('/admin/flash-sales', app_base), { preserveScroll: true });
+        }
+    };
+
+    const goNext = () => {
+        if (!canGoNext) return;
+        setTab((value) => Math.min(steps.length - 1, value + 1));
+    };
+
+    const submit = (e) => {
+        e.preventDefault();
+
+        if (tab < steps.length - 1) {
+            goNext();
+            return;
+        }
+
+        if (canSubmit && !form.processing) {
+            submitFlashSale();
+        }
+    };
 
     return (
         <AdminLayout
@@ -286,7 +305,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                 <span className="muted">{form.data.items.length} SKUs selected</span>
                             </div>
 
-                            <div className="table-wrap flash-sale-pricing-table">
+                            <div className="table-wrap flash-sale-product-table">
                                 <table>
                                     <thead>
                                         <tr>
@@ -327,7 +346,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                     {tab === 2 && (
                         <>
                             <PanelHeading eyebrow="Step 3" title="Sale data by SKU" />
-                            <div className="table-wrap">
+                            <div className="table-wrap flash-sale-pricing-table">
                                 <table>
                                     <thead>
                                         <tr>
@@ -435,16 +454,19 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                             <th>Discount</th>
                                             <th>Limit</th>
                                             <th>Sale price</th>
+                                            <th />
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {selectedItems.map(({ item, sku }) => {
+                                        {selectedItems.map(({ item, index, sku }) => {
                                             const salePrice = salePriceFor(sku, item);
+                                            const itemError = itemErrorFor(index);
                                             return (
-                                                <tr key={sku.id}>
+                                                <tr key={sku.id} className={itemError ? 'flash-sale-conflict-row' : ''}>
                                                     <td>
                                                         <strong>{sku.product.name}</strong>
                                                         <small className="muted" style={{ display: 'block' }}>{skuLabel(sku)}</small>
+                                                        {itemError && <small className="flash-sale-conflict-message">{itemError}</small>}
                                                     </td>
                                                     <td>
                                                         {item.discount_type === 'percentage'
@@ -453,6 +475,11 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                     </td>
                                                     <td>{item.quantity_limit || 'No limit'}</td>
                                                     <td>{salePrice ? `$${salePrice.toFixed(2)}` : '-'}</td>
+                                                    <td>
+                                                        <button type="button" className="icon-btn small danger" onClick={() => removeSku(sku.id)} aria-label="Remove overlapping SKU">
+                                                            <Icon name="trash" size={13} />
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             );
                                         })}
@@ -467,7 +494,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                             Previous
                         </button>
                         {tab < steps.length - 1 ? (
-                            <button type="button" className="btn primary" disabled={!canGoNext} onClick={() => setTab((value) => Math.min(steps.length - 1, value + 1))}>
+                            <button type="button" className="btn primary" disabled={!canGoNext} onClick={goNext}>
                                 Next
                             </button>
                         ) : (

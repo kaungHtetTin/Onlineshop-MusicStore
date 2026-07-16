@@ -23,9 +23,13 @@ class ProductController extends Controller
         StorefrontInventoryService $storefrontInventory
     )
     {
-        $fulfillmentLocation = $storefrontInventory->fulfillmentLocation();
-        $query = Product::with(['category', 'primaryImage', 'skus.image'])
-            ->where('status', 'active');
+        $query = Product::with([
+                'category',
+                'primaryImage',
+                'skus' => fn ($q) => $q->availableAnywhere()->with('image'),
+            ])
+            ->active()
+            ->availableAnywhere();
 
         // Search
         if ($request->filled('search')) {
@@ -40,25 +44,11 @@ class ProductController extends Controller
         }
 
         if ($request->filled('min_price')) {
-            $query->whereHas('skus', fn ($q) => $q->where('price', '>=', (float) $request->min_price));
+            $query->whereHas('skus', fn ($q) => $q->availableAnywhere()->where('price', '>=', (float) $request->min_price));
         }
 
         if ($request->filled('max_price')) {
-            $query->whereHas('skus', fn ($q) => $q->where('price', '<=', (float) $request->max_price));
-        }
-
-        if ($request->filled('availability')) {
-            $hasAvailableStock = fn ($q) => $q
-                ->where('is_active', true)
-                ->whereHas('inventoryBalances', fn ($balance) => $balance
-                    ->where('location_id', $fulfillmentLocation->id)
-                    ->whereColumn('inventory_balances.on_hand_qty', '>', 'inventory_balances.reserved_qty'));
-
-            if ($request->availability === 'in_stock') {
-                $query->whereHas('skus', $hasAvailableStock);
-            } elseif ($request->availability === 'out_of_stock') {
-                $query->whereDoesntHave('skus', $hasAvailableStock);
-            }
+            $query->whereHas('skus', fn ($q) => $q->availableAnywhere()->where('price', '<=', (float) $request->max_price));
         }
 
         if ($request->filled('min_rating')) {
@@ -69,7 +59,7 @@ class ProductController extends Controller
             $saleSkuIds = FlashSaleItem::query()
                 ->whereHas('flashSale', fn ($q) => $q->activeNow())
                 ->pluck('sku_id');
-            $query->whereHas('skus', fn ($q) => $q->whereIn('id', $saleSkuIds));
+            $query->whereHas('skus', fn ($q) => $q->availableAnywhere()->whereIn('id', $saleSkuIds));
         }
 
         // Sorting
@@ -81,24 +71,34 @@ class ProductController extends Controller
                 case 'price_low':
                     $query->joinSub(
                         DB::table('skus')
+                            ->join('inventory_balances', 'inventory_balances.sku_id', '=', 'skus.id')
+                            ->join('locations', 'locations.id', '=', 'inventory_balances.location_id')
+                            ->where('skus.is_active', true)
+                            ->where('locations.is_active', true)
+                            ->whereColumn('inventory_balances.on_hand_qty', '>', 'inventory_balances.reserved_qty')
                             ->selectRaw('product_id, MIN(price) as sort_price')
                             ->groupBy('product_id'),
                         'sku_sort',
                         'products.id',
                         '=',
                         'sku_sort.product_id'
-                    )->orderBy('sku_sort.sort_price', 'asc');
+                    )->select('products.*')->orderBy('sku_sort.sort_price', 'asc');
                     break;
                 case 'price_high':
                     $query->joinSub(
                         DB::table('skus')
+                            ->join('inventory_balances', 'inventory_balances.sku_id', '=', 'skus.id')
+                            ->join('locations', 'locations.id', '=', 'inventory_balances.location_id')
+                            ->where('skus.is_active', true)
+                            ->where('locations.is_active', true)
+                            ->whereColumn('inventory_balances.on_hand_qty', '>', 'inventory_balances.reserved_qty')
                             ->selectRaw('product_id, MAX(price) as sort_price')
                             ->groupBy('product_id'),
                         'sku_sort',
                         'products.id',
                         '=',
                         'sku_sort.product_id'
-                    )->orderBy('sku_sort.sort_price', 'desc');
+                    )->select('products.*')->orderBy('sku_sort.sort_price', 'desc');
                     break;
                 case 'best_selling':
                     $query->leftJoinSub(
@@ -128,7 +128,7 @@ class ProductController extends Controller
 
         $products = $query->paginate(12)->withQueryString();
         $flashSalePricing->attachToProducts($products->getCollection());
-        $storefrontInventory->attachAvailableQuantities($products->getCollection(), $fulfillmentLocation);
+        $storefrontInventory->attachAvailableQuantitiesAcrossLocations($products->getCollection());
 
         $categories = Category::where('is_active', true)
             ->orderBy('sort_order')
@@ -137,7 +137,7 @@ class ProductController extends Controller
         return Inertia::render('User/Products/Index', [
             'products' => $products,
             'categories' => $categories,
-            'filters' => $request->only(['search', 'category', 'sort', 'min_price', 'max_price', 'availability', 'min_rating', 'flash_sale'])
+            'filters' => $request->only(['search', 'category', 'sort', 'min_price', 'max_price', 'min_rating', 'flash_sale'])
         ]);
     }
 
@@ -147,9 +147,14 @@ class ProductController extends Controller
         StorefrontInventoryService $storefrontInventory
     )
     {
-        $product = Product::with(['category', 'images', 'skus.image'])
+        $product = Product::with([
+                'category',
+                'images',
+                'skus' => fn ($q) => $q->availableAnywhere()->with('image'),
+            ])
             ->where('slug', $slug)
-            ->where('status', 'active')
+            ->active()
+            ->availableAnywhere()
             ->firstOrFail();
 
         $reviews = Review::query()
@@ -161,10 +166,15 @@ class ProductController extends Controller
             ->withQueryString();
 
         // Category-based related products
-        $relatedProducts = Product::with(['category', 'primaryImage', 'skus.image'])
+        $relatedProducts = Product::with([
+                'category',
+                'primaryImage',
+                'skus' => fn ($q) => $q->availableAnywhere()->with('image'),
+            ])
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
-            ->where('status', 'active')
+            ->active()
+            ->availableAnywhere()
             ->take(6)
             ->get();
 
@@ -180,8 +190,13 @@ class ProductController extends Controller
                 ->pluck('products.category_id');
 
             if ($preferredCategoryIds->isNotEmpty()) {
-                $recommendedProducts = Product::with(['category', 'primaryImage', 'skus.image'])
-                    ->where('status', 'active')
+                $recommendedProducts = Product::with([
+                        'category',
+                        'primaryImage',
+                        'skus' => fn ($q) => $q->availableAnywhere()->with('image'),
+                    ])
+                    ->active()
+                    ->availableAnywhere()
                     ->where('id', '!=', $product->id)
                     ->whereIn('category_id', $preferredCategoryIds->all())
                     ->orderByRaw('FIELD(category_id, '.implode(',', $preferredCategoryIds->all()).')')
@@ -210,9 +225,14 @@ class ProductController extends Controller
 
         $frequentlyBoughtTogether = collect();
         if (! empty($frequentlyBoughtTogetherIds)) {
-            $frequentlyBoughtTogether = Product::with(['category', 'primaryImage', 'skus.image'])
+            $frequentlyBoughtTogether = Product::with([
+                    'category',
+                    'primaryImage',
+                    'skus' => fn ($q) => $q->availableAnywhere()->with('image'),
+                ])
                 ->whereIn('id', $frequentlyBoughtTogetherIds)
-                ->where('status', 'active')
+                ->active()
+                ->availableAnywhere()
                 ->orderByRaw('FIELD(id, '.implode(',', array_map('intval', $frequentlyBoughtTogetherIds)).')')
                 ->get();
         }
@@ -222,7 +242,7 @@ class ProductController extends Controller
         $flashSalePricing->attachToProducts($recommendedProducts);
         $flashSalePricing->attachToProducts($frequentlyBoughtTogether);
 
-        $storefrontInventory->attachAvailableQuantities(
+        $storefrontInventory->attachAvailableQuantitiesAcrossLocations(
             collect([$product])
                 ->concat($relatedProducts)
                 ->concat($recommendedProducts)

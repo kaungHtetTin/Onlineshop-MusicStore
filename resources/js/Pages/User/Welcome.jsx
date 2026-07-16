@@ -128,7 +128,7 @@ function BlogPreviewCard({ post }) {
     );
 }
 
-const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale = null, storefront = {}, latestBlogs = [], paymentMethods = [] }) => {
+const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale = null, flashSaleEvents = [], storefront = {}, latestBlogs = [], paymentMethods = [] }) => {
     const theme = useTheme();
     const { app_base, app_settings } = usePage().props;
     const sections = { ...defaultSections, ...(storefront.sections || {}) };
@@ -139,6 +139,11 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
         : fallbackPromos;
     const themeColor = app_settings?.theme_color || '#087f74';
     const defaultAccent = alpha(theme.palette.primary.main, 0.12);
+    const visibleFlashSaleEvents = Array.isArray(flashSaleEvents) && flashSaleEvents.length > 0
+        ? flashSaleEvents
+        : activeFlashSale && flashSaleProducts.length > 0
+            ? [{ ...activeFlashSale, products: flashSaleProducts }]
+            : [];
 
     const displayCategories = categories.map((cat) => ({
         ...cat,
@@ -292,34 +297,41 @@ const Welcome = ({ products, categories, flashSaleProducts = [], activeFlashSale
                 </Container>
             )}
 
-            {sections.flash_sale?.is_active !== false && activeFlashSale && flashSaleProducts.length > 0 && (
-                <Container maxWidth="lg" sx={{ mt: 4 }}>
-                    <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, border: '1px solid rgba(0,0,0,0.05)' }}>
-                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1.25} sx={{ mb: 2 }}>
-                            <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-                                <LocalFireDepartment color="primary" sx={{ fontSize: '1.25rem' }} />
-                                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                    {sections.flash_sale?.title || activeFlashSale.name || 'Flash Sale'}
-                                </Typography>
-                                <Chip
-                                    label={`Ends ${new Date(activeFlashSale.ends_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
-                                    color="primary"
-                                    size="small"
-                                    sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }}
-                                />
+            {sections.flash_sale?.is_active !== false && visibleFlashSaleEvents.map((sale) => {
+                const saleProducts = Array.isArray(sale.products) ? sale.products : [];
+                if (saleProducts.length === 0) return null;
+
+                return (
+                    <Container key={sale.id || sale.name} maxWidth="lg" sx={{ mt: 4 }}>
+                        <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, border: '1px solid rgba(0,0,0,0.05)' }}>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1.25} sx={{ mb: 2 }}>
+                                <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+                                    <LocalFireDepartment color="primary" sx={{ fontSize: '1.25rem' }} />
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                        {sale.name || sections.flash_sale?.title || 'Flash Sale'}
+                                    </Typography>
+                                    {sale.ends_at && (
+                                        <Chip
+                                            label={`Ends ${new Date(sale.ends_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
+                                            color="primary"
+                                            size="small"
+                                            sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }}
+                                        />
+                                    )}
+                                </Stack>
+                                <Button component={Link} href={routeWithBase('/products?flash_sale=1', app_base)} size="small" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
+                                    More
+                                </Button>
                             </Stack>
-                            <Button component={Link} href={routeWithBase('/products', app_base)} size="small" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                                More
-                            </Button>
-                        </Stack>
-                        <Box sx={{ ...productListGridSx }}>
-                            {flashSaleProducts.slice(0, 4).map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
+                            <Box sx={{ ...productListGridSx }}>
+                                {saleProducts.slice(0, 4).map((product) => (
+                                    <ProductCard key={product.id} product={product} />
+                                ))}
+                            </Box>
                         </Box>
-                    </Box>
-                </Container>
-            )}
+                    </Container>
+                );
+            })}
 
             {sections.promos?.is_active !== false && promos.length > 0 && (
                 <Container maxWidth="lg" sx={{ mt: 4 }}>

@@ -72,7 +72,7 @@ class FlashSaleController extends Controller
     public function store(Request $request, AuditLogService $auditLogService)
     {
         $validated = $this->validated($request);
-        $this->ensureNoActiveOverlap($validated);
+        $this->ensureNoCatalogOverlap($validated);
 
         $flashSale = DB::transaction(function () use ($validated) {
             $flashSale = FlashSale::create($this->salePayload($validated));
@@ -91,7 +91,7 @@ class FlashSaleController extends Controller
     public function update(Request $request, FlashSale $flashSale, AuditLogService $auditLogService)
     {
         $validated = $this->validated($request);
-        $this->ensureNoActiveOverlap($validated, $flashSale);
+        $this->ensureNoCatalogOverlap($validated, $flashSale);
 
         DB::transaction(function () use ($flashSale, $validated) {
             $flashSale->update($this->salePayload($validated));
@@ -167,26 +167,89 @@ class FlashSaleController extends Controller
         ];
     }
 
-    private function ensureNoActiveOverlap(array $validated, ?FlashSale $ignore = null): void
+    private function ensureNoCatalogOverlap(array $validated, ?FlashSale $ignore = null): void
     {
         if (! (bool) $validated['is_active']) {
+            return;
+        }
+
+        $items = collect($validated['items'])->values();
+        $skuIds = $items
+            ->pluck('sku_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($skuIds->isEmpty()) {
+            return;
+        }
+
+        $skus = Sku::query()
+            ->with('product:id,name')
+            ->whereIn('id', $skuIds->all())
+            ->get()
+            ->keyBy('id');
+
+        $productIds = $skus
+            ->pluck('product_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($productIds->isEmpty()) {
             return;
         }
 
         $starts = Carbon::parse($validated['starts_at']);
         $ends = Carbon::parse($validated['ends_at']);
 
-        $overlap = FlashSale::query()
-            ->where('is_active', true)
-            ->when($ignore, fn ($query) => $query->whereKeyNot($ignore->id))
-            ->where('starts_at', '<', $ends)
-            ->where('ends_at', '>', $starts)
-            ->exists();
+        $conflicts = FlashSaleItem::query()
+            ->select('flash_sale_items.*')
+            ->join('flash_sales', 'flash_sales.id', '=', 'flash_sale_items.flash_sale_id')
+            ->join('skus', 'skus.id', '=', 'flash_sale_items.sku_id')
+            ->where('flash_sales.is_active', true)
+            ->when($ignore, fn ($query) => $query->where('flash_sales.id', '!=', $ignore->id))
+            ->where('flash_sales.starts_at', '<', $ends)
+            ->where('flash_sales.ends_at', '>', $starts)
+            ->where(function ($query) use ($skuIds, $productIds) {
+                $query
+                    ->whereIn('flash_sale_items.sku_id', $skuIds->all())
+                    ->orWhereIn('skus.product_id', $productIds->all());
+            })
+            ->with(['flashSale', 'sku.product'])
+            ->get();
 
-        if ($overlap) {
-            throw ValidationException::withMessages([
-                'starts_at' => 'Another active flash sale already overlaps this time window.',
-            ]);
+        if ($conflicts->isEmpty()) {
+            return;
+        }
+
+        $messages = [
+            'items' => 'Remove highlighted SKUs that overlap with another active flash sale.',
+        ];
+
+        foreach ($items as $index => $item) {
+            $incomingSku = $skus->get((int) $item['sku_id']);
+            if (! $incomingSku) {
+                continue;
+            }
+
+            $conflict = $conflicts->firstWhere('sku_id', $incomingSku->id)
+                ?: $conflicts->first(fn (FlashSaleItem $conflict) => (int) $conflict->sku?->product_id === (int) $incomingSku->product_id);
+
+            if (! $conflict) {
+                continue;
+            }
+
+            $saleName = $conflict->flashSale?->name ?: 'another flash sale';
+            $skuCode = $incomingSku->sku_code ?: 'this SKU';
+            $productName = $incomingSku->product?->name ?: 'this product';
+            $messages["items.{$index}.sku_id"] = (int) $conflict->sku_id === (int) $incomingSku->id
+                ? "SKU {$skuCode} is already in overlapping flash sale \"{$saleName}\"."
+                : "Product {$productName} is already in overlapping flash sale \"{$saleName}\".";
+        }
+
+        if (count($messages) > 1) {
+            throw ValidationException::withMessages($messages);
         }
     }
 

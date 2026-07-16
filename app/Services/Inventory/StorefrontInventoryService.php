@@ -59,4 +59,31 @@ class StorefrontInventoryService
             $sku->makeHidden(['stock_qty', 'reserved_qty']);
         }
     }
+
+    /**
+     * Add total availability from every active stock location to product SKUs.
+     *
+     * @param  iterable<Product>  $products
+     */
+    public function attachAvailableQuantitiesAcrossLocations(iterable $products): void
+    {
+        $products = $products instanceof Collection ? $products : collect($products);
+        $skus = $products->flatMap(fn (Product $product) => $product->skus)->values();
+
+        if ($skus->isEmpty()) {
+            return;
+        }
+
+        $availableBySku = InventoryBalance::query()
+            ->whereIn('sku_id', $skus->pluck('id'))
+            ->whereHas('location', fn ($location) => $location->where('is_active', true))
+            ->get()
+            ->groupBy('sku_id')
+            ->map(fn (Collection $balances) => $balances->sum(fn (InventoryBalance $balance) => max(0, $balance->available_qty)));
+
+        foreach ($skus as $sku) {
+            $sku->setAttribute('available_qty', (int) ($availableBySku->get($sku->id) ?? 0));
+            $sku->makeHidden(['stock_qty', 'reserved_qty']);
+        }
+    }
 }

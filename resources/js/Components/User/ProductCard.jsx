@@ -34,11 +34,17 @@ const ProductCard = ({ product }) => {
     const [variantDialogOpen, setVariantDialogOpen] = useState(false);
     const [selectedSkuId, setSelectedSkuId] = useState(null);
     const [quantity, setQuantity] = useState(1);
+    const purchasableSkus = useMemo(
+        () => (product.skus || []).filter((s) => s.is_active !== false && Number(s.available_qty ?? 0) > 0),
+        [product.skus]
+    );
 
-    const minPrice = useMemo(() => {
-        if (!product.skus || product.skus.length === 0) return 0;
-        return Math.min(...product.skus.map((s) => skuPrice(s)));
-    }, [product.skus]);
+    const displaySku = useMemo(() => {
+        if (purchasableSkus.length === 0) return null;
+        return purchasableSkus.reduce((best, sku) => (skuPrice(sku) < skuPrice(best) ? sku : best), purchasableSkus[0]);
+    }, [purchasableSkus]);
+    const minPrice = displaySku ? skuPrice(displaySku) : 0;
+    const showFlashPrice = displaySku && hasFlashSale(displaySku) && skuOriginalPrice(displaySku) > minPrice;
 
     const imageUrl = useMemo(() => {
         return product.primary_image
@@ -49,9 +55,10 @@ const ProductCard = ({ product }) => {
     const defaultSku = useMemo(() => pickDefaultSkuForProduct(product), [product]);
     const canAddCart = Boolean(defaultSku);
     const selectedSku = useMemo(
-        () => (product.skus || []).find((s) => s.id === selectedSkuId) || defaultSku || null,
-        [product.skus, selectedSkuId, defaultSku]
+        () => purchasableSkus.find((s) => s.id === selectedSkuId) || defaultSku || null,
+        [purchasableSkus, selectedSkuId, defaultSku]
     );
+    const selectedSkuQtyLimit = Math.min(ORDER_QTY_MAX, Math.max(1, Number(selectedSku?.available_qty ?? 1)));
 
     const wishlistPayload = useMemo(
         () => ({
@@ -101,9 +108,9 @@ const ProductCard = ({ product }) => {
                 showToast('Please select an option first.', 'warning');
                 return;
             }
-            const isPreorder = Number(selectedSku.available_qty ?? 0) <= 0;
             const skuLabel = formatSkuLabel(selectedSku);
             const imagePath = selectedSku?.image?.image_path || product.primary_image?.image_path || null;
+            const addQty = Math.min(quantity, Number(selectedSku.available_qty ?? 1));
 
             addToCart({
                 skuId: selectedSku.id,
@@ -117,11 +124,11 @@ const ProductCard = ({ product }) => {
                 flashSale: selectedSku.flash_sale || null,
                 imagePath,
                 maxQty: Number(selectedSku.available_qty ?? 0),
-                isPreorder,
-                qty: quantity,
+                isPreorder: false,
+                qty: addQty,
             });
             setVariantDialogOpen(false);
-            showToast(isPreorder ? 'Added as preorder' : 'Added to cart', 'success');
+            showToast('Added to cart', 'success');
         },
         [selectedSku, product, addToCart, showToast, quantity]
     );
@@ -233,7 +240,7 @@ const ProductCard = ({ product }) => {
 
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
                     <Box>
-                        {product.skus?.some(hasFlashSale) && (
+                        {showFlashPrice && (
                             <Typography
                                 variant="caption"
                                 sx={{ color: 'error.main', fontWeight: 800, display: 'block', lineHeight: 1.1 }}
@@ -241,9 +248,20 @@ const ProductCard = ({ product }) => {
                                 Flash Sale
                             </Typography>
                         )}
-                        <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 700, lineHeight: 1 }}>
-                            {formatMoney(minPrice)}
-                        </Typography>
+                        <Stack direction="row" spacing={0.75} alignItems="baseline" useFlexGap flexWrap="wrap">
+                            <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                                {formatMoney(minPrice)}
+                            </Typography>
+                            {showFlashPrice && (
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ textDecoration: 'line-through', fontWeight: 600, lineHeight: 1 }}
+                                >
+                                    {formatMoney(skuOriginalPrice(displaySku))}
+                                </Typography>
+                            )}
+                        </Stack>
                     </Box>
                 </Stack>
             </CardContent>
@@ -269,9 +287,8 @@ const ProductCard = ({ product }) => {
                 <DialogTitle sx={{ pb: 1, fontWeight: 800 }}>Select option</DialogTitle>
                 <DialogContent>
                     <Stack spacing={1}>
-                        {(product.skus || []).map((sku) => {
+                        {purchasableSkus.map((sku) => {
                             const isSelected = selectedSku?.id === sku.id;
-                            const isPreorder = Number(sku.available_qty ?? 0) <= 0;
                             const skuImageUrl = getSkuImageUrl(sku, imageUrl, app_url);
                             return (
                                 <Button
@@ -294,8 +311,8 @@ const ProductCard = ({ product }) => {
                                             <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                                 {formatSkuLabel(sku)}
                                             </Typography>
-                                            <Typography variant="caption" color={isPreorder ? 'warning.main' : 'text.secondary'}>
-                                                {isPreorder ? 'Out of stock - Preorder' : `In stock (${sku.available_qty})`}
+                                            <Typography variant="caption" color="text.secondary">
+                                                In stock ({sku.available_qty})
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -334,7 +351,7 @@ const ProductCard = ({ product }) => {
                                         Math.min(ORDER_QTY_MAX, q + 1)
                                     )
                                 }
-                                disabled={quantity >= ORDER_QTY_MAX}
+                                disabled={quantity >= selectedSkuQtyLimit}
                             >
                                 <Add fontSize="small" />
                             </IconButton>
@@ -346,7 +363,7 @@ const ProductCard = ({ product }) => {
                         Cancel
                     </Button>
                     <Button variant="contained" onClick={handleConfirmAddToCart} disabled={!selectedSku}>
-                        {selectedSku && Number(selectedSku.available_qty ?? 0) <= 0 ? 'Add Preorder' : 'Add to cart'}
+                        Add to cart
                     </Button>
                 </DialogActions>
             </Dialog>
