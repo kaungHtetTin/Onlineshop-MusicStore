@@ -1,1 +1,0 @@
-import{a}from"./app-ad3fde1d.js";import{e as r}from"./Button-b01f17ef.js";const c=r(a("path",{d:"m12 4-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"})),h=r([a("path",{d:"M19 5v14H5V5zm0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2"},"0"),a("path",{d:"M14 17H7v-2h7zm3-4H7v-2h10zm0-4H7V7h10z"},"1")]);export{c as A,h as a};

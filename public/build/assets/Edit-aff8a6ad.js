@@ -1,1 +1,0 @@
-import{a as t}from"./app-ad3fde1d.js";import m from"./Form-31b16a54.js";import"./AdminLayout-87920ef3.js";import"./icons-fe49f4a4.js";import"./url-e9a55f60.js";import"./AdminFlash-76382f1f.js";function d({productOptions:o,flashSale:r}){return t(m,{productOptions:o,flashSale:r,mode:"edit"})}export{d as default};
