@@ -60,6 +60,19 @@ const normalizeDuplicatedBase = (url, base) => {
     }
 };
 
+const stripBasePath = (pathname, base) => {
+    if (!pathname || !base || base === '/') {
+        return pathname || '/';
+    }
+
+    const cleanBase = `/${String(base).replace(/^\/+|\/+$/g, '')}`;
+    if (pathname === cleanBase) {
+        return '/';
+    }
+
+    return pathname.startsWith(`${cleanBase}/`) ? pathname.substring(cleanBase.length) : pathname;
+};
+
 const normalizeCurrentBrowserUrl = (base) => {
     const correctedPath = normalizeDuplicatedBasePath(window.location.pathname, base);
     if (correctedPath !== window.location.pathname) {
@@ -98,8 +111,9 @@ const registerUserServiceWorker = (base = '') => {
 
     const cleanBase = base && base !== '/' ? `/${String(base).replace(/^\/+|\/+$/g, '')}` : '';
     const currentPath = normalizeDuplicatedBasePath(window.location.pathname, cleanBase);
+    const pathInApp = stripBasePath(currentPath, cleanBase);
 
-    if (currentPath === '/admin' || currentPath.startsWith('/admin/')) {
+    if (pathInApp === '/admin' || pathInApp.startsWith('/admin/')) {
         return;
     }
 
@@ -146,6 +160,12 @@ if (el && el.dataset.page) {
             const userTheme = createUserTheme(props.initialPage.props.app_settings || {});
             props.initialPage.url = normalizeDuplicatedBase(props.initialPage.url, base);
             normalizeCurrentBrowserUrl(base);
+            const cleanBase = base && base !== '/' ? `/${String(base).replace(/^\/+|\/+$/g, '')}` : '';
+            const pathInApp = stripBasePath(window.location.pathname, cleanBase);
+            const csrfRefreshPath = pathInApp === '/admin' || pathInApp.startsWith('/admin/')
+                ? `${cleanBase}/admin/csrf-token`
+                : `${cleanBase}/csrf-token`;
+            window.setCsrfRefreshUrl?.(csrfRefreshPath);
             registerUserServiceWorker(base);
             window.configureRealtime?.(base);
 

@@ -28,7 +28,14 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StorefrontController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ProfileController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/csrf-token', function (Request $request) {
+    return response()
+        ->json(['csrf_token' => $request->session()->token()])
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+})->name('csrf-token');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');

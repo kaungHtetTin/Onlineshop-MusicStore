@@ -14,6 +14,94 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 window.axios.defaults.headers.common['Accept'] = 'application/json';
 window.axios.defaults.withCredentials = true;
 
+const csrfMeta = () => document.querySelector('meta[name="csrf-token"]');
+
+const readCookie = (name) => {
+    const match = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith(`${name}=`));
+
+    return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : null;
+};
+
+const currentCsrfToken = () => csrfMeta()?.getAttribute('content') || readCookie('XSRF-TOKEN');
+
+const syncCsrfToken = (token) => {
+    if (!token) return;
+
+    const meta = csrfMeta();
+    if (meta) {
+        meta.setAttribute('content', token);
+    }
+
+    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+};
+
+syncCsrfToken(currentCsrfToken());
+
+window.setCsrfRefreshUrl = (url) => {
+    window.__csrfRefreshUrl = url;
+};
+
+const refreshCsrfToken = async () => {
+    const response = await window.axios.get(window.__csrfRefreshUrl || '/csrf-token', {
+        __csrfRefreshRequest: true,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'application/json',
+        },
+    });
+    const token = response.data?.csrf_token || response.headers?.['x-csrf-token'];
+    syncCsrfToken(token);
+
+    return token;
+};
+
+window.axios.interceptors.request.use((config) => {
+    if (!config.__csrfRefreshRequest) {
+        const token = currentCsrfToken();
+        if (token) {
+            config.headers = config.headers || {};
+            config.headers['X-CSRF-TOKEN'] = token;
+        }
+    }
+
+    return config;
+});
+
+window.axios.interceptors.response.use(
+    (response) => {
+        syncCsrfToken(response.headers?.['x-csrf-token']);
+
+        return response;
+    },
+    async (error) => {
+        const originalRequest = error.config;
+        const canRefresh = error.response?.status === 419
+            && originalRequest
+            && !originalRequest.__csrfRetry
+            && !originalRequest.__csrfRefreshRequest;
+
+        if (!canRefresh) {
+            return Promise.reject(error);
+        }
+
+        originalRequest.__csrfRetry = true;
+
+        try {
+            const token = await refreshCsrfToken();
+            if (token) {
+                originalRequest.headers = originalRequest.headers || {};
+                originalRequest.headers['X-CSRF-TOKEN'] = token;
+            }
+
+            return window.axios(originalRequest);
+        } catch {
+            return Promise.reject(error);
+        }
+    }
+);
+
 /**
  * Echo exposes an expressive API for subscribing to channels and listening
  * for events that are broadcast by Laravel. Echo and event broadcasting

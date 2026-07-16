@@ -12,6 +12,7 @@ use App\Http\Controllers\User\WishlistController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\PwaController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,6 +27,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/csrf-token', function (Request $request) {
+    return response()
+        ->json(['csrf_token' => $request->session()->token()])
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+})->name('csrf-token');
 Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('/categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');
