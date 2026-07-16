@@ -8,7 +8,7 @@ use App\Models\Product;
 use App\Services\FlashSalePricingService;
 use App\Services\Inventory\StorefrontInventoryService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class CategoryController extends Controller
 {
@@ -44,7 +44,7 @@ class CategoryController extends Controller
                 ->withQueryString();
         }
 
-        return Inertia::render('User/Categories/Index', [
+        return Spa::render('User/Categories/Index', [
             'categories' => $roots,
         ]);
     }
@@ -88,7 +88,7 @@ class CategoryController extends Controller
         $flashSalePricing->attachToProducts($products->getCollection());
         $storefrontInventory->attachAvailableQuantitiesAcrossLocations($products->getCollection());
 
-        return Inertia::render('User/Categories/Show', [
+        return Spa::render('User/Categories/Show', [
             'category' => $category,
             'products' => $products,
         ]);

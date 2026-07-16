@@ -4,7 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Application;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 use App\Models\Product;
 use App\Models\BlogPost;
@@ -162,7 +162,7 @@ class HomeController extends Controller
             ->take(6)
             ->get();
 
-        return Inertia::render('User/Welcome', [
+        return Spa::render('User/Welcome', [
             'products' => $products,
             'productSection' => $productSection,
             'flashSaleProducts' => $flashSaleProducts,

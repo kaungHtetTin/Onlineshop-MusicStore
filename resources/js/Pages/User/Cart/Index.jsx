@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@/spa/router';
 import {
     Box,
     Button,
@@ -25,6 +25,7 @@ import {
     sectionShellSxForTheme,
     storefrontBackgroundSx,
 } from '@/Components/User/musicStoreDesign';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function CartIndex() {
     const theme = useTheme();
@@ -32,6 +33,7 @@ export default function CartIndex() {
     const sectionShellSx = sectionShellSxForTheme(theme);
     const ORDER_QTY_MAX = 999;
     const { app_base, app_url, auth } = usePage().props;
+    const t = usePhraseTranslation();
     const items = useCartStore((s) => s.items);
     const setQty = useCartStore((s) => s.setQty);
     const removeItem = useCartStore((s) => s.removeItem);
@@ -52,23 +54,23 @@ export default function CartIndex() {
 
             <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 }, flex: '1 0 auto', width: '100%' }}>
                 <BackLink href={routeWithBase('/products', app_base)}>
-                    Continue shopping
+                    {t('Continue shopping')}
                 </BackLink>
 
                 <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
-                    Your setlist
+                    {t('Your setlist')}
                 </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>
-                    Shopping cart
+                    {t('Shopping cart')}
                 </Typography>
 
                 {items.length === 0 ? (
                     <Paper elevation={0} sx={{ ...sectionShellSx, p: 4, textAlign: 'center' }}>
                         <Typography color="text.secondary" sx={{ mb: 2 }}>
-                            Your cart is empty. Add an instrument, cable, accessory, or studio essential to get started.
+                            {t('Your cart is empty. Add an instrument, cable, accessory, or studio essential to get started.')}
                         </Typography>
                         <Button variant="contained" component={Link} href={routeWithBase('/products', app_base)}>
-                            Browse products
+                            {t('Browse products')}
                         </Button>
                     </Paper>
                 ) : (
@@ -111,21 +113,21 @@ export default function CartIndex() {
                                     </Typography>
                                     {line.skuCode && (
                                         <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.25 }}>
-                                            SKU: {line.skuCode}
+                                            {t('SKU')}: {line.skuCode}
                                         </Typography>
                                     )}
                                     {line.isPreorder && (
                                         <Typography variant="caption" color="warning.main" display="block" sx={{ fontWeight: 700 }}>
-                                            Pre-order
+                                            {t('Pre-order')}
                                         </Typography>
                                     )}
                                     {line.flashSale && (
                                         <Typography variant="caption" color="error.main" display="block" sx={{ fontWeight: 800 }}>
-                                            Flash Sale
+                                            {t('Flash Sale')}
                                         </Typography>
                                     )}
                                     <Typography variant="body2" color="primary" sx={{ fontWeight: 800 }}>
-                                        ${Number(line.price).toFixed(2)} each
+                                        ${Number(line.price).toFixed(2)} {t('each')}
                                     </Typography>
                                     {line.flashSale && line.originalPrice && (
                                         <Typography variant="caption" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
@@ -177,7 +179,7 @@ export default function CartIndex() {
                                                 <Add fontSize="small" />
                                             </IconButton>
                                         </Box>
-                                        <IconButton size="small" color="error" sx={{ p: 0.5 }} onClick={() => removeItem(line.skuId)} aria-label="Remove">
+                                        <IconButton size="small" color="error" sx={{ p: 0.5 }} onClick={() => removeItem(line.skuId)} aria-label={t('Remove')}>
                                             <DeleteOutlined />
                                         </IconButton>
                                     </Stack>
@@ -188,7 +190,7 @@ export default function CartIndex() {
                         <Paper elevation={0} sx={{ ...sectionShellSx, p: 2.5 }}>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                    Subtotal
+                                    {t('Subtotal')}
                                 </Typography>
                                 <Typography variant="h6" sx={{ fontWeight: 800 }}>
                                     ${subtotal.toFixed(2)}
@@ -208,7 +210,7 @@ export default function CartIndex() {
                                     router.visit(routeWithBase('/checkout', app_base));
                                 }}
                             >
-                                {auth?.user ? 'Proceed to checkout' : 'Log in to checkout'}
+                                {t(auth?.user ? 'Proceed to checkout' : 'Log in to checkout')}
                             </Button>
                         </Paper>
                     </Stack>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@/spa/router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import {
@@ -31,6 +31,7 @@ import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MOBILE_BOTTOM_NAV_HEIGHT } from '@/Components/User/MobileBottomNav';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { apiUrl, routeWithBase, storageUrl } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 import {
     compressImageFile,
     ensureSanctumCookie,
@@ -59,6 +60,7 @@ function newClientTempId() {
 export default function UserChatShow() {
     const theme = useTheme();
     const { app_base, auth, app_url, app_settings } = usePage().props;
+    const t = usePhraseTranslation();
     const appName = app_settings?.app_name || 'Harmony House';
     const queryClient = useQueryClient();
     const pageVisible = usePageVisible();
@@ -332,7 +334,7 @@ export default function UserChatShow() {
                 },
             }}
         >
-            <UserBrandHead title="Support Chat" />
+            <UserBrandHead title={t('Support Chat')} />
             <Navbar />
 
             <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -390,7 +392,7 @@ export default function UserChatShow() {
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
                                 <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.62rem' }}>
-                                    {pollQuery.isFetching ? 'Updating…' : 'Live'}
+                                    {pollQuery.isFetching ? t('Updating...') : t('Live')}
                                 </Typography>
                             </Box>
                         </Stack>
@@ -422,7 +424,7 @@ export default function UserChatShow() {
                             </Stack>
                         ) : overviewQuery.isError ? (
                             <Alert severity="error" sx={{ m: 2 }}>
-                                Could not load chat. Please refresh the page.
+                                {t('Could not load chat. Please refresh the page.')}
                             </Alert>
                         ) : (
                             <>
@@ -448,7 +450,7 @@ export default function UserChatShow() {
                                                 disabled={loadingOlder}
                                                 sx={{ borderRadius: 1.25, fontWeight: 750, fontSize: '0.68rem', py: 0.25 }}
                                             >
-                                                {loadingOlder ? 'Loading…' : 'Load older messages'}
+                                                {loadingOlder ? t('Loading...') : t('Load older messages')}
                                             </Button>
                                         </Box>
                                     )}
@@ -544,7 +546,7 @@ export default function UserChatShow() {
                                                                     <DoneAll sx={{ fontSize: 13, color: 'rgba(255,255,255,0.92)' }} />
                                                                 ) : (
                                                                     <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.72)', fontWeight: 800, fontSize: '0.57rem' }}>
-                                                                        Sent
+                                                                        {t('Sent')}
                                                                     </Typography>
                                                                 )
                                                             ) : null}
@@ -556,7 +558,7 @@ export default function UserChatShow() {
                                                                     onClick={() => retryOptimistic(m)}
                                                                     sx={{ fontWeight: 900, color: '#fff' }}
                                                                 >
-                                                                    Retry
+                                                                    {t('Retry')}
                                                                 </Button>
                                                             ) : null}
                                                         </Stack>
@@ -643,7 +645,7 @@ export default function UserChatShow() {
                                     <Box sx={{ px: { xs: 0.9, sm: 1.1 }, pt: 0.55, flexShrink: 0 }}>
                                         <LinearProgress variant="determinate" value={uploadPct} sx={{ borderRadius: 1, height: 4 }} />
                                         <Typography variant="caption" sx={{ fontWeight: 750, display: 'block', mt: 0.45, fontSize: '0.65rem' }}>
-                                            Uploading… {uploadPct}%
+                                            {t('Uploading...')} {uploadPct}%
                                         </Typography>
                                     </Box>
                                 ) : null}
@@ -682,7 +684,7 @@ export default function UserChatShow() {
                                                 '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.16) },
                                                 '& .MuiSvgIcon-root': { display: 'block', fontSize: 18 },
                                             }}
-                                            aria-label="Upload image"
+                                            aria-label={t('Upload image')}
                                         >
                                             <AddPhotoAlternate />
                                             <input
@@ -697,7 +699,7 @@ export default function UserChatShow() {
                                             fullWidth
                                             multiline
                                             maxRows={4}
-                                            placeholder="Message…"
+                                            placeholder={t('Message...')}
                                             value={draft}
                                             onChange={(e) => setDraft(e.target.value)}
                                             onKeyDown={(e) => {
@@ -753,7 +755,7 @@ export default function UserChatShow() {
                                                 },
                                                 '& .MuiSvgIcon-root': { display: 'block', fontSize: 18 },
                                             }}
-                                            aria-label="Send"
+                                            aria-label={t('Send')}
                                         >
                                             {sendMutation.isPending || uploadMutation.isPending ? (
                                                 <CircularProgress size={18} thickness={5} sx={{ color: '#fff' }} />

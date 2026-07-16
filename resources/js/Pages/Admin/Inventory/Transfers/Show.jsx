@@ -1,13 +1,15 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import useInventoryRealtime from '@/Utils/useInventoryRealtime';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function TransferShow({ transfer, lastUpdated, pollIntervalMs = 20000 }) {
     const { app_base, flash } = usePage().props;
+    const t = usePhraseTranslation();
     const { state: realtimeState, lastEventAt } = useInventoryRealtime({
         locationIds: [transfer.source_location_id, transfer.destination_location_id],
         transferId: transfer.id,
@@ -19,35 +21,35 @@ export default function TransferShow({ transfer, lastUpdated, pollIntervalMs = 2
     const totalUnits = transfer.items.reduce((sum, item) => sum + Number(item.requested_quantity || 0), 0);
 
     return (
-        <AdminLayout title={transfer.transfer_number} eyebrow="Stock transfer">
+        <AdminLayout title={transfer.transfer_number} eyebrow={t('Stock transfer')}>
             <Head title={transfer.transfer_number} />
             <AdminFlash flash={flash} />
             <div className="sticky-toolbar">
                 <Link className="back-link" href={routeWithBase('/admin/inventory/transfers', app_base)}>
-                    <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} /> Back to transfers
+                    <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} /> {t('Back to transfers')}
                 </Link>
             </div>
 
             <section className="receipt-detail-card panel glass">
                 <PanelHeading
-                    eyebrow="Transfer summary"
-                    title="Warehouse stock movement"
-                    action={<small className="muted">Realtime {realtimeState} · Updated {new Date(lastEventAt || lastUpdated).toLocaleTimeString()}</small>}
+                    eyebrow={t('Transfer summary')}
+                    title={t('Warehouse stock movement')}
+                    action={<small className="muted">{t('Realtime')} {t(realtimeState)} - {t('Updated')} {new Date(lastEventAt || lastUpdated).toLocaleTimeString()}</small>}
                 />
                 <div className="receipt-detail-meta">
-                    <div><span>From</span><strong>{transfer.source_location.name}</strong><small>{transfer.source_location.code}</small></div>
-                    <div><span>To</span><strong>{transfer.destination_location.name}</strong><small>{transfer.destination_location.code}</small></div>
-                    <div><span>Moved</span><strong>{totalUnits} units</strong><small>{new Date(transfer.created_at).toLocaleString()}</small></div>
+                    <div><span>{t('From')}</span><strong>{transfer.source_location.name}</strong><small>{transfer.source_location.code}</small></div>
+                    <div><span>{t('To')}</span><strong>{transfer.destination_location.name}</strong><small>{transfer.destination_location.code}</small></div>
+                    <div><span>{t('Moved')}</span><strong>{t(':count units', { count: totalUnits })}</strong><small>{new Date(transfer.created_at).toLocaleString()}</small></div>
                 </div>
 
                 <div className="receipt-lines-table table-wrap">
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>Product / SKU</th>
-                                <th>Quantity moved</th>
-                                <th>Source change</th>
-                                <th>Destination change</th>
+                                <th>{t('Product / SKU')}</th>
+                                <th>{t('Quantity moved')}</th>
+                                <th>{t('Source change')}</th>
+                                <th>{t('Destination change')}</th>
                             </tr>
                         </thead>
                         <tbody>

@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class LocationController extends Controller
 {
@@ -66,7 +66,7 @@ class LocationController extends Controller
                 ])
             : collect();
 
-        return Inertia::render('Admin/Locations/Index', [
+        return Spa::render('Admin/Locations/Index', [
             'locations' => $locations,
             'staff' => $staff,
             'canManage' => $canManage,

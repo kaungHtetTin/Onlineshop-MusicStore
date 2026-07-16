@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { PanelHeading } from '@/Components/Admin/shared';
 import { routeWithBase, storageUrl } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function AdjustmentCreate({ locations, reasons, selectedSku, selectedLocationId }) {
     const { app_base, app_url } = usePage().props;
+    const t = usePhraseTranslation();
     const [processing, setProcessing] = useState(false);
     const form = useForm({
         location_id: selectedLocationId || locations[0]?.id || '',
@@ -50,16 +52,16 @@ export default function AdjustmentCreate({ locations, reasons, selectedSku, sele
     };
 
     return (
-        <AdminLayout title="Adjust stock" eyebrow="Inventory">
-            <Head title="Adjust Stock" />
+        <AdminLayout title={t('Adjust stock')} eyebrow={t('Inventory')}>
+            <Head title={t('Adjust Stock')} />
             <div className="sticky-toolbar">
                 <Link className="back-link" href={routeWithBase('/admin/inventory', app_base)}>
-                    <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} /> Back to stock overview
+                    <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} /> {t('Back to stock overview')}
                 </Link>
             </div>
 
             <form onSubmit={submit} className="panel glass adjustment-simple-form">
-                <PanelHeading eyebrow="Stock correction" title="Update counted quantity" action={<small className="muted">Product is selected from stock overview.</small>} />
+                <PanelHeading eyebrow={t('Stock correction')} title={t('Update counted quantity')} action={<small className="muted">{t('Product is selected from stock overview.')}</small>} />
 
                 {Object.keys(form.errors).length > 0 && (
                     <div className="flash error">
@@ -79,25 +81,25 @@ export default function AdjustmentCreate({ locations, reasons, selectedSku, sele
 
                 <div className="adjustment-simple-grid">
                     <label className="form-field">
-                        <span>Warehouse</span>
+                        <span>{t('Warehouse')}</span>
                         <select value={form.data.location_id} onChange={(event) => setLocation(event.target.value)} required>
                             {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
                         </select>
                     </label>
                     <label className="form-field">
-                        <span>Reason</span>
+                        <span>{t('Reason')}</span>
                         <select value={form.data.reason_code} onChange={(event) => form.setData('reason_code', event.target.value)} required>
                             {reasons.map((reason) => <option key={reason.value} value={reason.value}>{reason.label}</option>)}
                         </select>
                     </label>
                     <div className="adjustment-quantity-card">
                         <div className="adjustment-quantity-card-inner">
-                            <span>System</span>
+                            <span>{t('System')}</span>
                             <strong>{systemQuantity}</strong>
                         </div>
                     </div>
                     <label className="form-field">
-                        <span>Counted</span>
+                        <span>{t('Counted')}</span>
                         <input
                             type="number"
                             min="0"
@@ -108,25 +110,25 @@ export default function AdjustmentCreate({ locations, reasons, selectedSku, sele
                     </label>
                     <div className={variance < 0 ? 'adjustment-quantity-card negative' : variance > 0 ? 'adjustment-quantity-card positive' : 'adjustment-quantity-card'}>
                         <div className="adjustment-quantity-card-inner">
-                            <span>Variance</span>
+                            <span>{t('Variance')}</span>
                             <strong>{variance > 0 ? '+' : ''}{variance}</strong>
                         </div>
                     </div>
                     <label className="form-field adjustment-note-field">
-                        <span>{variance < 0 ? 'Loss note' : 'Adjustment note'}</span>
+                        <span>{t(variance < 0 ? 'Loss note' : 'Adjustment note')}</span>
                         <input
                             value={form.data.notes}
                             onChange={(event) => form.setData('notes', event.target.value)}
-                            placeholder={variance < 0 ? 'Required for stock loss' : 'Optional note'}
+                            placeholder={t(variance < 0 ? 'Required for stock loss' : 'Optional note')}
                             required={variance < 0}
                         />
                     </label>
                 </div>
 
                 <div className="receipt-wizard-actions">
-                    <Link className="btn secondary" href={routeWithBase('/admin/inventory', app_base)}>Cancel</Link>
+                    <Link className="btn secondary" href={routeWithBase('/admin/inventory', app_base)}>{t('Cancel')}</Link>
                     <button className="btn primary" type="submit" disabled={processing}>
-                        <Icon name="check" size={14} /> Create adjustment
+                        <Icon name="check" size={14} /> {t('Create adjustment')}
                     </button>
                 </div>
             </form>

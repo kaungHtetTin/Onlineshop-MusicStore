@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@/spa/router';
 import {
     Avatar,
     Box,
@@ -27,6 +27,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { useWishlistStore } from '@/stores/wishlistStore';
 import { getMusicStoreColors } from '@/Components/User/musicStoreDesign';
+import { useTranslation } from '@/Utils/i18n';
 
 const menuPaperSx = (theme) => ({
     mt: 1,
@@ -118,6 +119,7 @@ export default function ProfileMenu() {
     const logoutForm = useForm({});
     const open = Boolean(anchorEl);
     const user = auth?.user;
+    const t = useTranslation();
 
     const handleOpen = (e) => setAnchorEl(e.currentTarget);
     const handleClose = () => setAnchorEl(null);
@@ -133,7 +135,7 @@ export default function ProfileMenu() {
                 size="small"
                 color="primary"
                 onClick={handleOpen}
-                aria-label={user ? 'Account menu' : 'Sign in menu'}
+                aria-label={user ? t('storefront.account_menu', 'Account menu') : t('storefront.sign_in_menu', 'Sign in menu')}
                 aria-controls={open ? 'profile-menu' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
@@ -203,34 +205,34 @@ export default function ProfileMenu() {
                         <MenuLinkItem
                             href={routeWithBase('/profile', app_base)}
                             icon={<Settings fontSize="small" />}
-                            label="Profile settings"
+                            label={t('storefront.profile_settings', 'Profile settings')}
                             onClose={handleClose}
                         />
                         <MenuLinkItem
                             href={routeWithBase('/orders', app_base)}
                             icon={<ReceiptLong fontSize="small" />}
-                            label="My orders"
-                            secondary="Track payments & delivery"
+                            label={t('storefront.my_orders', 'My orders')}
+                            secondary={t('storefront.orders_hint', 'Track payments & delivery')}
                             onClose={handleClose}
                         />
                         <MenuLinkItem
                             href={routeWithBase('/wishlist', app_base)}
                             icon={<FavoriteBorder fontSize="small" />}
-                            label="Wishlist"
+                            label={t('storefront.wishlist', 'Wishlist')}
                             badge={wishCount}
                             onClose={handleClose}
                         />
                         <MenuLinkItem
                             href={routeWithBase('/chat', app_base)}
                             icon={<ChatBubbleOutlined fontSize="small" />}
-                            label="Support chat"
+                            label={t('storefront.support_chat_label', 'Support chat')}
                             badge={chat_unread_count}
                             onClose={handleClose}
                         />
                         <MenuLinkItem
                             href={routeWithBase('/products', app_base)}
                             icon={<ShoppingBag fontSize="small" />}
-                            label="Continue shopping"
+                            label={t('storefront.continue_shopping', 'Continue shopping')}
                             onClose={handleClose}
                         />
                         <Divider sx={{ mx: 2, my: 0.75, opacity: 0.6 }} />
@@ -239,7 +241,7 @@ export default function ProfileMenu() {
                                 <Logout fontSize="small" />
                             </ListItemIcon>
                             <ListItemText
-                                primary={logoutForm.processing ? 'Signing out…' : 'Log out'}
+                                primary={logoutForm.processing ? t('storefront.signing_out', 'Signing out...') : t('storefront.log_out', 'Log out')}
                                 primaryTypographyProps={{ fontWeight: 700, fontSize: '0.875rem' }}
                             />
                         </MenuItem>
@@ -248,29 +250,29 @@ export default function ProfileMenu() {
                     <>
                         <Box sx={{ px: 2.5, pt: 1.5, pb: 1 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: musicColors.rosin }}>
-                                Welcome to {appName}
+                                {t('storefront.welcome_to', `Welcome to ${appName}`, { app: appName })}
                             </Typography>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                Sign in to save gear, track orders, and chat with the shop team.
+                                {t('storefront.guest_hint', 'Sign in to save gear, track orders, and chat with the shop team.')}
                             </Typography>
                         </Box>
                         <Divider sx={{ mx: 2, mb: 0.5, opacity: 0.6 }} />
                         <MenuLinkItem
                             href={routeWithBase('/login', app_base)}
                             icon={<Login fontSize="small" />}
-                            label="Sign in"
+                            label={t('storefront.sign_in', 'Sign in')}
                             onClose={handleClose}
                         />
                         <MenuLinkItem
                             href={routeWithBase('/register', app_base)}
                             icon={<PersonAdd fontSize="small" />}
-                            label="Create account"
+                            label={t('storefront.create_account', 'Create account')}
                             onClose={handleClose}
                         />
                         <MenuLinkItem
                             href={routeWithBase('/products', app_base)}
                             icon={<ShoppingBag fontSize="small" />}
-                            label="Browse shop"
+                            label={t('storefront.browse_shop', 'Browse shop')}
                             onClose={handleClose}
                         />
                     </>

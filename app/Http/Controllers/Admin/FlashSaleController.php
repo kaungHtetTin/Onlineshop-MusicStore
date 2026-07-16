@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class FlashSaleController extends Controller
 {
@@ -43,7 +43,7 @@ class FlashSaleController extends Controller
             };
         }
 
-        return Inertia::render('Admin/FlashSales/Index', [
+        return Spa::render('Admin/FlashSales/Index', [
             'flashSales' => $query->paginate(12)->withQueryString(),
             'filters' => [
                 'q' => $request->string('q')->toString(),
@@ -54,7 +54,7 @@ class FlashSaleController extends Controller
 
     public function create()
     {
-        return Inertia::render('Admin/FlashSales/Create', [
+        return Spa::render('Admin/FlashSales/Create', [
             'productOptions' => $this->productOptions(),
         ]);
     }
@@ -63,7 +63,7 @@ class FlashSaleController extends Controller
     {
         $flashSale->load(['items.sku.product']);
 
-        return Inertia::render('Admin/FlashSales/Edit', [
+        return Spa::render('Admin/FlashSales/Edit', [
             'flashSale' => $flashSale,
             'productOptions' => $this->productOptions(),
         ]);

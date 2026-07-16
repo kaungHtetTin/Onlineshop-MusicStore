@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePage, Link } from '@inertiajs/react';
+import { usePage, Link } from '@/spa/router';
 import { routeWithBase } from '@/Utils/url';
 import {
     Box,
@@ -39,6 +39,7 @@ import {
     sectionShellSxForTheme,
     storefrontBackgroundSx,
 } from '@/Components/User/musicStoreDesign';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const defaultSections = {
     categories: { title: 'Shop by sound', subtitle: 'Find the right instrument family for your next session.', is_active: true },
@@ -101,17 +102,18 @@ const formatBlogDate = (value) => {
 function SectionHeader({ eyebrow, title, subtitle, action }) {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
+    const t = usePhraseTranslation();
 
     return (
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1.25} sx={{ mb: 2 }}>
             <Box>
-                {eyebrow && <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>{eyebrow}</Typography>}
+                {eyebrow && <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>{t(eyebrow)}</Typography>}
                 <Typography variant="h5" sx={{ fontWeight: 950, color: musicColors.ink, lineHeight: 1.12 }}>
-                    {title}
+                    {t(title)}
                 </Typography>
                 {subtitle && (
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 560, fontWeight: 650 }}>
-                        {subtitle}
+                        {t(subtitle)}
                     </Typography>
                 )}
             </Box>
@@ -201,6 +203,7 @@ function ProductSectionEmpty({ title, subtitle }) {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
     const sectionShellSx = sectionShellSxForTheme(theme);
+    const t = usePhraseTranslation();
 
     return (
         <Box
@@ -228,10 +231,10 @@ function ProductSectionEmpty({ title, subtitle }) {
             </Box>
             <Box>
                 <Typography variant="h6" sx={{ fontWeight: 950, color: musicColors.ink, mb: 0.5 }}>
-                    {title}
+                    {t(title)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 650, maxWidth: 620 }}>
-                    {subtitle}
+                    {t(subtitle)}
                 </Typography>
             </Box>
             <Button
@@ -241,7 +244,7 @@ function ProductSectionEmpty({ title, subtitle }) {
                 endIcon={<ArrowForward />}
                 sx={{ fontWeight: 900, justifySelf: { xs: 'stretch', md: 'end' } }}
             >
-                Browse catalog
+                {t('Browse catalog')}
             </Button>
         </Box>
     );
@@ -250,6 +253,7 @@ function ProductSectionEmpty({ title, subtitle }) {
 const Welcome = ({ products = [], productSection = null, categories, flashSaleProducts = [], activeFlashSale = null, flashSaleEvents = [], storefront = {}, latestBlogs = [], paymentMethods = [] }) => {
     const theme = useTheme();
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
     const musicColors = getMusicStoreColors(theme);
     const sectionShellSx = sectionShellSxForTheme(theme);
     const sections = { ...defaultSections, ...(storefront.sections || {}) };
@@ -332,13 +336,13 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                             }}
                         >
                             <Typography sx={{ ...eyebrowSx, color: musicColors.amber, mb: 1 }}>
-                                Musical instrument store
+                                {t('Musical instrument store')}
                             </Typography>
                             <Typography variant="h2" sx={{ fontWeight: 950, fontSize: { xs: '2rem', sm: '2.6rem', md: '4rem' }, mb: 1.25, lineHeight: 0.98, maxWidth: 620 }}>
-                                {hero.title || defaultHero.title}
+                                {t(hero.title || defaultHero.title)}
                             </Typography>
                             <Typography variant="body1" sx={{ opacity: 0.88, mb: 3, maxWidth: 500, fontWeight: 600 }}>
-                                {hero.subtitle || defaultHero.subtitle}
+                                {t(hero.subtitle || defaultHero.subtitle)}
                             </Typography>
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} alignItems={{ xs: 'stretch', sm: 'center' }}>
                                 <Button
@@ -354,7 +358,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                         '&:hover': { bgcolor: musicColors.amber },
                                     }}
                                 >
-                                    {hero.button_label || defaultHero.button_label}
+                                    {t(hero.button_label || defaultHero.button_label)}
                                 </Button>
                                 <Button
                                     component={Link}
@@ -369,14 +373,14 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                         '&:hover': { borderColor: musicColors.amber, bgcolor: alpha(musicColors.amber, 0.08) },
                                     }}
                                 >
-                                    Browse categories
+                                    {t('Browse categories')}
                                 </Button>
                             </Stack>
                             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 3 }}>
                                 {['Guitars', 'Keys', 'Drums', 'Audio'].map((label) => (
                                     <Chip
                                         key={label}
-                                        label={label}
+                                        label={t(label)}
                                         size="small"
                                         sx={{
                                             color: 'white',
@@ -423,7 +427,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                 endIcon={<ArrowForward />}
                                 sx={{ color: musicColors.rosin, fontWeight: 900 }}
                             >
-                                View all
+                                {t('View all')}
                             </Button>
                         )}
                     />
@@ -507,7 +511,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                     </Typography>
                                     {sale.ends_at && (
                                         <Chip
-                                            label={`Ends ${new Date(sale.ends_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
+                                            label={`${t('Ends')} ${new Date(sale.ends_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
                                             color="primary"
                                             size="small"
                                             sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }}
@@ -515,7 +519,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                     )}
                                 </Stack>
                                 <Button component={Link} href={routeWithBase('/products?flash_sale=1', app_base)} size="small" endIcon={<ArrowForward />} sx={{ color: musicColors.rosin, fontWeight: 900 }}>
-                                    More deals
+                                    {t('More deals')}
                                 </Button>
                             </Stack>
                             <Box sx={{ ...productListGridSx }}>
@@ -556,9 +560,9 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                     <Box component="img" src={promo.image_url} alt="" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.24 }} />
                                 ) : null}
                                 <Box sx={{ position: 'relative', zIndex: 1 }}>
-                                    <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>Curated set</Typography>
-                                    <Typography variant="h6" sx={{ fontWeight: 950, color: musicColors.ink, lineHeight: 1.1 }}>{promo.title}</Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 650, mt: 0.75, maxWidth: 350 }}>{promo.subtitle}</Typography>
+                                    <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>{t('Curated set')}</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 950, color: musicColors.ink, lineHeight: 1.1 }}>{t(promo.title)}</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 650, mt: 0.75, maxWidth: 350 }}>{t(promo.subtitle)}</Typography>
                                 </Box>
                                 <AutoAwesome sx={{ position: 'relative', zIndex: 1, fontSize: 34, color: musicColors.brass }} />
                             </Box>
@@ -603,7 +607,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                 endIcon={<ArrowForward />}
                                 sx={{ color: musicColors.rosin, fontWeight: 900 }}
                             >
-                                View all
+                                {t('View all')}
                             </Button>
                         )}
                     />
@@ -627,7 +631,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                 endIcon={<ArrowForward />}
                                 sx={{ color: musicColors.rosin, fontWeight: 900 }}
                             >
-                                Checkout
+                                {t('Checkout')}
                             </Button>
                         )}
                     />

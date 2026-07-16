@@ -9,13 +9,13 @@ use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class CategoryController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Admin/Categories/Index', [
+        return Spa::render('Admin/Categories/Index', [
             'categories' => Category::with('parent')->latest()->paginate(15)->withQueryString(),
             'parentCategories' => Category::whereNull('parent_id')->where('is_active', true)->get()
         ]);

@@ -14,7 +14,7 @@ html {
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Poppins', 'Noto Sans Myanmar', 'Roboto', sans-serif;
   width: 100%;
   min-width: 0;
   overflow-x: hidden;
@@ -48,6 +48,109 @@ canvas {
 
 .MuiButton-root {
   min-width: 0;
+}
+
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 3px 5px 3px 7px;
+  border: 1px solid rgb(15 23 42 / 12%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 8px 22px rgb(15 23 42 / 8%);
+  font-family: 'Poppins', 'Noto Sans Myanmar', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.language-switcher-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgb(244 194 103 / 18%);
+  color: #8a5a12;
+  font-size: 15px;
+}
+
+.language-switcher-label {
+  white-space: nowrap;
+}
+
+.language-switcher select {
+  max-width: 110px;
+  min-height: 26px;
+  padding: 3px 24px 3px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #1f1714;
+  font: inherit;
+  cursor: pointer;
+}
+
+.language-switcher select:focus {
+  outline: 2px solid rgb(244 194 103 / 40%);
+  outline-offset: 2px;
+}
+
+.language-switcher select option {
+  color: #1f1714;
+  background: #fff;
+}
+
+.storefront-language-switcher {
+  color: #f4c267;
+  border-color: rgb(244 194 103 / 30%);
+  background: rgb(255 255 255 / 10%);
+  box-shadow: none;
+}
+
+.storefront-language-switcher .language-switcher-icon {
+  background: rgb(244 194 103 / 20%);
+  color: #f4c267;
+}
+
+.storefront-language-switcher select {
+  color: #f4c267;
+}
+
+.pos-language-switcher {
+  min-height: 30px;
+  border-color: rgb(15 23 42 / 12%);
+  background: rgb(255 255 255 / 92%);
+  box-shadow: none;
+}
+
+.pos-language-switcher .language-switcher-icon {
+  background: rgb(8 127 116 / 12%);
+  color: #087f74;
+}
+
+.pos-language-switcher select {
+  max-width: 86px;
+  color: #1f2937;
+}
+
+@media (max-width: 420px) {
+  .storefront-language-switcher {
+    padding-inline: 4px;
+  }
+
+  .storefront-language-switcher .language-switcher-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 14px;
+  }
+
+  .storefront-language-switcher select {
+    max-width: 70px;
+  }
 }
 
 .MuiDialog-paper {

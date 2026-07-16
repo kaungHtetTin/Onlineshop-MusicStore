@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { router } from '@inertiajs/react';
+import { router } from '@/spa/router';
 
 const normalizeIds = (ids = []) => [...new Set(ids.map((id) => Number(id)).filter(Boolean))];
 

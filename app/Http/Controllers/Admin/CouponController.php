@@ -7,7 +7,7 @@ use App\Models\Coupon;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class CouponController extends Controller
 {
@@ -23,7 +23,7 @@ class CouponController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
-        return Inertia::render('Admin/Coupons/Index', [
+        return Spa::render('Admin/Coupons/Index', [
             'coupons' => $query->paginate(15)->withQueryString(),
             'filters' => [
                 'q' => $request->string('q')->toString(),

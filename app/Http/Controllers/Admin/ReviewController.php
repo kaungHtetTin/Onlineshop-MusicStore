@@ -7,7 +7,7 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class ReviewController extends Controller
 {
@@ -28,7 +28,7 @@ class ReviewController extends Controller
             });
         }
 
-        return Inertia::render('Admin/Reviews/Index', [
+        return Spa::render('Admin/Reviews/Index', [
             'reviews' => $query->latest()->paginate(15)->withQueryString(),
             'filters' => [
                 'q' => $request->string('q')->toString(),

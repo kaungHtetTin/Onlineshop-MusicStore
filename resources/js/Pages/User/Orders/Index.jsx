@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@/spa/router';
 import { Box, Button, Chip, Container, Pagination, Paper, Stack, Typography } from '@mui/material';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
@@ -7,6 +7,7 @@ import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/Mobile
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const statusColor = {
     pending: 'warning',
@@ -30,6 +31,7 @@ const paymentLabels = {
 
 export default function OrdersIndex({ orders }) {
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
     const handlePageChange = (_event, page) => {
         router.get(routeWithBase('/orders', app_base), { page }, { preserveScroll: false, preserveState: true });
     };
@@ -41,20 +43,20 @@ export default function OrdersIndex({ orders }) {
 
             <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
                 <BackLink href={routeWithBase('/products', app_base)}>
-                    Back to shop
+                    {t('Back to shop')}
                 </BackLink>
 
                 <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
-                    My orders
+                    {t('My orders')}
                 </Typography>
 
                 {orders.data.length === 0 ? (
                     <Paper elevation={0} sx={{ p: 4, borderRadius: 2, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
                         <Typography color="text.secondary" sx={{ mb: 2 }}>
-                            You have not placed any orders yet.
+                            {t('You have not placed any orders yet.')}
                         </Typography>
                         <Button variant="contained" component={Link} href={routeWithBase('/products', app_base)}>
-                            Start shopping
+                            {t('Start shopping')}
                         </Button>
                     </Paper>
                 ) : (
@@ -86,10 +88,10 @@ export default function OrdersIndex({ orders }) {
                                         </Typography>
                                     </Box>
                                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                                        <Chip size="small" label={order.status} color={statusColor[order.status] || 'default'} variant="outlined" />
+                                        <Chip size="small" label={t(order.status)} color={statusColor[order.status] || 'default'} variant="outlined" />
                                         <Chip
                                             size="small"
-                                            label={paymentLabels[order.payment_status] || order.payment_status}
+                                            label={t(paymentLabels[order.payment_status] || order.payment_status)}
                                             color={paymentStatusColor[order.payment_status] || 'default'}
                                             variant="outlined"
                                         />
@@ -112,7 +114,7 @@ export default function OrdersIndex({ orders }) {
                             color="primary"
                         />
                         <Typography variant="caption" sx={{ alignSelf: 'center' }}>
-                            Page {orders.current_page} of {orders.last_page}
+                            {t('Page')} {orders.current_page} {t('of')} {orders.last_page}
                         </Typography>
                     </Stack>
                 )}

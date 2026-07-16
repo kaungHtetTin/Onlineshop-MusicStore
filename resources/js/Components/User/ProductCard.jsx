@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { Card, CardMedia, CardContent, Typography, Box, IconButton, Rating, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, Box, IconButton, Rating, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox } from '@mui/material';
 import { FavoriteBorder, Favorite, AddShoppingCart, Add, Remove } from '@mui/icons-material';
-import { usePage, Link } from '@inertiajs/react';
+import { usePage, Link } from '@/spa/router';
 import { storageUrl, routeWithBase } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
 import { useWishlistStore } from '@/stores/wishlistStore';
@@ -9,6 +9,7 @@ import { pickDefaultSkuForProduct } from '@/Utils/pickDefaultSku';
 import { formatMoney, hasFlashSale, skuOriginalPrice, skuPrice } from '@/Utils/pricing';
 import { useTheme } from '@mui/material/styles';
 import { getMusicStoreColors } from '@/Components/User/musicStoreDesign';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const formatSkuLabel = (sku) => {
     const attrs = sku?.attributes || {};
@@ -30,14 +31,15 @@ const ProductCard = ({ product }) => {
     const musicColors = getMusicStoreColors(theme);
     const ORDER_QTY_MAX = 999;
     const { app_url, app_base } = usePage().props;
+    const t = usePhraseTranslation();
     const addToCart = useCartStore((s) => s.addItem);
     const wishToggle = useWishlistStore((s) => s.toggle);
     const inWishlist = useWishlistStore((s) => s.items.some((i) => i.productId === product.id));
 
     const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
     const [variantDialogOpen, setVariantDialogOpen] = useState(false);
-    const [selectedSkuId, setSelectedSkuId] = useState(null);
-    const [quantity, setQuantity] = useState(1);
+    const [selectedSkuIds, setSelectedSkuIds] = useState([]);
+    const [skuQuantities, setSkuQuantities] = useState({});
     const purchasableSkus = useMemo(
         () => (product.skus || []).filter((s) => s.is_active !== false && Number(s.available_qty ?? 0) > 0),
         [product.skus]
@@ -58,12 +60,6 @@ const ProductCard = ({ product }) => {
 
     const defaultSku = useMemo(() => pickDefaultSkuForProduct(product), [product]);
     const canAddCart = Boolean(defaultSku);
-    const selectedSku = useMemo(
-        () => purchasableSkus.find((s) => s.id === selectedSkuId) || defaultSku || null,
-        [purchasableSkus, selectedSkuId, defaultSku]
-    );
-    const selectedSkuQtyLimit = Math.min(ORDER_QTY_MAX, Math.max(1, Number(selectedSku?.available_qty ?? 1)));
-
     const wishlistPayload = useMemo(
         () => ({
             productId: product.id,
@@ -87,9 +83,9 @@ const ProductCard = ({ product }) => {
             e.preventDefault();
             e.stopPropagation();
             const added = wishToggle(wishlistPayload);
-            showToast(added ? 'Saved to wishlist' : 'Removed from wishlist', 'success');
+            showToast(t(added ? 'Saved to wishlist' : 'Removed from wishlist'), 'success');
         },
-        [wishToggle, wishlistPayload, showToast]
+        [wishToggle, wishlistPayload, showToast, t]
     );
 
     const handleAddToCart = useCallback(
@@ -97,44 +93,77 @@ const ProductCard = ({ product }) => {
             e.preventDefault();
             e.stopPropagation();
             if (!defaultSku || !canAddCart) {
-                showToast('No purchasable SKU found for this product.', 'warning');
+                showToast(t('No purchasable SKU found for this product.'), 'warning');
                 return;
             }
-            setSelectedSkuId(defaultSku.id);
-            setQuantity(1);
+            setSelectedSkuIds([defaultSku.id]);
+            setSkuQuantities({ [defaultSku.id]: 1 });
             setVariantDialogOpen(true);
         },
-        [defaultSku, canAddCart, showToast]
+        [defaultSku, canAddCart, showToast, t]
+    );
+
+    const skuQtyLimit = useCallback((sku) => Math.min(ORDER_QTY_MAX, Math.max(1, Number(sku?.available_qty ?? 1))), []);
+
+    const clampSkuQuantity = useCallback((sku, value) => {
+        const numericValue = Number(value);
+        const nextValue = Number.isFinite(numericValue) ? numericValue : 1;
+        return Math.max(1, Math.min(skuQtyLimit(sku), Math.floor(nextValue)));
+    }, [skuQtyLimit]);
+
+    const getSkuQuantity = useCallback((sku) => clampSkuQuantity(sku, skuQuantities[sku.id] ?? 1), [clampSkuQuantity, skuQuantities]);
+
+    const toggleSkuSelection = useCallback((sku) => {
+        setSelectedSkuIds((current) => (
+            current.includes(sku.id)
+                ? current.filter((id) => id !== sku.id)
+                : [...current, sku.id]
+        ));
+        setSkuQuantities((current) => ({ ...current, [sku.id]: clampSkuQuantity(sku, current[sku.id] ?? 1) }));
+    }, [clampSkuQuantity]);
+
+    const changeSkuQuantity = useCallback((sku, value) => {
+        setSkuQuantities((current) => ({ ...current, [sku.id]: clampSkuQuantity(sku, value) }));
+        setSelectedSkuIds((current) => (current.includes(sku.id) ? current : [...current, sku.id]));
+    }, [clampSkuQuantity]);
+
+    const selectedCartSkus = useMemo(
+        () => purchasableSkus.filter((sku) => selectedSkuIds.includes(sku.id)),
+        [purchasableSkus, selectedSkuIds]
     );
 
     const handleConfirmAddToCart = useCallback(() => {
-            if (!selectedSku) {
-                showToast('Please select an option first.', 'warning');
+            if (selectedCartSkus.length === 0) {
+                showToast(t('Please select at least one option.'), 'warning');
                 return;
             }
-            const skuLabel = formatSkuLabel(selectedSku);
-            const imagePath = selectedSku?.image?.image_path || product.primary_image?.image_path || null;
-            const addQty = Math.min(quantity, Number(selectedSku.available_qty ?? 1));
 
-            addToCart({
-                skuId: selectedSku.id,
-                productId: product.id,
-                name: product.name,
-                skuLabel,
-                skuCode: selectedSku.sku_code || null,
-                variantAttributes: selectedSku.attributes || {},
-                price: skuPrice(selectedSku),
-                originalPrice: skuOriginalPrice(selectedSku),
-                flashSale: selectedSku.flash_sale || null,
-                imagePath,
-                maxQty: Number(selectedSku.available_qty ?? 0),
-                isPreorder: false,
-                qty: addQty,
+            selectedCartSkus.forEach((sku) => {
+                const skuLabel = formatSkuLabel(sku);
+                const imagePath = sku?.image?.image_path || product.primary_image?.image_path || null;
+                const addQty = getSkuQuantity(sku);
+
+                addToCart({
+                    skuId: sku.id,
+                    productId: product.id,
+                    name: product.name,
+                    skuLabel,
+                    skuCode: sku.sku_code || null,
+                    variantAttributes: sku.attributes || {},
+                    price: skuPrice(sku),
+                    originalPrice: skuOriginalPrice(sku),
+                    flashSale: sku.flash_sale || null,
+                    imagePath,
+                    maxQty: Number(sku.available_qty ?? 0),
+                    isPreorder: false,
+                    qty: addQty,
+                });
             });
+
             setVariantDialogOpen(false);
-            showToast('Added to cart', 'success');
+            showToast(t('Added to cart'), 'success');
         },
-        [selectedSku, product, addToCart, showToast, quantity]
+        [selectedCartSkus, product, addToCart, showToast, getSkuQuantity, t]
     );
 
     return (
@@ -200,7 +229,7 @@ const ProductCard = ({ product }) => {
                     }}
                     size="small"
                     onClick={handleWishlist}
-                    aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                    aria-label={t(inWishlist ? 'Remove from wishlist' : 'Add to wishlist')}
                 >
                     {inWishlist ? (
                         <Favorite sx={{ fontSize: '1rem' }} color="primary" />
@@ -222,14 +251,14 @@ const ProductCard = ({ product }) => {
                     size="small"
                     onClick={handleAddToCart}
                     disabled={!defaultSku || !canAddCart}
-                    aria-label="Add to cart"
+                    aria-label={t('Add to cart')}
                 >
                     <AddShoppingCart sx={{ fontSize: '1rem' }} color="primary" />
                 </IconButton>
             </Box>
             <CardContent sx={{ flexGrow: 1, p: '10px !important' }}>
                 <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: 900, color: musicColors.rosin, textTransform: 'uppercase', letterSpacing: 0 }}>
-                    {product.category?.name || 'Uncategorized'}
+                    {product.category?.name || t('Uncategorized')}
                 </Typography>
                 <Typography
                     variant="body2"
@@ -267,7 +296,7 @@ const ProductCard = ({ product }) => {
                                 variant="caption"
                                 sx={{ color: 'error.main', fontWeight: 800, display: 'block', lineHeight: 1.1 }}
                             >
-                                Flash Sale
+                                {t('Flash Sale')}
                             </Typography>
                         )}
                         <Stack direction="row" spacing={0.75} alignItems="baseline" useFlexGap flexWrap="wrap">
@@ -306,86 +335,138 @@ const ProductCard = ({ product }) => {
             </Snackbar>
 
             <Dialog open={variantDialogOpen} onClose={() => setVariantDialogOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle sx={{ pb: 1, fontWeight: 800 }}>Select option</DialogTitle>
+                <DialogTitle sx={{ pb: 1, fontWeight: 800 }}>{t('Select option')}</DialogTitle>
                 <DialogContent>
                     <Stack spacing={1}>
                         {purchasableSkus.map((sku) => {
-                            const isSelected = selectedSku?.id === sku.id;
+                            const isSelected = selectedSkuIds.includes(sku.id);
                             const skuImageUrl = getSkuImageUrl(sku, imageUrl, app_url);
+                            const quantity = getSkuQuantity(sku);
                             return (
-                                <Button
+                                <Box
                                     key={sku.id}
-                                    variant={isSelected ? 'contained' : 'outlined'}
-                                    onClick={() => {
-                                        setSelectedSkuId(sku.id);
-                                        setQuantity(1);
+                                    sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: '34px minmax(0, 1fr) auto', sm: 'auto minmax(0, 1fr) auto' },
+                                        gap: { xs: 0.75, sm: 1 },
+                                        alignItems: 'center',
+                                        p: { xs: 0.75, sm: 1 },
+                                        border: '1px solid',
+                                        borderColor: isSelected ? 'primary.main' : 'divider',
+                                        borderRadius: 1,
+                                        bgcolor: isSelected ? 'primary.main' : 'background.paper',
+                                        color: isSelected ? 'primary.contrastText' : 'text.primary',
+                                        transition: 'border-color 0.15s, background 0.15s',
                                     }}
-                                    sx={{ justifyContent: 'space-between', textTransform: 'none', py: 1.2, px: 1.5 }}
                                 >
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                    <Checkbox
+                                        checked={isSelected}
+                                        onChange={() => toggleSkuSelection(sku)}
+                                        inputProps={{ 'aria-label': `${t('Select option')} ${formatSkuLabel(sku)}` }}
+                                        sx={{
+                                            color: isSelected ? 'primary.contrastText' : 'text.secondary',
+                                            '&.Mui-checked': { color: isSelected ? 'primary.contrastText' : 'primary.main' },
+                                        }}
+                                    />
+                                    <Box
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => toggleSkuSelection(sku)}
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter' || event.key === ' ') {
+                                                event.preventDefault();
+                                                toggleSkuSelection(sku);
+                                            }
+                                        }}
+                                        sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 1.25 }, minWidth: 0, cursor: 'pointer' }}
+                                    >
                                         <Box
                                             component="img"
                                             src={skuImageUrl}
                                             alt={formatSkuLabel(sku)}
-                                            sx={{ width: 44, aspectRatio: '3 / 4', objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+                                            sx={{ display: { xs: 'none', sm: 'block' }, width: 44, aspectRatio: '3 / 4', objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
                                         />
-                                        <Box sx={{ textAlign: 'left' }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                        <Box sx={{ minWidth: 0, textAlign: 'left' }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 800, lineHeight: 1.18, fontSize: { xs: '0.86rem', sm: '0.875rem' } }} noWrap title={formatSkuLabel(sku)}>
                                                 {formatSkuLabel(sku)}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                In stock ({sku.available_qty})
-                                            </Typography>
+                                            <Stack direction="row" spacing={0.75} alignItems="baseline" useFlexGap flexWrap="wrap" sx={{ mt: 0.25 }}>
+                                                <Typography variant="caption" sx={{ color: isSelected ? 'rgba(255,255,255,0.82)' : 'text.secondary', lineHeight: 1.1 }}>
+                                                    {t('In stock')} ({sku.available_qty})
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ fontWeight: 900, lineHeight: 1.1 }}>
+                                                    {formatMoney(skuPrice(sku))}
+                                                </Typography>
+                                                {hasFlashSale(sku) && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        sx={{ textDecoration: 'line-through', color: isSelected ? 'rgba(255,255,255,0.72)' : 'text.secondary' }}
+                                                    >
+                                                        {formatMoney(skuOriginalPrice(sku))}
+                                                    </Typography>
+                                                )}
+                                            </Stack>
                                         </Box>
                                     </Box>
-                                    <Box sx={{ textAlign: 'right' }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                                            {formatMoney(skuPrice(sku))}
+                                    <Box
+                                        sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: { xs: '28px 30px 28px', sm: '32px 38px 32px' },
+                                            alignItems: 'center',
+                                            justifySelf: 'end',
+                                            border: '1px solid',
+                                            borderColor: isSelected ? 'rgba(255,255,255,0.5)' : 'divider',
+                                            borderRadius: 1,
+                                            bgcolor: 'background.paper',
+                                            color: 'text.primary',
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <IconButton
+                                            size="small"
+                                            aria-label={`${t('Decrease quantity for')} ${formatSkuLabel(sku)}`}
+                                            disabled={quantity <= 1}
+                                            onClick={() => changeSkuQuantity(sku, quantity - 1)}
+                                            sx={{ width: { xs: 28, sm: 32 }, height: { xs: 30, sm: 34 }, borderRadius: 0 }}
+                                        >
+                                            <Remove fontSize="small" />
+                                        </IconButton>
+                                        <Typography
+                                            aria-label={`${t('Qty')} ${formatSkuLabel(sku)}`}
+                                            sx={{
+                                                height: { xs: 30, sm: 34 },
+                                                lineHeight: { xs: '30px', sm: '34px' },
+                                                textAlign: 'center',
+                                                fontWeight: 900,
+                                                borderLeft: '1px solid',
+                                                borderRight: '1px solid',
+                                                borderColor: 'divider',
+                                                fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                                            }}
+                                        >
+                                            {quantity}
                                         </Typography>
-                                        {hasFlashSale(sku) && (
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                                sx={{ textDecoration: 'line-through', display: 'block' }}
-                                            >
-                                                {formatMoney(skuOriginalPrice(sku))}
-                                            </Typography>
-                                        )}
+                                        <IconButton
+                                            size="small"
+                                            aria-label={`${t('Increase quantity for')} ${formatSkuLabel(sku)}`}
+                                            disabled={quantity >= skuQtyLimit(sku)}
+                                            onClick={() => changeSkuQuantity(sku, quantity + 1)}
+                                            sx={{ width: { xs: 28, sm: 32 }, height: { xs: 30, sm: 34 }, borderRadius: 0 }}
+                                        >
+                                            <Add fontSize="small" />
+                                        </IconButton>
                                     </Box>
-                                </Button>
+                                </Box>
                             );
                         })}
-                    </Stack>
-
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ minWidth: 56 }}>
-                            Qty
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                            <IconButton size="small" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
-                                <Remove fontSize="small" />
-                            </IconButton>
-                            <Typography sx={{ px: 1.5, fontWeight: 700 }}>{quantity}</Typography>
-                            <IconButton
-                                size="small"
-                                onClick={() =>
-                                    setQuantity((q) =>
-                                        Math.min(ORDER_QTY_MAX, q + 1)
-                                    )
-                                }
-                                disabled={quantity >= selectedSkuQtyLimit}
-                            >
-                                <Add fontSize="small" />
-                            </IconButton>
-                        </Box>
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2 }}>
                     <Button onClick={() => setVariantDialogOpen(false)} color="inherit">
-                        Cancel
+                        {t('Cancel')}
                     </Button>
-                    <Button variant="contained" onClick={handleConfirmAddToCart} disabled={!selectedSku}>
-                        Add to cart
+                    <Button variant="contained" onClick={handleConfirmAddToCart} disabled={selectedCartSkus.length === 0}>
+                        {t('Add to cart')}
                     </Button>
                 </DialogActions>
             </Dialog>

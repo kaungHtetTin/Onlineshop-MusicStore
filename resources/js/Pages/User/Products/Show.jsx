@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { usePage, Link, useForm, router } from '@inertiajs/react';
+import { usePage, Link, useForm, router } from '@/spa/router';
 import { 
     Box, Container, Typography, Stack, 
     Button, Chip, Rating, Divider, IconButton,
@@ -35,6 +35,7 @@ import {
     sectionShellSxForTheme,
     storefrontBackgroundSx,
 } from '@/Components/User/musicStoreDesign';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBoughtTogether = [], reviews = { data: [] } }) => {
     const theme = useTheme();
@@ -42,6 +43,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     const sectionShellSx = sectionShellSxForTheme(theme);
     const ORDER_QTY_MAX = 999;
     const { app_url, app_base, auth } = usePage().props;
+    const t = usePhraseTranslation();
     const [selectedSku, setSelectedSku] = useState(product.skus[0] || null);
     const [quantity, setQuantity] = useState(1);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -126,7 +128,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
 
             <Container maxWidth="xl" sx={{ mt: { xs: 2, md: 4 }, px: { lg: 6 } }}>
                 <BackLink href={routeWithBase('/products', app_base)}>
-                    Back to Shop
+                    {t('Back to Shop')}
                 </BackLink>
 
                 <Box sx={{ 
@@ -166,7 +168,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                     <Stack spacing={3.5} sx={{ minWidth: 0 }}>
                         <Box>
                             <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 1.5 }}>
-                                {product.category?.name || 'Uncategorized'}
+                                {product.category?.name || t('Uncategorized')}
                             </Typography>
                             <Typography variant="h3" sx={{ fontWeight: 950, mb: 2, lineHeight: 1.08, color: musicColors.ink }}>
                                 {product.name}
@@ -174,7 +176,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             <Stack direction="row" spacing={1.5} alignItems="center">
                                 <Rating value={parseFloat(product.rating || 0)} readOnly size="small" precision={0.5} />
                                 <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: 0.5 }}>
-                                    ({product.review_count || 0} reviews)
+                                    ({product.review_count || 0} {t('reviews')})
                                 </Typography>
                             </Stack>
                         </Box>
@@ -185,17 +187,17 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             </Typography>
                             {hasFlashSale(selectedSku) && (
                                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                                    <Chip label="Flash Sale" color="error" size="small" sx={{ fontWeight: 800 }} />
+                                    <Chip label={t('Flash Sale')} color="error" size="small" sx={{ fontWeight: 800 }} />
                                     <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
                                         {formatMoney(skuOriginalPrice(selectedSku))}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                        Ends {new Date(selectedSku.flash_sale.ends_at).toLocaleString()}
+                                        {t('Ends')} {new Date(selectedSku.flash_sale.ends_at).toLocaleString()}
                                     </Typography>
                                 </Stack>
                             )}
                             <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>
-                                In Stock ({selectedSku?.available_qty ?? 0} available)
+                                {t('In Stock')} ({selectedSku?.available_qty ?? 0} {t('available')})
                             </Typography>
                         </Box>
 
@@ -234,7 +236,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                         {/* Variants Selection */}
                         {product.skus.length > 1 && (
                             <Box sx={{ py: 1 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 2 }}>Choose finish / variant</Typography>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 2 }}>{t('Choose finish / variant')}</Typography>
                                 <ToggleButtonGroup
                                     value={selectedSku?.id}
                                     exclusive
@@ -310,7 +312,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                     whiteSpace: 'nowrap',
                                 }}
                             >
-                                Add to Cart
+                                {t('Add to Cart')}
                             </Button>
                             <IconButton
                                 sx={{
@@ -328,17 +330,17 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                         </Stack>
 
                         <Box sx={{ ...sectionShellSx, p: { xs: 2.5, md: 4 }, mt: 4 }}>
-                            <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>Details</Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>Product description</Typography>
+                            <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>{t('Details')}</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>{t('Product description')}</Typography>
                             <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, opacity: 0.9 }}>
-                                {product.description || 'No description available.'}
+                                {product.description || t('No description available.')}
                             </Typography>
                         </Box>
 
                         <Stack direction="row" spacing={3}>
                             <Stack direction="row" spacing={1} alignItems="center" sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}>
                                 <Share fontSize="small" />
-                                <Typography variant="caption" sx={{ fontWeight: 600 }}>Share</Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 600 }}>{t('Share')}</Typography>
                             </Stack>
                         </Stack>
                     </Stack>
@@ -346,16 +348,16 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
 
                 <Box sx={{ mt: 8 }}>
                     <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
-                        Feedback
+                        {t('Feedback')}
                     </Typography>
                     <Typography variant="h5" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>
-                        Ratings & Reviews
+                        {t('Ratings & Reviews')}
                     </Typography>
                     <Stack spacing={2}>
                         {auth?.user ? (
                             <Box component="form" onSubmit={submitReview} sx={{ ...sectionShellSx, p: 2 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                                    Rate this product
+                                    {t('Rate this product')}
                                 </Typography>
                                 <Stack
                                     direction={{ xs: 'column', sm: 'row' }}
@@ -386,14 +388,14 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                         }}
                                     />
                                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
-                                        Your rating: {Number(data.rating) || 1} / 5
+                                        {t('Your rating')}: {Number(data.rating) || 1} / 5
                                     </Typography>
                                 </Stack>
                                 <TextField
                                     fullWidth
                                     multiline
                                     minRows={2}
-                                    label="Comment (optional)"
+                                    label={t('Comment (optional)')}
                                     value={data.comment}
                                     onChange={(e) => setData('comment', e.target.value)}
                                     error={Boolean(errors.comment)}
@@ -405,12 +407,12 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                     </Typography>
                                 )}
                                 <Button type="submit" variant="contained" sx={{ mt: 1.5 }} disabled={processing}>
-                                    {processing ? 'Saving...' : 'Submit rating'}
+                                    {t(processing ? 'Saving...' : 'Submit rating')}
                                 </Button>
                             </Box>
                         ) : (
                             <Alert severity="info" variant="outlined">
-                                <Link href={routeWithBase('/login', app_base)}>Log in</Link> to leave a rating.
+                                <Link href={routeWithBase('/login', app_base)}>{t('Log in')}</Link> {t('to leave a rating.')}
                             </Alert>
                         )}
 
@@ -420,7 +422,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                     <Box key={r.id} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                                             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                                {r.user?.name || 'Customer'}
+                                                {r.user?.name || t('Customer')}
                                             </Typography>
                                             <Rating readOnly size="small" value={Number(r.rating)} />
                                         </Stack>
@@ -445,7 +447,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             </>
                         ) : (
                             <Typography variant="body2" color="text.secondary">
-                                No reviews yet. Be the first to rate this product.
+                                {t('No reviews yet. Be the first to rate this product.')}
                             </Typography>
                         )}
                     </Stack>
@@ -454,7 +456,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                 {/* Recommendations */}
                 {frequentlyBoughtTogether.length > 0 && (
                     <Box sx={{ mt: 10, mb: 4 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>Frequently Bought Together</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>{t('Frequently Bought Together')}</Typography>
                         <Box sx={{
                             ...productListGridSx,
                         }}>
@@ -467,7 +469,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
 
                 {recommendedProducts.length > 0 && (
                     <Box sx={{ mt: 10, mb: 4 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>Recommended for you</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>{t('Recommended for you')}</Typography>
                         <Box sx={{ 
                             ...productListGridSx,
                         }}>
@@ -481,7 +483,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                 {/* Related Products */}
                 {relatedProducts.length > 0 && (
                     <Box sx={{ mt: 6, mb: 4 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>You May Also Like</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>{t('You May Also Like')}</Typography>
                         <Box sx={{ 
                             ...productListGridSx,
                         }}>
@@ -505,7 +507,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                 sx={{ bottom: { xs: 72, sm: 24 } }}
             >
                 <Alert severity="success" variant="filled" onClose={() => setCartToast(false)} sx={{ width: '100%' }}>
-                    Added to your cart
+                    {t('Added to your cart')}
                 </Alert>
             </Snackbar>
         </Box>

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class BlogController extends Controller
 {
@@ -39,7 +39,7 @@ class BlogController extends Controller
             $query->whereHas('category', fn ($q) => $q->where('slug', $request->category));
         }
 
-        return Inertia::render('Admin/Blogs/Index', [
+        return Spa::render('Admin/Blogs/Index', [
             'posts' => $query->paginate(12)->withQueryString(),
             'filters' => [
                 'q' => $request->string('q')->toString(),
@@ -53,14 +53,14 @@ class BlogController extends Controller
 
     public function create()
     {
-        return Inertia::render('Admin/Blogs/Create', $this->formOptions());
+        return Spa::render('Admin/Blogs/Create', $this->formOptions());
     }
 
     public function edit(BlogPost $blog)
     {
         $blog->load(['category', 'tags', 'author:id,name']);
 
-        return Inertia::render('Admin/Blogs/Edit', array_merge($this->formOptions(), [
+        return Spa::render('Admin/Blogs/Edit', array_merge($this->formOptions(), [
             'post' => $blog,
         ]));
     }

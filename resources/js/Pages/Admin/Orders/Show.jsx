@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { fulfillmentSteps, orderStatusLabels, paymentLabels } from '@/constants/orderLabels';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const stepLabels = {
     pending: 'Order placed',
@@ -22,6 +23,7 @@ function activeStepIndex(status, paymentStatus) {
 }
 
 export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments, canManageOrders, canCancelOrders }) {
+    const t = usePhraseTranslation();
     const { app_base, app_url, flash } = usePage().props;
     const [rejectOpen, setRejectOpen] = useState(false);
     const [cancelOpen, setCancelOpen] = useState(false);
@@ -61,8 +63,8 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
     const handleConfirm = () => {
         const message = approvalDiscountAmount > 0
-            ? `Confirm payment and apply $${approvalDiscountAmount.toFixed(2)} discount? Stock will be deducted and fulfillment begins.`
-            : 'Confirm payment? Stock will be deducted and fulfillment begins.';
+            ? t('Confirm payment and apply :amount discount? Stock will be deducted and fulfillment begins.', { amount: `$${approvalDiscountAmount.toFixed(2)}` })
+            : t('Confirm payment? Stock will be deducted and fulfillment begins.');
         if (!confirm(message)) return;
         confirmForm.post(routeWithBase(`/admin/orders/${order.id}/confirm-payment`, app_base), { preserveScroll: true });
     };
@@ -111,19 +113,19 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
             if (!navigator.clipboard) throw new Error('Clipboard unavailable');
             await navigator.clipboard.writeText(voucherLinks.public);
         } catch (error) {
-            window.prompt('Public invoice link', voucherLinks.public);
+            window.prompt(t('Public invoice link'), voucherLinks.public);
         }
         setLinkCopied(true);
         window.setTimeout(() => setLinkCopied(false), 1800);
     };
 
     return (
-        <AdminLayout title={order.order_number} eyebrow="Order detail">
-            <Head title={`Order ${order.order_number}`} />
+        <AdminLayout title={order.order_number} eyebrow={t('Order detail')}>
+            <Head title={t('Order :value', { value: order.order_number })} />
 
             <Link href={routeWithBase('/admin/orders', app_base)} className="back-link">
                 <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} />
-                Back to orders
+                {t('Back to orders')}
             </Link>
 
             <AdminFlash
@@ -137,25 +139,25 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
             <section className="panel glass" style={{ marginBottom: 14 }}>
                 <div className="stack-row" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
                     <div>
-                        <p className="eyebrow">Order</p>
+                        <p className="eyebrow">{t('Order')}</p>
                         <h2 style={{ fontSize: 18, fontWeight: 800 }}>{order.order_number}</h2>
                         <small>
-                            Placed {order.created_at}
-                            {order.status_updated_at ? ` · Updated ${order.status_updated_at}` : ''}
+                            {t('Placed')} {order.created_at}
+                            {order.status_updated_at ? ` - ${t('Updated')} ${order.status_updated_at}` : ''}
                         </small>
                     </div>
                     <div style={{ display: 'grid', gap: 8, justifyItems: 'end' }}>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                            <StatusBadge status={order.status} label={orderStatusLabels[order.status] || order.status} />
+                            <StatusBadge status={order.status} label={t(orderStatusLabels[order.status] || order.status)} />
                             <StatusBadge
                                 status={order.payment_status}
-                                label={paymentLabels[order.payment_status] || order.payment_status}
+                                label={t(paymentLabels[order.payment_status] || order.payment_status)}
                             />
                         </div>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                             <a href={voucherLinks.print} target="_blank" rel="noopener noreferrer" className="btn secondary" style={{ minHeight: 32, fontSize: 11 }}>
                                 <Icon name="receipt" size={13} />
-                                Print voucher
+                                {t('Print voucher')}
                             </a>
                             <a href={voucherLinks.pdf} className="btn primary" style={{ minHeight: 32, fontSize: 11 }}>
                                 <Icon name="external" size={13} />
@@ -163,7 +165,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                             </a>
                             <button type="button" className="btn secondary" style={{ minHeight: 32, fontSize: 11 }} onClick={copyPublicLink}>
                                 <Icon name="external" size={13} />
-                                {linkCopied ? 'Copied' : 'Public link'}
+                                {linkCopied ? t('Copied') : t('Public link')}
                             </button>
                         </div>
                     </div>
@@ -176,8 +178,8 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                 key={s}
                                 className={`step ${idx < stepActive ? 'done' : ''} ${idx === stepActive ? 'active' : ''}`}
                             >
-                                <small>Step {idx + 1}</small>
-                                <strong>{stepLabels[s]}</strong>
+                                <small>{t('Step')} {idx + 1}</small>
+                                <strong>{t(stepLabels[s])}</strong>
                             </div>
                         ))}
                     </div>
@@ -185,7 +187,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
                 {isCancelled && (
                     <div className="flash warning" style={{ marginTop: 12, marginBottom: 0 }}>
-                        This order was cancelled.
+                        {t('This order was cancelled.')}
                         {order.payment_rejection_reason && ` ${order.payment_rejection_reason}`}
                     </div>
                 )}
@@ -195,8 +197,8 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                 <div className="stack-sm">
                     <section className="panel glass">
                         <PanelHeading
-                            eyebrow="Customer"
-                            title={order.user?.name || 'Guest'}
+                            eyebrow={t('Customer')}
+                            title={order.user?.name || t('Guest')}
                             action={
                                 order.user ? (
                                     <Link
@@ -205,22 +207,22 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                         style={{ minHeight: 32, fontSize: 11 }}
                                     >
                                         <Icon name="chat" size={13} />
-                                        Open chat
+                                        {t('Open chat')}
                                     </Link>
                                 ) : null
                             }
                         />
                         <p>
-                            {order.user?.phone || '—'} · {order.user?.email}
+                            {order.user?.phone || '-'} - {order.user?.email}
                         </p>
 
                         <div className="route" style={{ marginTop: 14 }}>
                             <span className="route-line" />
                             <div>
                                 <span className="route-marker pickup" />
-                                <small>Ship to</small>
+                                <small>{t('Ship to')}</small>
                                 <strong>
-                                    {order.receiver_name} · {order.receiver_phone}
+                                    {order.receiver_name} - {order.receiver_phone}
                                 </strong>
                                 <p style={{ marginTop: 4, whiteSpace: 'pre-wrap' }}>{order.shipping_address}</p>
                             </div>
@@ -228,32 +230,32 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
                         {order.order_notes && (
                             <div style={{ marginTop: 14 }}>
-                                <p className="eyebrow">Customer notes</p>
+                                <p className="eyebrow">{t('Customer notes')}</p>
                                 <p>{order.order_notes}</p>
                             </div>
                         )}
                     </section>
                     <section className="panel glass">
-                        <PanelHeading eyebrow="Items" title="Line items" />
+                        <PanelHeading eyebrow={t('Items')} title={t('Line items')} />
                         <div className="table-wrap">
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Product</th>
-                                        <th>SKU</th>
-                                        <th style={{ textAlign: 'right' }}>Qty</th>
-                                        <th style={{ textAlign: 'right' }}>Unit price</th>
-                                        <th style={{ textAlign: 'right' }}>Total</th>
+                                        <th>{t('Product')}</th>
+                                        <th>{t('SKU')}</th>
+                                        <th style={{ textAlign: 'right' }}>{t('Qty')}</th>
+                                        <th style={{ textAlign: 'right' }}>{t('Unit price')}</th>
+                                        <th style={{ textAlign: 'right' }}>{t('Total')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {order.items.map((item) => (
                                         <tr key={item.id}>
                                             <td>
-                                                <strong>{item.product?.name || 'Product'}</strong>
+                                                <strong>{item.product?.name || t('Product')}</strong>
                                                 {item.variants?.__preorder && (
                                                     <div style={{ marginTop: 4 }}>
-                                                        <StatusBadge status="warning" label="Pre-order" />
+                                                        <StatusBadge status="warning" label={t('Pre-order')} />
                                                     </div>
                                                 )}
                                             </td>
@@ -276,23 +278,23 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                         </div>
                         <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--color-border)' }}>
                             <div className="detail-row">
-                                <span>Subtotal</span>
+                                <span>{t('Subtotal')}</span>
                                 <strong>${Number(order.total_amount).toFixed(2)}</strong>
                             </div>
                             <div className="detail-row">
-                                <span>Tax</span>
+                                <span>{t('Tax')}</span>
                                 <strong>${Number(order.tax_amount ?? 0).toFixed(2)}</strong>
                             </div>
                             <div className="detail-row">
-                                <span>Shipping</span>
+                                <span>{t('Shipping')}</span>
                                 <strong>${Number(order.shipping_fee).toFixed(2)}</strong>
                             </div>
                             {checkoutDiscountAmount > 0 && (
                                 <div className="detail-row">
                                     <span>
-                                        Checkout discount
+                                        {t('Checkout discount')}
                                         {order.coupon_code ? ` (${order.coupon_code})` : ''}
-                                        {order.redeemed_points > 0 ? ` · ${order.redeemed_points} pts` : ''}
+                                        {order.redeemed_points > 0 ? ` - ${order.redeemed_points} ${t('pts')}` : ''}
                                     </span>
                                     <strong>-${checkoutDiscountAmount.toFixed(2)}</strong>
                                 </div>
@@ -300,7 +302,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                             {adminDiscountAmount > 0 && (
                                 <div className="detail-row">
                                     <span>
-                                        Approval discount
+                                        {t('Approval discount')}
                                         {order.admin_discount_type === 'percent'
                                             ? ` (${Number(order.admin_discount_value || 0).toFixed(2)}%)`
                                             : ''}
@@ -309,28 +311,28 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                 </div>
                             )}
                             <div className="detail-row">
-                                <span>Total</span>
+                                <span>{t('Total')}</span>
                                 <strong style={{ fontSize: 15 }}>${Number(order.final_amount).toFixed(2)}</strong>
                             </div>
                         </div>
                     </section>
 
                     <section className="panel glass">
-                        <PanelHeading eyebrow="Internal" title="Admin notes" />
+                        <PanelHeading eyebrow={t('Internal')} title={t('Admin notes')} />
                         <form onSubmit={saveNotes}>
                             <label className="form-field">
-                                <span>Private staff notes</span>
+                                <span>{t('Private staff notes')}</span>
                                 <textarea
                                     value={notesForm.data.admin_notes}
                                     onChange={(e) => notesForm.setData('admin_notes', e.target.value)}
-                                    placeholder="Not visible to customer"
+                                    placeholder={t('Not visible to customer')}
                                     disabled={!canManageOrders}
                                 />
                             </label>
                             {canManageOrders && (
                                 <button type="submit" className="btn secondary" disabled={notesForm.processing} style={{ marginTop: 10 }}>
                                     <Icon name="check" size={13} />
-                                    Save notes
+                                    {t('Save notes')}
                                 </button>
                             )}
                         </form>
@@ -339,7 +341,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
                 <div className="side-stack">
                     <section className="panel glass">
-                        <PanelHeading eyebrow="Payment" title={awaitingReview && canReviewPayments ? 'Screenshot & decision' : 'Screenshot'} />
+                        <PanelHeading eyebrow={t('Payment')} title={awaitingReview && canReviewPayments ? t('Screenshot & decision') : t('Screenshot')} />
                         <div className="stack-sm">
                             {paymentAccount && (
                                 <div
@@ -351,8 +353,8 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                         gap: 4,
                                     }}
                                 >
-                                    <p className="eyebrow" style={{ margin: 0 }}>Transfer account</p>
-                                    <strong>{paymentAccount.banking_service || order.payment_method || 'Manual transfer'}</strong>
+                                    <p className="eyebrow" style={{ margin: 0 }}>{t('Transfer account')}</p>
+                                    <strong>{paymentAccount.banking_service || order.payment_method || t('Manual transfer')}</strong>
                                     {paymentAccount.account_name && <span>{paymentAccount.account_name}</span>}
                                     {paymentAccount.account_no && <code>{paymentAccount.account_no}</code>}
                                 </div>
@@ -361,7 +363,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                 <a href={proofUrl} target="_blank" rel="noopener noreferrer">
                                     <img
                                         src={proofUrl}
-                                        alt="Payment proof"
+                                        alt={t('Payment proof')}
                                         style={{
                                             width: '100%',
                                             maxHeight: 360,
@@ -372,7 +374,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                     />
                                 </a>
                             ) : (
-                                <p>No screenshot uploaded.</p>
+                                <p>{t('No screenshot uploaded.')}</p>
                             )}
 
                             {awaitingReview && canReviewPayments && (
@@ -384,26 +386,26 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                     }}
                                 >
                                     <p className="eyebrow" style={{ marginBottom: -2 }}>
-                                        Decision
+                                        {t('Decision')}
                                     </p>
                                     <div className="approval-discount">
                                         <div className="approval-discount-grid">
                                             <label className="form-field">
-                                                <span>Discount mode</span>
+                                                <span>{t('Discount mode')}</span>
                                                 <select
                                                     value={confirmForm.data.discount_type}
                                                     onChange={(e) => confirmForm.setData('discount_type', e.target.value)}
                                                     disabled={confirmForm.processing}
                                                 >
-                                                    <option value="percent">Percent</option>
-                                                    <option value="amount">Amount</option>
+                                                    <option value="percent">{t('Percent')}</option>
+                                                    <option value="amount">{t('Amount')}</option>
                                                 </select>
                                             </label>
                                             <label className="form-field">
                                                 <span>
                                                     {confirmForm.data.discount_type === 'percent'
-                                                        ? 'Discount percent'
-                                                        : 'Discount amount'}
+                                                        ? t('Discount percent')
+                                                        : t('Discount amount')}
                                                 </span>
                                                 <input
                                                     type="number"
@@ -424,21 +426,21 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                         )}
                                         <div className="approval-discount-summary">
                                             <div>
-                                                <span>Current total</span>
+                                                <span>{t('Current total')}</span>
                                                 <strong>${orderPayableAmount.toFixed(2)}</strong>
                                             </div>
                                             <div>
-                                                <span>Approval discount</span>
+                                                <span>{t('Approval discount')}</span>
                                                 <strong>-${approvalDiscountAmount.toFixed(2)}</strong>
                                             </div>
                                             <div>
-                                                <span>Customer pays</span>
+                                                <span>{t('Customer pays')}</span>
                                                 <strong>${approvalFinalAmount.toFixed(2)}</strong>
                                             </div>
                                         </div>
                                         {discountTooHigh && (
                                             <small className="field-error">
-                                                Discount cannot be greater than the current order total.
+                                                {t('Discount cannot be greater than the current order total.')}
                                             </small>
                                         )}
                                     </div>
@@ -451,7 +453,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                             style={{ minWidth: 150 }}
                                         >
                                             <Icon name="check" size={14} />
-                                            Confirm payment
+                                            {t('Confirm payment')}
                                         </button>
                                         <button
                                             type="button"
@@ -460,7 +462,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                             disabled={rejectForm.processing}
                                             style={{ minWidth: 140 }}
                                         >
-                                            Reject payment
+                                            {t('Reject payment')}
                                         </button>
                                     </div>
                                 </div>
@@ -468,8 +470,8 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
                             {order.payment_reviewed_at && (
                                 <small>
-                                    Payment reviewed {order.payment_reviewed_at}
-                                    {order.payment_reviewer?.name ? ` by ${order.payment_reviewer.name}` : ''}
+                                    {t('Payment reviewed')} {order.payment_reviewed_at}
+                                    {order.payment_reviewer?.name ? ` ${t('by')} ${order.payment_reviewer.name}` : ''}
                                 </small>
                             )}
                         </div>
@@ -477,7 +479,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
                     {canManageOrders && order.payment_status === 'paid' && !isCancelled && !isDelivered && (
                         <section className="panel glass">
-                            <PanelHeading eyebrow="Fulfillment" title="Update status" />
+                            <PanelHeading eyebrow={t('Fulfillment')} title={t('Update status')} />
                             <div className="stack-sm">
                                 {order.status === 'processing' && (
                                     <button
@@ -487,7 +489,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                         disabled={statusForm.processing}
                                     >
                                         <Icon name="navigation" size={14} />
-                                        Mark as shipped
+                                        {t('Mark as shipped')}
                                     </button>
                                 )}
                                 {order.status === 'shipped' && (
@@ -498,7 +500,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                         disabled={statusForm.processing}
                                     >
                                         <Icon name="check" size={14} />
-                                        Mark as delivered
+                                        {t('Mark as delivered')}
                                     </button>
                                 )}
                             </div>
@@ -507,14 +509,14 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
                     {canCancelOrders && !isCancelled && !isDelivered && (
                         <button type="button" className="btn danger full" onClick={() => setCancelOpen(true)}>
-                            Cancel order
+                            {t('Cancel order')}
                         </button>
                     )}
 
                     {canCancelOrders && (
                         <button type="button" className="btn danger full" onClick={() => setDeleteOpen(true)}>
                             <Icon name="trash" size={14} />
-                            Delete & return stock
+                            {t('Delete & return stock')}
                         </button>
                     )}
 
@@ -526,8 +528,8 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                     <form className="operation-modal compact glass" onSubmit={handleReject} onClick={(e) => e.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Payment</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>Reject payment</h2>
+                                <p className="eyebrow">{t('Payment')}</p>
+                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('Reject payment')}</h2>
                             </div>
                             <button type="button" className="icon-btn small" onClick={() => setRejectOpen(false)}>
                                 <Icon name="close" size={14} />
@@ -535,7 +537,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                         </div>
                         <div className="crud-grid">
                             <label className="form-field span-2">
-                                <span>Message to customer (optional)</span>
+                                <span>{t('Message to customer (optional)')}</span>
                                 <textarea
                                     value={rejectForm.data.reason}
                                     onChange={(e) => rejectForm.setData('reason', e.target.value)}
@@ -544,10 +546,10 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={() => setRejectOpen(false)}>
-                                Close
+                                {t('Close')}
                             </button>
                             <button type="submit" className="btn danger" disabled={rejectForm.processing}>
-                                Reject & cancel
+                                {t('Reject & cancel')}
                             </button>
                         </div>
                     </form>
@@ -559,8 +561,8 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                     <form className="operation-modal compact glass" onSubmit={handleCancel} onClick={(e) => e.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Order</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>Cancel order</h2>
+                                <p className="eyebrow">{t('Order')}</p>
+                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('Cancel order')}</h2>
                             </div>
                             <button type="button" className="icon-btn small" onClick={() => setCancelOpen(false)}>
                                 <Icon name="close" size={14} />
@@ -569,11 +571,11 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                         <div className="crud-grid">
                             <p className="span-2">
                                 {order.payment_status === 'paid'
-                                    ? 'Stock will be restored to inventory. The customer will see the order as cancelled.'
-                                    : 'This will cancel the order and notify the customer if applicable.'}
+                                    ? t('Stock will be restored to inventory. The customer will see the order as cancelled.')
+                                    : t('This will cancel the order and notify the customer if applicable.')}
                             </p>
                             <label className="form-field span-2">
-                                <span>Reason (optional)</span>
+                                <span>{t('Reason (optional)')}</span>
                                 <textarea
                                     value={cancelForm.data.reason}
                                     onChange={(e) => cancelForm.setData('reason', e.target.value)}
@@ -582,10 +584,10 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={() => setCancelOpen(false)}>
-                                Close
+                                {t('Close')}
                             </button>
                             <button type="submit" className="btn danger" disabled={cancelForm.processing}>
-                                Cancel order
+                                {t('Cancel order')}
                             </button>
                         </div>
                     </form>
@@ -597,8 +599,8 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                     <form className="operation-modal compact glass" onSubmit={handleDelete} onClick={(e) => e.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Order return</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>Delete order</h2>
+                                <p className="eyebrow">{t('Order return')}</p>
+                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('Delete order')}</h2>
                             </div>
                             <button type="button" className="icon-btn small" onClick={() => setDeleteOpen(false)}>
                                 <Icon name="close" size={14} />
@@ -606,10 +608,10 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                         </div>
                         <div className="crud-grid">
                             <p className="span-2">
-                                This permanently removes the order. Paid order stock will be returned, active reservations will be released, and any POS sale finance entry will be deleted.
+                                {t('This permanently removes the order. Paid order stock will be returned, active reservations will be released, and any POS sale finance entry will be deleted.')}
                             </p>
                             <label className="form-field span-2">
-                                <span>Reason (optional)</span>
+                                <span>{t('Reason (optional)')}</span>
                                 <textarea
                                     value={deleteForm.data.reason}
                                     onChange={(e) => deleteForm.setData('reason', e.target.value)}
@@ -618,10 +620,10 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={() => setDeleteOpen(false)}>
-                                Close
+                                {t('Close')}
                             </button>
                             <button type="submit" className="btn danger" disabled={deleteForm.processing}>
-                                Delete order
+                                {t('Delete order')}
                             </button>
                         </div>
                     </form>

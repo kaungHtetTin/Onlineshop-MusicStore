@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@/spa/router';
 import { routeWithBase } from '@/Utils/url';
 import {
     Box,
@@ -14,6 +14,7 @@ import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const formatDate = (value) => {
     if (!value) return '';
@@ -53,6 +54,7 @@ function RelatedCard({ post }) {
 
 export default function BlogShow({ post, related = [] }) {
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
 
     return (
         <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
@@ -139,7 +141,7 @@ export default function BlogShow({ post, related = [] }) {
                 {related.length > 0 && (
                     <Box sx={{ mt: 5, p: 2, bgcolor: 'white', borderRadius: 1, border: '1px solid rgba(0,0,0,0.06)' }}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>Related posts</Typography>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>{t('Related posts')}</Typography>
                             <Button component={Link} href={routeWithBase('/blogs', app_base)} size="small" endIcon={<ArrowForward />}>
                                 All posts
                             </Button>

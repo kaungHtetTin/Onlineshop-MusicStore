@@ -1,9 +1,11 @@
-import { Head } from '@inertiajs/react';
+import { Head } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import AdminPagination from '@/Components/Admin/AdminPagination';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function AdjustmentsIndex({ adjustments }) {
+    const t = usePhraseTranslation();
     const rows = adjustments.data.flatMap((adjustment) =>
         adjustment.items.map((item) => ({
             adjustment,
@@ -12,28 +14,28 @@ export default function AdjustmentsIndex({ adjustments }) {
     );
 
     return (
-        <AdminLayout title="Adjustments" eyebrow="Inventory">
-            <Head title="Stock Adjustments" />
+        <AdminLayout title={t('Adjustments')} eyebrow={t('Inventory')}>
+            <Head title={t('Stock Adjustments')} />
             <section className="panel glass">
-                <PanelHeading eyebrow="Counts & corrections" title="Stock adjustment records" />
+                <PanelHeading eyebrow={t('Counts & corrections')} title={t('Stock adjustment records')} />
                 <div className="table-wrap">
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>Adjustment</th>
-                                <th>Warehouse</th>
-                                <th>Product / SKU</th>
-                                <th>Before</th>
-                                <th>After</th>
-                                <th>Variance</th>
-                                <th>Reason</th>
-                                <th>Status</th>
+                                <th>{t('Adjustment')}</th>
+                                <th>{t('Warehouse')}</th>
+                                <th>{t('Product / SKU')}</th>
+                                <th>{t('Before')}</th>
+                                <th>{t('After')}</th>
+                                <th>{t('Variance')}</th>
+                                <th>{t('Reason')}</th>
+                                <th>{t('Status')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {rows.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="empty-table-cell">No adjustments yet.</td>
+                                    <td colSpan="8" className="empty-table-cell">{t('No adjustments yet.')}</td>
                                 </tr>
                             ) : rows.map(({ adjustment, item }) => (
                                 <tr key={`${adjustment.id}-${item.id}`}>
@@ -52,13 +54,13 @@ export default function AdjustmentsIndex({ adjustments }) {
                                         {item.quantity_delta > 0 ? '+' : ''}{item.quantity_delta}
                                     </td>
                                     <td>{adjustment.reason_code.replaceAll('_', ' ')}</td>
-                                    <td><StatusBadge status="success" label="posted" /></td>
+                                    <td><StatusBadge status="success" label={t('posted')} /></td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
-                <AdminPagination paginator={adjustments} label="adjustments" />
+                <AdminPagination paginator={adjustments} label={t('adjustments')} />
             </section>
         </AdminLayout>
     );

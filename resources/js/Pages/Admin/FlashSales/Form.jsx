@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const emptyForm = {
     name: '',
@@ -89,9 +90,11 @@ const campaignDuration = (startsAt, endsAt) => {
 };
 
 function Stat({ label, value }) {
+    const t = usePhraseTranslation();
+
     return (
         <div className="metric-card" style={{ padding: 12 }}>
-            <span>{label}</span>
+            <span>{t(label)}</span>
             <strong>{value}</strong>
         </div>
     );
@@ -99,6 +102,7 @@ function Stat({ label, value }) {
 
 export default function FlashSaleForm({ productOptions, flashSale = null, mode = 'create' }) {
     const { app_base, flash } = usePage().props;
+    const t = usePhraseTranslation();
     const [tab, setTab] = useState(0);
     const [productSearch, setProductSearch] = useState('');
     const form = useForm(buildInitialData(flashSale));
@@ -238,16 +242,16 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
 
     return (
         <AdminLayout
-            title={mode === 'edit' ? 'Edit flash sale' : 'Create flash sale'}
-            eyebrow="Marketing"
+            title={mode === 'edit' ? t('Edit flash sale') : t('Create flash sale')}
+            eyebrow={t('Marketing')}
             action={
                 <Link href={routeWithBase('/admin/flash-sales', app_base)} className="btn secondary">
                     <Icon name="navigation" size={14} />
-                    Back to list
+                    {t('Back to list')}
                 </Link>
             }
         >
-            <Head title={mode === 'edit' ? 'Edit Flash Sale' : 'Create Flash Sale'} />
+            <Head title={mode === 'edit' ? t('Edit Flash Sale') : t('Create Flash Sale')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
             <form onSubmit={submit}>
@@ -260,30 +264,30 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                 className={tab === index ? 'active' : ''}
                                 onClick={() => setTab(index)}
                             >
-                                {index + 1}. {step.label}
+                                {index + 1}. {t(step.label)}
                             </button>
                         ))}
                     </div>
 
                     {tab === 0 && (
                         <>
-                            <PanelHeading eyebrow="Step 1" title="Basic information" />
+                            <PanelHeading eyebrow={t('Step 1')} title={t('Basic information')} />
                             <div className="crud-grid">
                                 <label className="form-field span-2">
-                                    <span>Campaign name</span>
+                                    <span>{t('Campaign name')}</span>
                                     <input value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required />
                                 </label>
                                 <label className="form-field">
-                                    <span>Starts</span>
+                                    <span>{t('Starts')}</span>
                                     <input type="datetime-local" value={form.data.starts_at} onChange={(e) => form.setData('starts_at', e.target.value)} required />
                                 </label>
                                 <label className="form-field">
-                                    <span>Ends</span>
+                                    <span>{t('Ends')}</span>
                                     <input type="datetime-local" value={form.data.ends_at} onChange={(e) => form.setData('ends_at', e.target.value)} required />
                                 </label>
                                 <label className="form-field checkbox-row">
                                     <input type="checkbox" checked={form.data.is_active} onChange={(e) => form.setData('is_active', e.target.checked)} />
-                                    <span>Active campaign</span>
+                                    <span>{t('Active campaign')}</span>
                                 </label>
                             </div>
                         </>
@@ -291,18 +295,18 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
 
                     {tab === 1 && (
                         <>
-                            <PanelHeading eyebrow="Step 2" title="Select products" />
+                            <PanelHeading eyebrow={t('Step 2')} title={t('Select products')} />
                             <div className="filter-toolbar compact" style={{ marginBottom: 12 }}>
                                 <div className="search-box">
                                     <Icon name="search" size={16} />
                                     <input
                                         type="search"
-                                        placeholder="Search products, categories, SKU codes..."
+                                        placeholder={t('Search products, categories, SKU codes...')}
                                         value={productSearch}
                                         onChange={(e) => setProductSearch(e.target.value)}
                                     />
                                 </div>
-                                <span className="muted">{form.data.items.length} SKUs selected</span>
+                                <span className="muted">{form.data.items.length} {t('SKUs selected')}</span>
                             </div>
 
                             <div className="table-wrap flash-sale-product-table">
@@ -310,15 +314,15 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                     <thead>
                                         <tr>
                                             <th style={{ width: 44 }} />
-                                            <th>Product</th>
-                                            <th>Category</th>
-                                            <th>SKUs</th>
-                                            <th>Selected</th>
+                                            <th>{t('Product')}</th>
+                                            <th>{t('Category')}</th>
+                                            <th>{t('SKUs')}</th>
+                                            <th>{t('Selected')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {filteredProducts.length === 0 ? (
-                                            <tr><td colSpan={5}><span className="muted">No products match your search.</span></td></tr>
+                                            <tr><td colSpan={5}><span className="muted">{t('No products match your search.')}</span></td></tr>
                                         ) : filteredProducts.map((product) => {
                                             const selected = selectedCountForProduct(product);
                                             return (
@@ -331,7 +335,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                         />
                                                     </td>
                                                     <td><strong>{product.name}</strong></td>
-                                                    <td><span className="muted">{product.category || 'Uncategorized'}</span></td>
+                                                    <td><span className="muted">{product.category || t('Uncategorized')}</span></td>
                                                     <td>{product.skus.length}</td>
                                                     <td>{selected} / {product.skus.length}</td>
                                                 </tr>
@@ -345,30 +349,30 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
 
                     {tab === 2 && (
                         <>
-                            <PanelHeading eyebrow="Step 3" title="Sale data by SKU" />
+                            <PanelHeading eyebrow={t('Step 3')} title={t('Sale data by SKU')} />
                             <div className="table-wrap flash-sale-pricing-table">
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>Product / SKU</th>
-                                            <th>Original</th>
-                                            <th>Discount</th>
-                                            <th>Value</th>
-                                            <th>Limit</th>
-                                            <th>Sale price</th>
+                                            <th>{t('Product / SKU')}</th>
+                                            <th>{t('Original')}</th>
+                                            <th>{t('Discount')}</th>
+                                            <th>{t('Value')}</th>
+                                            <th>{t('Limit')}</th>
+                                            <th>{t('Sale price')}</th>
                                             <th />
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {selectedItems.length === 0 ? (
-                                            <tr><td colSpan={7}><span className="muted">Select products first.</span></td></tr>
+                                            <tr><td colSpan={7}><span className="muted">{t('Select products first.')}</span></td></tr>
                                         ) : selectedItems.map(({ item, sku }) => {
                                             const salePrice = salePriceFor(sku, item);
                                             return (
                                                 <tr key={sku.id}>
                                                     <td>
                                                         <strong>{sku.product.name}</strong>
-                                                        <small className="muted" style={{ display: 'block' }}>{skuLabel(sku)} · available {sku.available_qty}</small>
+                                                        <small className="muted" style={{ display: 'block' }}>{skuLabel(sku)} - {t('available')} {sku.available_qty}</small>
                                                     </td>
                                                     <td>
                                                         <span className="price-pill">${Number(sku.price).toFixed(2)}</span>
@@ -378,10 +382,10 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                             <select
                                                                 value={item.discount_type}
                                                                 onChange={(e) => updateItem(sku.id, { discount_type: e.target.value, discount_value: '' })}
-                                                                aria-label="Discount type"
+                                                                aria-label={t('Discount type')}
                                                             >
-                                                                <option value="percentage">Percentage</option>
-                                                                <option value="fixed_price">Fixed price</option>
+                                                                <option value="percentage">{t('Percentage')}</option>
+                                                                <option value="fixed_price">{t('Fixed price')}</option>
                                                             </select>
                                                         </div>
                                                     </td>
@@ -396,20 +400,20 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                                 onChange={(e) => updateItem(sku.id, { discount_value: e.target.value })}
                                                                 placeholder={item.discount_type === 'percentage' ? '20' : '9.99'}
                                                                 required
-                                                                aria-label="Discount value"
+                                                                aria-label={t('Discount value')}
                                                             />
                                                         </div>
                                                     </td>
                                                     <td>
                                                         <div className="sale-control input-control">
-                                                            <span>Qty</span>
+                                                            <span>{t('Qty')}</span>
                                                             <input
                                                                 type="number"
                                                                 min="1"
                                                                 value={item.quantity_limit}
                                                                 onChange={(e) => updateItem(sku.id, { quantity_limit: e.target.value })}
-                                                                placeholder="No limit"
-                                                                aria-label="Quantity limit"
+                                                                placeholder={t('No limit')}
+                                                                aria-label={t('Quantity limit')}
                                                             />
                                                         </div>
                                                     </td>
@@ -421,7 +425,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                         )}
                                                     </td>
                                                     <td>
-                                                        <button type="button" className="icon-btn small danger" onClick={() => removeSku(sku.id)} aria-label="Remove SKU">
+                                                        <button type="button" className="icon-btn small danger" onClick={() => removeSku(sku.id)} aria-label={t('Remove SKU')}>
                                                             <Icon name="trash" size={13} />
                                                         </button>
                                                     </td>
@@ -436,7 +440,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
 
                     {tab === 3 && (
                         <>
-                            <PanelHeading eyebrow="Step 4" title="Review and submit" />
+                            <PanelHeading eyebrow={t('Step 4')} title={t('Review and submit')} />
                             <div className="metrics-grid compact" style={{ marginBottom: 14 }}>
                                 <Stat label="Campaign" value={form.data.name || '-'} />
                                 <Stat label="Starts" value={formatDateTime(form.data.starts_at)} />
@@ -444,16 +448,16 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                 <Stat label="Duration" value={campaignDuration(form.data.starts_at, form.data.ends_at)} />
                                 <Stat label="Products" value={selectedProducts.length} />
                                 <Stat label="SKUs" value={selectedItems.length} />
-                                <Stat label="Status" value={form.data.is_active ? 'Active' : 'Inactive'} />
+                                <Stat label="Status" value={form.data.is_active ? t('Active') : t('Inactive')} />
                             </div>
                             <div className="table-wrap">
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>SKU</th>
-                                            <th>Discount</th>
-                                            <th>Limit</th>
-                                            <th>Sale price</th>
+                                            <th>{t('SKU')}</th>
+                                            <th>{t('Discount')}</th>
+                                            <th>{t('Limit')}</th>
+                                            <th>{t('Sale price')}</th>
                                             <th />
                                         </tr>
                                     </thead>
@@ -470,13 +474,13 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                     </td>
                                                     <td>
                                                         {item.discount_type === 'percentage'
-                                                            ? `${Number(item.discount_value || 0)}% off`
-                                                            : `$${Number(item.discount_value || 0).toFixed(2)} fixed`}
+                                                            ? `${Number(item.discount_value || 0)}% ${t('off')}`
+                                                            : `$${Number(item.discount_value || 0).toFixed(2)} ${t('fixed')}`}
                                                     </td>
-                                                    <td>{item.quantity_limit || 'No limit'}</td>
+                                                    <td>{item.quantity_limit || t('No limit')}</td>
                                                     <td>{salePrice ? `$${salePrice.toFixed(2)}` : '-'}</td>
                                                     <td>
-                                                        <button type="button" className="icon-btn small danger" onClick={() => removeSku(sku.id)} aria-label="Remove overlapping SKU">
+                                                        <button type="button" className="icon-btn small danger" onClick={() => removeSku(sku.id)} aria-label={t('Remove overlapping SKU')}>
                                                             <Icon name="trash" size={13} />
                                                         </button>
                                                     </td>
@@ -491,15 +495,15 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
 
                     <div className="modal-actions">
                         <button type="button" className="btn secondary" disabled={tab === 0} onClick={() => setTab((value) => Math.max(0, value - 1))}>
-                            Previous
+                            {t('Previous')}
                         </button>
                         {tab < steps.length - 1 ? (
                             <button type="button" className="btn primary" disabled={!canGoNext} onClick={goNext}>
-                                Next
+                                {t('Next')}
                             </button>
                         ) : (
                             <button type="submit" className="btn primary" disabled={form.processing || !canSubmit}>
-                                {mode === 'edit' ? 'Save flash sale' : 'Create flash sale'}
+                                {mode === 'edit' ? t('Save flash sale') : t('Create flash sale')}
                             </button>
                         )}
                     </div>

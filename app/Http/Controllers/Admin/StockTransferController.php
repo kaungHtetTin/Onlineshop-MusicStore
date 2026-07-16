@@ -9,7 +9,7 @@ use App\Models\StockTransfer;
 use App\Services\AuditLogService;
 use App\Services\Inventory\StockTransferService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class StockTransferController extends Controller
 {
@@ -18,7 +18,7 @@ class StockTransferController extends Controller
         $this->authorize('viewAny', StockTransfer::class);
         $locationIds = $request->user()->accessibleLocationIds();
 
-        return Inertia::render('Admin/Inventory/Transfers/Index', [
+        return Spa::render('Admin/Inventory/Transfers/Index', [
             'transfers' => StockTransfer::query()
                 ->where(function ($query) use ($locationIds) {
                     $query->whereIn('source_location_id', $locationIds)
@@ -42,7 +42,7 @@ class StockTransferController extends Controller
     {
         $this->authorize('create', StockTransfer::class);
 
-        return Inertia::render('Admin/Inventory/Transfers/Create', [
+        return Spa::render('Admin/Inventory/Transfers/Create', [
             'locations' => Location::query()
                 ->whereIn('id', $request->user()->accessibleLocationIds())
                 ->where('is_active', true)
@@ -86,7 +86,7 @@ class StockTransferController extends Controller
     {
         $this->authorize('view', $transfer);
 
-        return Inertia::render('Admin/Inventory/Transfers/Show', [
+        return Spa::render('Admin/Inventory/Transfers/Show', [
             'transfer' => $transfer->load([
                 'sourceLocation:id,code,name,type',
                 'destinationLocation:id,code,name,type',

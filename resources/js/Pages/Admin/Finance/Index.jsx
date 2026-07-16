@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const money = (value) =>
     `$${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -22,12 +23,14 @@ const emptyEntry = {
 };
 
 function MetricCard({ label, value, icon, tone }) {
+    const t = usePhraseTranslation();
+
     return (
         <article className={`metric-card glass ${tone ? `tone-${tone}` : ''}`}>
             <span className="icon-well">
                 <Icon name={icon} size={15} />
             </span>
-            <small>{label}</small>
+            <small>{t(label)}</small>
             <strong>{value}</strong>
         </article>
     );
@@ -38,6 +41,7 @@ function categoryLabel(options, type, value) {
 }
 
 function DailyFinanceChart({ trend }) {
+    const t = usePhraseTranslation();
     const chart = useMemo(() => {
         const rows = trend.map((row) => ({
             day: row.day,
@@ -84,7 +88,7 @@ function DailyFinanceChart({ trend }) {
     if (!chart) {
         return (
             <div className="finance-chart-empty">
-                <span className="muted">No finance data in this period.</span>
+                <span className="muted">{t('No finance data in this period.')}</span>
             </div>
         );
     }
@@ -101,12 +105,12 @@ function DailyFinanceChart({ trend }) {
                 {series.map((item) => (
                     <div key={item.key}>
                         <span className={`chart-dot ${item.className}`} />
-                        <small>{item.label}</small>
+                        <small>{t(item.label)}</small>
                         <strong>{money(chart.latest[item.key])}</strong>
                     </div>
                 ))}
             </div>
-            <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label="Daily finance trend line chart">
+            <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label={t('Daily finance trend line chart')}>
                 {chart.ticks.map((tick) => (
                     <g key={tick}>
                         <line
@@ -143,7 +147,7 @@ function DailyFinanceChart({ trend }) {
                         cy={chart.yFor(row[item.key])}
                         r="3.5"
                     >
-                        <title>{`${row.day} ${item.label}: ${money(row[item.key])}`}</title>
+                        <title>{`${row.day} ${t(item.label)}: ${money(row[item.key])}`}</title>
                     </circle>
                 )))}
                 {chart.rows.map((row, index) => (
@@ -159,6 +163,8 @@ function DailyFinanceChart({ trend }) {
 }
 
 function LedgerPagination({ paginator }) {
+    const t = usePhraseTranslation();
+
     if (!paginator || paginator.last_page <= 1) {
         return null;
     }
@@ -166,14 +172,18 @@ function LedgerPagination({ paginator }) {
     return (
         <div className="ledger-pagination">
             <small>
-                Showing {paginator.from || 0}-{paginator.to || 0} of {paginator.total} entries
+                {t('Showing :from-:to of :total entries', {
+                    from: paginator.from || 0,
+                    to: paginator.to || 0,
+                    total: paginator.total,
+                })}
             </small>
             <div className="pagination-links">
                 {paginator.links.map((link, index) => {
                     const label = link.label.includes('&laquo;')
-                        ? 'Previous'
+                        ? t('Previous')
                         : link.label.includes('&raquo;')
-                            ? 'Next'
+                            ? t('Next')
                             : link.label.replace(/&amp;/g, '&');
 
                     if (!link.url) {
@@ -204,6 +214,7 @@ function LedgerPagination({ paginator }) {
 }
 
 export default function FinanceIndex({ entries, summary, trend, filters, options }) {
+    const t = usePhraseTranslation();
     const { app_base, flash } = usePage().props;
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -268,7 +279,7 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
     };
 
     const remove = (entry) => {
-        if (!confirm(`Delete "${entry.title}"?`)) return;
+        if (!confirm(t('Delete ":title"?', { title: entry.title }))) return;
         router.delete(routeWithBase(`/admin/finance/entries/${entry.id}`, app_base), { preserveScroll: true });
     };
 
@@ -276,16 +287,16 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
 
     return (
         <AdminLayout
-            title="Finance"
-            eyebrow="Financial control"
+            title={t('Finance')}
+            eyebrow={t('Financial control')}
             action={
                 <button type="button" className="btn primary" onClick={() => openModal()}>
                     <Icon name="plus" size={14} />
-                    Add entry
+                    {t('Add entry')}
                 </button>
             }
         >
-            <Head title="Finance" />
+            <Head title={t('Finance')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
             <div className="metrics-grid six">
@@ -298,75 +309,75 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
             </div>
 
             <section className="panel glass" style={{ marginBottom: 14 }}>
-                <PanelHeading eyebrow="Period controls" title="Finance filters" />
+                <PanelHeading eyebrow={t('Period controls')} title={t('Finance filters')} />
                 <form className="finance-filter" onSubmit={submitSearch}>
                     <div className="finance-filter-row search-row">
                         <div className="search-box">
                             <Icon name="search" size={16} />
-                            <input placeholder="Search title, reference, notes..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                            <input placeholder={t('Search title, reference, notes...')} value={search} onChange={(e) => setSearch(e.target.value)} />
                         </div>
-                        <button type="submit" className="btn primary">Search</button>
+                        <button type="submit" className="btn primary">{t('Search')}</button>
                     </div>
                     <div className="finance-filter-row controls-row">
                         <label className="form-field inline">
-                            <span>From</span>
+                            <span>{t('From')}</span>
                             <input type="date" value={filters.from || ''} onChange={(e) => applyFilters({ from: e.target.value || undefined })} />
                         </label>
                         <label className="form-field inline">
-                            <span>To</span>
+                            <span>{t('To')}</span>
                             <input type="date" value={filters.to || ''} onChange={(e) => applyFilters({ to: e.target.value || undefined })} />
                         </label>
                         <select value={filters.type || ''} onChange={(e) => applyFilters({ type: e.target.value || undefined, category: undefined })}>
-                            <option value="">All types</option>
-                            <option value="income">Income</option>
-                            <option value="expense">Expense</option>
+                            <option value="">{t('All types')}</option>
+                            <option value="income">{t('Income')}</option>
+                            <option value="expense">{t('Expense')}</option>
                         </select>
                         <select value={filters.status || ''} onChange={(e) => applyFilters({ status: e.target.value || undefined })}>
-                            <option value="">All statuses</option>
+                            <option value="">{t('All statuses')}</option>
                             {options.statuses.map((status) => (
                                 <option key={status} value={status}>
-                                    {status}
+                                    {t(status)}
                                 </option>
                             ))}
                         </select>
                         <select value={filters.category || ''} onChange={(e) => applyFilters({ category: e.target.value || undefined })}>
-                            <option value="">All categories</option>
+                            <option value="">{t('All categories')}</option>
                             {categoryOptions.map((category) => (
                                 <option key={`${category.value}-${category.label}`} value={category.value}>
-                                    {category.label}
+                                    {t(category.label)}
                                 </option>
                             ))}
                         </select>
-                        <button type="button" className="btn secondary" onClick={resetFilters}>Reset</button>
+                        <button type="button" className="btn secondary" onClick={resetFilters}>{t('Reset')}</button>
                     </div>
                 </form>
             </section>
 
             <div className="finance-grid finance-grid-full">
                 <section className="panel glass">
-                    <PanelHeading eyebrow={`${summary.from} to ${summary.to}`} title="Daily finance trend" />
+                    <PanelHeading eyebrow={`${summary.from} ${t('to')} ${summary.to}`} title={t('Daily finance trend')} />
                     <DailyFinanceChart trend={trend} />
                 </section>
             </div>
 
             <section className="panel glass" style={{ marginTop: 14 }}>
-                <PanelHeading eyebrow="Manual ledger" title="Income and expense entries" />
+                <PanelHeading eyebrow={t('Manual ledger')} title={t('Income and expense entries')} />
                 <div className="table-wrap">
                     <table>
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Entry</th>
-                                <th>Type</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Recorded by</th>
+                                <th>{t('Date')}</th>
+                                <th>{t('Entry')}</th>
+                                <th>{t('Type')}</th>
+                                <th>{t('Amount')}</th>
+                                <th>{t('Status')}</th>
+                                <th>{t('Recorded by')}</th>
                                 <th />
                             </tr>
                         </thead>
                         <tbody>
                             {entries.data.length === 0 ? (
-                                <tr><td colSpan={7}><span className="muted">No manual finance entries match your filters.</span></td></tr>
+                                <tr><td colSpan={7}><span className="muted">{t('No manual finance entries match your filters.')}</span></td></tr>
                             ) : entries.data.map((entry) => {
                                 const isStockReceiptEntry = entry.is_stock_receipt_entry || entry.category === 'stock_receipt';
 
@@ -376,23 +387,23 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
                                         <td>
                                             <strong>{entry.title}</strong>
                                             <small>
-                                                {categoryLabel(options, entry.type, entry.category)}
+                                                {t(categoryLabel(options, entry.type, entry.category))}
                                                 {entry.reference ? ` / ${entry.reference}` : ''}
                                             </small>
                                         </td>
-                                        <td><StatusBadge status={entry.type === 'income' ? 'success' : 'warning'} label={entry.type} /></td>
+                                        <td><StatusBadge status={entry.type === 'income' ? 'success' : 'warning'} label={t(entry.type)} /></td>
                                         <td><strong>{money(entry.amount)}</strong></td>
-                                        <td><StatusBadge status={entry.status} label={entry.status} /></td>
-                                        <td>{entry.recorder?.name || 'System'}</td>
+                                        <td><StatusBadge status={entry.status} label={t(entry.status)} /></td>
+                                        <td>{entry.recorder?.name || t('System')}</td>
                                         <td>
                                             {isStockReceiptEntry ? (
-                                                <span className="muted">Managed by receipt</span>
+                                                <span className="muted">{t('Managed by receipt')}</span>
                                             ) : (
                                                 <div className="inline-actions">
-                                                    <button type="button" className="icon-btn small" onClick={() => openModal(entry)} aria-label="Edit entry">
+                                                    <button type="button" className="icon-btn small" onClick={() => openModal(entry)} aria-label={t('Edit entry')}>
                                                         <Icon name="edit" size={13} />
                                                     </button>
-                                                    <button type="button" className="icon-btn small danger" onClick={() => remove(entry)} aria-label="Delete entry">
+                                                    <button type="button" className="icon-btn small danger" onClick={() => remove(entry)} aria-label={t('Delete entry')}>
                                                         <Icon name="trash" size={13} />
                                                     </button>
                                                 </div>
@@ -413,8 +424,8 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
                     <form className="operation-modal compact glass" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Finance entry</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editing ? 'Edit entry' : 'New entry'}</h2>
+                                <p className="eyebrow">{t('Finance entry')}</p>
+                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editing ? t('Edit entry') : t('New entry')}</h2>
                             </div>
                             <button type="button" className="icon-btn small" onClick={closeModal}>
                                 <Icon name="close" size={14} />
@@ -423,7 +434,7 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
 
                         <div className="crud-grid">
                             <label className="form-field">
-                                <span>Type</span>
+                                <span>{t('Type')}</span>
                                 <select
                                     value={form.data.type}
                                     onChange={(e) => {
@@ -435,55 +446,55 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
                                         });
                                     }}
                                 >
-                                    <option value="income">Income</option>
-                                    <option value="expense">Expense</option>
+                                    <option value="income">{t('Income')}</option>
+                                    <option value="expense">{t('Expense')}</option>
                                 </select>
                             </label>
                             <label className="form-field">
-                                <span>Category</span>
+                                <span>{t('Category')}</span>
                                 <select value={form.data.category} onChange={(e) => form.setData('category', e.target.value)}>
                                     {formCategoryOptions.map((category) => (
-                                        <option key={category.value} value={category.value}>{category.label}</option>
+                                        <option key={category.value} value={category.value}>{t(category.label)}</option>
                                     ))}
                                 </select>
                             </label>
                             <label className="form-field">
-                                <span>Title</span>
+                                <span>{t('Title')}</span>
                                 <input value={form.data.title} onChange={(e) => form.setData('title', e.target.value)} required />
                             </label>
                             <label className="form-field">
-                                <span>Amount</span>
+                                <span>{t('Amount')}</span>
                                 <input type="number" step="0.01" min="0.01" value={form.data.amount} onChange={(e) => form.setData('amount', e.target.value)} required />
                             </label>
                             <label className="form-field">
-                                <span>Date</span>
+                                <span>{t('Date')}</span>
                                 <input type="date" value={form.data.entry_date} onChange={(e) => form.setData('entry_date', e.target.value)} required />
                             </label>
                             <label className="form-field">
-                                <span>Status</span>
+                                <span>{t('Status')}</span>
                                 <select value={form.data.status} onChange={(e) => form.setData('status', e.target.value)}>
-                                    <option value="approved">Approved</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="void">Void</option>
+                                    <option value="approved">{t('Approved')}</option>
+                                    <option value="pending">{t('Pending')}</option>
+                                    <option value="void">{t('Void')}</option>
                                 </select>
                             </label>
                             <label className="form-field">
-                                <span>Payment method</span>
-                                <input value={form.data.payment_method} onChange={(e) => form.setData('payment_method', e.target.value)} placeholder="Cash, bank, wallet..." />
+                                <span>{t('Payment method')}</span>
+                                <input value={form.data.payment_method} onChange={(e) => form.setData('payment_method', e.target.value)} placeholder={t('Cash, bank, wallet...')} />
                             </label>
                             <label className="form-field">
-                                <span>Reference</span>
-                                <input value={form.data.reference} onChange={(e) => form.setData('reference', e.target.value)} placeholder="Receipt or transaction ID" />
+                                <span>{t('Reference')}</span>
+                                <input value={form.data.reference} onChange={(e) => form.setData('reference', e.target.value)} placeholder={t('Receipt or transaction ID')} />
                             </label>
                             <label className="form-field full">
-                                <span>Notes</span>
+                                <span>{t('Notes')}</span>
                                 <textarea value={form.data.notes} onChange={(e) => form.setData('notes', e.target.value)} rows={3} />
                             </label>
                         </div>
 
                         <div className="modal-actions">
-                            <button type="button" className="btn secondary" onClick={closeModal}>Cancel</button>
-                            <button type="submit" className="btn primary" disabled={form.processing}>{editing ? 'Save changes' : 'Create entry'}</button>
+                            <button type="button" className="btn secondary" onClick={closeModal}>{t('Cancel')}</button>
+                            <button type="submit" className="btn primary" disabled={form.processing}>{editing ? t('Save changes') : t('Create entry')}</button>
                         </div>
                     </form>
                 </div>

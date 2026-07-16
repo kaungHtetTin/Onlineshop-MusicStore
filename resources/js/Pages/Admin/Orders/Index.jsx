@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import AdminPagination from '@/Components/Admin/AdminPagination';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import { orderStatusLabels, paymentLabels } from '@/constants/orderLabels';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const tabs = [
     { key: '', label: 'All orders' },
@@ -15,12 +16,14 @@ const tabs = [
 ];
 
 function MetricCard({ label, value, icon }) {
+    const t = usePhraseTranslation();
+
     return (
         <article className="metric-card glass">
             <span className="icon-well">
                 <Icon name={icon} size={15} />
             </span>
-            <small>{label}</small>
+            <small>{t(label)}</small>
             <strong>{value}</strong>
         </article>
     );
@@ -28,6 +31,7 @@ function MetricCard({ label, value, icon }) {
 
 export default function OrdersIndex({ orders, stats, filters, canReviewPayments, canManageOrders }) {
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
     const [search, setSearch] = useState(filters.q ?? '');
     const activeTab = filters.tab ?? '';
 
@@ -41,8 +45,8 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
     };
 
     return (
-        <AdminLayout title="Order management" eyebrow="Sales operations">
-            <Head title="Orders" />
+        <AdminLayout title={t('Order management')} eyebrow={t('Sales operations')}>
+            <Head title={t('Orders')} />
 
             <div className="metrics-grid six">
                 <MetricCard label="Total orders" value={stats.total} icon="receipt" />
@@ -58,17 +62,17 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
             </div>
 
             <section className="panel glass">
-                <PanelHeading eyebrow="Order queue" title="All customer orders" />
+                <PanelHeading eyebrow={t('Order queue')} title={t('All customer orders')} />
 
                 <div className="tab-bar">
-                    {tabs.map((t) => (
+                    {tabs.map((tab) => (
                         <button
-                            key={t.key || 'all'}
+                            key={tab.key || 'all'}
                             type="button"
-                            className={activeTab === t.key ? 'active' : ''}
-                            onClick={() => applyFilters({ tab: t.key || undefined })}
+                            className={activeTab === tab.key ? 'active' : ''}
+                            onClick={() => applyFilters({ tab: tab.key || undefined })}
                         >
-                            {t.label}
+                            {t(tab.label)}
                         </button>
                     ))}
                 </div>
@@ -77,7 +81,7 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input
-                            placeholder="Search order #, name, email, phone…"
+                            placeholder={t('Search order #, name, email, phone...')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -86,10 +90,10 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                         value={filters.status ?? ''}
                         onChange={(e) => applyFilters({ status: e.target.value || undefined })}
                     >
-                        <option value="">All statuses</option>
+                        <option value="">{t('All statuses')}</option>
                         {Object.entries(orderStatusLabels).map(([k, v]) => (
                             <option key={k} value={k}>
-                                {v}
+                                {t(v)}
                             </option>
                         ))}
                     </select>
@@ -97,15 +101,15 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                         value={filters.payment_status ?? ''}
                         onChange={(e) => applyFilters({ payment_status: e.target.value || undefined })}
                     >
-                        <option value="">All payments</option>
+                        <option value="">{t('All payments')}</option>
                         {Object.entries(paymentLabels).map(([k, v]) => (
                             <option key={k} value={k}>
-                                {v}
+                                {t(v)}
                             </option>
                         ))}
                     </select>
                     <button type="submit" className="btn primary">
-                        Search
+                        {t('Search')}
                     </button>
                 </form>
 
@@ -116,13 +120,13 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                         style={{ marginBottom: 10 }}
                         onClick={() => router.get(routeWithBase('/admin/orders', app_base))}
                     >
-                        Reset filters
+                        {t('Reset filters')}
                     </button>
                 )}
 
                 {!canManageOrders && (
                     <p style={{ marginBottom: 10 }}>
-                        View only — contact a manager to confirm payments or update fulfillment.
+                        {t('View only - contact a manager to confirm payments or update fulfillment.')}
                     </p>
                 )}
 
@@ -130,12 +134,12 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                     <table>
                         <thead>
                             <tr>
-                                <th>Order</th>
-                                <th>Customer</th>
-                                <th>Items</th>
-                                <th>Total</th>
-                                <th>Payment</th>
-                                <th>Fulfillment</th>
+                                <th>{t('Order')}</th>
+                                <th>{t('Customer')}</th>
+                                <th>{t('Items')}</th>
+                                <th>{t('Total')}</th>
+                                <th>{t('Payment')}</th>
+                                <th>{t('Fulfillment')}</th>
                                 <th />
                             </tr>
                         </thead>
@@ -143,7 +147,7 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                             {orders.data.length === 0 ? (
                                 <tr>
                                     <td colSpan={7}>
-                                        <span className="muted">No orders match your filters.</span>
+                                        <span className="muted">{t('No orders match your filters.')}</span>
                                     </td>
                                 </tr>
                             ) : (
@@ -164,13 +168,13 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                                         <td>
                                             <StatusBadge
                                                 status={order.payment_status}
-                                                label={paymentLabels[order.payment_status] || order.payment_status}
+                                                label={t(paymentLabels[order.payment_status] || order.payment_status)}
                                             />
                                         </td>
                                         <td>
                                             <StatusBadge
                                                 status={order.status}
-                                                label={orderStatusLabels[order.status] || order.status}
+                                                label={t(orderStatusLabels[order.status] || order.status)}
                                             />
                                         </td>
                                         <td>
@@ -179,10 +183,10 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                                                 className="icon-btn small"
                                                 aria-label={
                                                     order.payment_status === 'pending_review' && canReviewPayments
-                                                        ? `Review order ${order.order_number}`
-                                                        : `Open order ${order.order_number}`
+                                                        ? `${t('Review order')} ${order.order_number}`
+                                                        : `${t('Open order')} ${order.order_number}`
                                                 }
-                                                title={order.payment_status === 'pending_review' && canReviewPayments ? 'Review order' : 'Open order'}
+                                                title={order.payment_status === 'pending_review' && canReviewPayments ? t('Review order') : t('Open order')}
                                             >
                                                 <Icon name="external" size={13} />
                                             </Link>
@@ -194,7 +198,7 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                     </table>
                 </div>
 
-                <AdminPagination paginator={orders} label="orders" />
+                <AdminPagination paginator={orders} label={t('orders')} />
             </section>
         </AdminLayout>
     );

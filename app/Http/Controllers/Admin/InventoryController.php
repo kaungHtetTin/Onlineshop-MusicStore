@@ -15,7 +15,7 @@ use App\Models\StockTransfer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class InventoryController extends Controller
 {
@@ -65,7 +65,7 @@ class InventoryController extends Controller
             return $this->stockOverviewRow($row, (int) ($inTransitMap[$key] ?? 0));
         });
 
-        return Inertia::render('Admin/Inventory/Index', [
+        return Spa::render('Admin/Inventory/Index', [
             'balances' => $paginator,
             'locations' => $locations,
             'categories' => $categories,
@@ -111,7 +111,7 @@ class InventoryController extends Controller
             $movementQuery->where('occurred_at', '<=', Carbon::parse($request->to)->endOfDay());
         }
 
-        return Inertia::render('Admin/Inventory/SkuShow', [
+        return Spa::render('Admin/Inventory/SkuShow', [
             'sku' => $sku,
             'balances' => InventoryBalance::query()
                 ->where('sku_id', $sku->id)

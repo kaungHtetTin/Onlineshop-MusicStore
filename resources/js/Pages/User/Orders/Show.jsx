@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@/spa/router';
 import {
     Alert,
     Box,
@@ -21,6 +21,7 @@ import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/Mobile
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase, storageUrl } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const statusColor = {
     pending: 'warning',
@@ -46,6 +47,7 @@ const paymentStatusColor = {
 
 export default function OrdersShow({ order, paymentStatusLabels = {} }) {
     const { app_base, app_url, flash } = usePage().props;
+    const t = usePhraseTranslation();
     const [proofLightbox, setProofLightbox] = useState(false);
 
     const paymentLabel = paymentStatusLabels[order.payment_status] || order.payment_status;
@@ -58,7 +60,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
 
             <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
                 <BackLink href={routeWithBase('/orders', app_base)}>
-                    All orders
+                    {t('All orders')}
                 </BackLink>
 
                 {flash?.success && (
@@ -104,7 +106,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                             />
                             <Chip
                                 size="small"
-                                label={`Payment: ${paymentLabel}`}
+                                label={`${t('Payment')}: ${t(paymentLabel)}`}
                                 color={paymentStatusColor[order.payment_status] || 'default'}
                                 variant="outlined"
                             />
@@ -147,7 +149,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                                         {item.product?.name}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                        Qty {item.quantity} · ${Number(item.unit_price).toFixed(2)} each
+                                        {t('Qty')} {item.quantity} - ${Number(item.unit_price).toFixed(2)} {t('each')}
                                     </Typography>
                                 </Box>
                                 <Typography variant="body2" sx={{ fontWeight: 800 }}>
@@ -159,15 +161,15 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                     <Divider sx={{ my: 2 }} />
                     <Stack spacing={0.75}>
                         <Stack direction="row" justifyContent="space-between">
-                            <Typography variant="body2">Subtotal</Typography>
+                            <Typography variant="body2">{t('Subtotal')}</Typography>
                             <Typography variant="body2">${Number(order.total_amount).toFixed(2)}</Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between">
-                            <Typography variant="body2">Tax</Typography>
+                            <Typography variant="body2">{t('Tax')}</Typography>
                             <Typography variant="body2">${Number(order.tax_amount ?? 0).toFixed(2)}</Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between">
-                            <Typography variant="body2">Shipping</Typography>
+                            <Typography variant="body2">{t('Shipping')}</Typography>
                             <Typography variant="body2">${Number(order.shipping_fee).toFixed(2)}</Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between" sx={{ pt: 1 }}>
@@ -180,19 +182,19 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                         </Stack>
                     </Stack>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-                        Payment: Manual transfer{proofUrl ? ' (screenshot submitted)' : ''}
+                        {t('Payment')}: {t('Manual transfer')}{proofUrl ? ` ${t('(screenshot submitted)')}` : ''}
                     </Typography>
 
                     {proofUrl && (
                         <Box sx={{ mt: 2 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                                Payment screenshot
+                                {t('Payment screenshot')}
                             </Typography>
                             <Box
                                 component="button"
                                 type="button"
                                 onClick={() => setProofLightbox(true)}
-                                aria-label="View payment screenshot"
+                                aria-label={t('View payment screenshot')}
                                 sx={{
                                     display: 'block',
                                     p: 0,
@@ -209,7 +211,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                                 <Box
                                     component="img"
                                     src={proofUrl}
-                                    alt="Payment screenshot"
+                                    alt={t('Payment screenshot')}
                                     sx={{
                                         width: '100%',
                                         height: { xs: 72, sm: 80 },
@@ -219,7 +221,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                                 />
                             </Box>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                Tap to view full size
+                                {t('Tap to view full size')}
                             </Typography>
                         </Box>
                     )}
@@ -230,7 +232,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                 <DialogContent sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.92)', position: 'relative' }}>
                     <IconButton
                         onClick={() => setProofLightbox(false)}
-                        aria-label="Close"
+                        aria-label={t('Close')}
                         sx={{ position: 'absolute', right: 8, top: 8, color: 'white', zIndex: 1 }}
                     >
                         <Close />
@@ -239,7 +241,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                         <Box
                             component="img"
                             src={proofUrl}
-                            alt="Payment screenshot"
+                            alt={t('Payment screenshot')}
                             sx={{ width: '100%', height: 'auto', display: 'block', borderRadius: 1 }}
                         />
                     ) : null}

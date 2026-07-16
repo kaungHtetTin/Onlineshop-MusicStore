@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class AdminUserController extends Controller
 {
@@ -42,7 +42,7 @@ class AdminUserController extends Controller
             $roles = $roles->reject(fn (array $role) => $role['value'] === 'super_admin')->values();
         }
 
-        return Inertia::render('Admin/Users/Index', [
+        return Spa::render('Admin/Users/Index', [
             'users' => $query
                 ->get(['id', 'name', 'email', 'phone', 'role', 'status', 'permissions', 'created_at', 'updated_at'])
                 ->map(function (User $user) {

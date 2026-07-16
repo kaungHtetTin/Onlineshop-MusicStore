@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\OrderManagementService;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class DashboardController extends Controller
 {
@@ -22,7 +22,7 @@ class DashboardController extends Controller
             ->limit(6)
             ->get();
 
-        return Inertia::render('Admin/Dashboard', [
+        return Spa::render('Admin/Dashboard', [
             'stats' => $stats,
             'recentOrders' => $recentOrders,
             'productCount' => Product::count(),
@@ -32,6 +32,6 @@ class DashboardController extends Controller
 
     public function uiShowcase()
     {
-        return Inertia::render('Admin/UiShowcase');
+        return Spa::render('Admin/UiShowcase');
     }
 }

@@ -568,11 +568,33 @@
   max-width: 360px;
 }
 
+.app-root .admin-back-button {
+  flex-shrink: 0;
+}
+
 .app-root .admin-topbar-actions {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-left: auto;
+}
+
+.app-root .admin-language-switcher {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-root .admin-language-switcher .language-switcher-icon {
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  color: var(--color-primary);
+}
+
+.app-root .admin-language-switcher select {
+  min-height: 34px;
+  max-width: 104px;
+  color: var(--color-text);
 }
 
 .app-root .admin-profile-menu {
@@ -2680,6 +2702,20 @@
 
   .app-root .admin-topbar-actions {
     gap: 6px;
+  }
+
+  .app-root .admin-language-switcher select {
+    max-width: 82px;
+    padding-inline: 7px 20px;
+  }
+
+  .app-root .admin-language-switcher {
+    padding-inline: 4px;
+  }
+
+  .app-root .admin-language-switcher .language-switcher-icon {
+    width: 18px;
+    height: 18px;
   }
 
   .app-root .profile-menu-trigger {

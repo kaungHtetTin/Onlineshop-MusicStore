@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@/spa/router';
 import {
     Box,
     Container,
@@ -17,6 +17,7 @@ import {
 import { routeWithBase } from '@/Utils/url';
 import { useTheme } from '@mui/material/styles';
 import { getMusicStoreColors, musicGradientForTheme } from '@/Components/User/musicStoreDesign';
+import { useTranslation } from '@/Utils/i18n';
 
 const asArray = (value) =>
     Array.isArray(value)
@@ -77,6 +78,7 @@ export default function Footer() {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
     const { app_base, app_settings } = usePage().props;
+    const t = useTranslation();
     const appName = app_settings?.app_name || 'Harmony House';
     const contacts = app_settings?.contacts || {};
     const emails = asArray(contacts.email);
@@ -140,13 +142,13 @@ export default function Footer() {
                             </Typography>
                         </Stack>
                         <Typography variant="caption" sx={{ opacity: 0.82, display: 'block', maxWidth: 280 }}>
-                            Instruments, accessories, and essentials for practice rooms, studios, and stages.
+                            {t('storefront.footer_text', 'Instruments, accessories, and essentials for practice rooms, studios, and stages.')}
                         </Typography>
                     </Box>
 
                     <Box>
                         <Typography variant="caption" sx={{ fontWeight: 800, mb: 1, display: 'block' }}>
-                            Shop
+                            {t('storefront.shop', 'Shop')}
                         </Typography>
                         <Stack spacing={0.75}>
                             <Typography
@@ -155,7 +157,7 @@ export default function Footer() {
                                 variant="caption"
                                 sx={{ opacity: 0.86, color: 'inherit', textDecoration: 'none', '&:hover': { opacity: 1, textDecoration: 'underline' } }}
                             >
-                                New arrivals
+                                {t('storefront.new_arrivals', 'New arrivals')}
                             </Typography>
                             <Typography
                                 component={Link}
@@ -163,7 +165,7 @@ export default function Footer() {
                                 variant="caption"
                                 sx={{ opacity: 0.86, color: 'inherit', textDecoration: 'none', '&:hover': { opacity: 1, textDecoration: 'underline' } }}
                             >
-                                Best sellers
+                                {t('storefront.best_sellers', 'Best sellers')}
                             </Typography>
                             <Typography
                                 component={Link}
@@ -171,7 +173,7 @@ export default function Footer() {
                                 variant="caption"
                                 sx={{ opacity: 0.86, color: 'inherit', textDecoration: 'none', '&:hover': { opacity: 1, textDecoration: 'underline' } }}
                             >
-                                Buying guides
+                                {t('storefront.buying_guides', 'Buying guides')}
                             </Typography>
                         </Stack>
                     </Box>
@@ -185,13 +187,13 @@ export default function Footer() {
                             }}
                         >
                             <ContactList
-                                title="Email"
+                                title={t('storefront.email', 'Email')}
                                 items={emails}
                                 icon={<EmailOutlined sx={{ fontSize: 14 }} />}
                                 hrefFor={(item) => `mailto:${item}`}
                             />
                             <ContactList
-                                title="Phone"
+                                title={t('storefront.phone', 'Phone')}
                                 items={phones}
                                 icon={<PhoneOutlined sx={{ fontSize: 14 }} />}
                                 hrefFor={(item) => `tel:${item.replace(/\s+/g, '')}`}
@@ -216,11 +218,11 @@ export default function Footer() {
                 <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ opacity: 0.72, mb: 0.75 }}>
                     <Headphones sx={{ fontSize: 15 }} />
                     <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                        Built for musicians, teachers, producers, and first-time players.
+                        {t('storefront.footer_note', 'Built for musicians, teachers, producers, and first-time players.')}
                     </Typography>
                 </Stack>
                 <Typography variant="caption" sx={{ textAlign: 'center', display: 'block', opacity: 0.64 }}>
-                    Copyright {new Date().getFullYear()} {appName}.
+                    {t('storefront.copyright', `Copyright ${new Date().getFullYear()} ${appName}.`, { year: new Date().getFullYear(), app: appName })}
                 </Typography>
                 <Typography
                     component="a"
@@ -238,7 +240,7 @@ export default function Footer() {
                         '&:hover': { opacity: 1, textDecoration: 'underline' },
                     }}
                 >
-                    Developed by k2softwarestudio.com
+                    {t('storefront.developed_by', 'Developed by k2softwarestudio.com')}
                 </Typography>
             </Container>
         </Box>

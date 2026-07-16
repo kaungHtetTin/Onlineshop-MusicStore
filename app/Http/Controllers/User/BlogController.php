@@ -7,7 +7,7 @@ use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\BlogTag;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class BlogController extends Controller
 {
@@ -34,7 +34,7 @@ class BlogController extends Controller
             $query->whereHas('tags', fn ($q) => $q->where('slug', $request->tag));
         }
 
-        return Inertia::render('User/Blogs/Index', [
+        return Spa::render('User/Blogs/Index', [
             'posts' => $query->paginate(9)->withQueryString(),
             'filters' => [
                 'q' => $request->string('q')->toString(),
@@ -72,7 +72,7 @@ class BlogController extends Controller
             ->take(3)
             ->get();
 
-        return Inertia::render('User/Blogs/Show', [
+        return Spa::render('User/Blogs/Show', [
             'post' => $post,
             'related' => $related,
         ]);

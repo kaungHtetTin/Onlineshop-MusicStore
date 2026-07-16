@@ -1,7 +1,8 @@
-import { Head } from '@inertiajs/react';
+import { Head } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const metrics = [
     { label: 'Active users', value: '2,431', hint: '+8.3% this week', icon: 'user' },
@@ -11,9 +12,11 @@ const metrics = [
 ];
 
 export default function UiShowcase() {
+    const t = usePhraseTranslation();
+
     return (
-        <AdminLayout title="UI Showcase" eyebrow="Design system reference">
-            <Head title="Admin UI Showcase" />
+        <AdminLayout title={t('UI Showcase')} eyebrow={t('Design system reference')}>
+            <Head title={t('Admin UI Showcase')} />
 
             <div className="metrics-grid four">
                 {metrics.map((m) => (
@@ -21,48 +24,48 @@ export default function UiShowcase() {
                         <span className="icon-well">
                             <Icon name={m.icon} size={15} />
                         </span>
-                        <small>{m.label}</small>
+                        <small>{t(m.label)}</small>
                         <strong>{m.value}</strong>
-                        <p>{m.hint}</p>
+                        <p>{t(m.hint)}</p>
                     </article>
                 ))}
             </div>
 
             <div className="admin-grid">
                 <section className="panel glass">
-                    <PanelHeading eyebrow="Forms" title="Form elements" />
+                    <PanelHeading eyebrow={t('Forms')} title={t('Form elements')} />
                     <div className="crud-grid" style={{ padding: 0 }}>
                         <label className="form-field">
-                            <span>Project name</span>
-                            <input defaultValue="LaLaPick Admin" />
+                            <span>{t('Project name')}</span>
+                            <input defaultValue={t('LaLaPick Admin')} />
                         </label>
                         <label className="form-field">
-                            <span>Admin email</span>
+                            <span>{t('Admin email')}</span>
                             <input defaultValue="admin@lalapick.com" />
                         </label>
                         <label className="form-field span-2">
-                            <span>Notes</span>
-                            <textarea defaultValue="Compact operational forms with focus rings." />
+                            <span>{t('Notes')}</span>
+                            <textarea defaultValue={t('Compact operational forms with focus rings.')} />
                         </label>
                     </div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                         <button type="button" className="btn primary grow">
-                            Save changes
+                            {t('Save changes')}
                         </button>
                         <button type="button" className="btn secondary grow">
-                            Cancel
+                            {t('Cancel')}
                         </button>
                     </div>
                 </section>
 
                 <section className="panel glass">
-                    <PanelHeading eyebrow="Status" title="Semantic badges" />
+                    <PanelHeading eyebrow={t('Status')} title={t('Semantic badges')} />
                     <div className="stack-sm">
-                        <StatusBadge status="success" label="Completed" />
-                        <StatusBadge status="warning" label="Pending approval" />
-                        <StatusBadge status="danger" label="Rejected" />
-                        <StatusBadge status="info" label="In progress" />
-                        <StatusBadge status="neutral" label="Inactive" />
+                        <StatusBadge status="success" label={t('Completed')} />
+                        <StatusBadge status="warning" label={t('Pending approval')} />
+                        <StatusBadge status="danger" label={t('Rejected')} />
+                        <StatusBadge status="info" label={t('In progress')} />
+                        <StatusBadge status="neutral" label={t('Inactive')} />
                     </div>
                     <div className="alert-list" style={{ marginTop: 14 }}>
                         <div>
@@ -70,8 +73,8 @@ export default function UiShowcase() {
                                 <Icon name="bell" size={15} />
                             </span>
                             <p>
-                                <strong>Storage at 92%</strong>
-                                <small>Review media uploads - 1m ago</small>
+                                <strong>{t('Storage at 92%')}</strong>
+                                <small>{t('Review media uploads - 1m ago')}</small>
                             </p>
                         </div>
                         <div>
@@ -79,8 +82,8 @@ export default function UiShowcase() {
                                 <Icon name="check" size={15} />
                             </span>
                             <p>
-                                <strong>API gateway stable</strong>
-                                <small>All services healthy - 1m ago</small>
+                                <strong>{t('API gateway stable')}</strong>
+                                <small>{t('All services healthy - 1m ago')}</small>
                             </p>
                         </div>
                     </div>
@@ -88,25 +91,25 @@ export default function UiShowcase() {
             </div>
 
             <section className="panel glass" style={{ marginTop: 14 }}>
-                <PanelHeading eyebrow="Tables" title="Recent activity" />
+                <PanelHeading eyebrow={t('Tables')} title={t('Recent activity')} />
                 <div className="filter-toolbar compact">
                     <div className="search-box">
                         <Icon name="search" size={16} />
-                        <input placeholder="Search activity..." />
+                        <input placeholder={t('Search activity...')} />
                     </div>
                     <select defaultValue="">
-                        <option value="">All types</option>
-                        <option value="order">Orders</option>
-                        <option value="product">Products</option>
+                        <option value="">{t('All types')}</option>
+                        <option value="order">{t('Orders')}</option>
+                        <option value="product">{t('Products')}</option>
                     </select>
                 </div>
                 <div className="table-wrap">
                     <table>
                         <thead>
                             <tr>
-                                <th>User</th>
-                                <th>Action</th>
-                                <th>Date</th>
+                                <th>{t('User')}</th>
+                                <th>{t('Action')}</th>
+                                <th>{t('Date')}</th>
                                 <th />
                             </tr>
                         </thead>
@@ -117,21 +120,21 @@ export default function UiShowcase() {
                                         <div className="rider-cell">
                                             <span>U{i}</span>
                                             <div>
-                                                <strong>User {i}</strong>
-                                                <small>Admin session</small>
+                                                <strong>{t('User :value', { value: i })}</strong>
+                                                <small>{t('Admin session')}</small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <strong>Updated product pricing</strong>
-                                        <small>Catalog change</small>
+                                        <strong>{t('Updated product pricing')}</strong>
+                                        <small>{t('Catalog change')}</small>
                                     </td>
                                     <td>
-                                        <small>Jun 9, 2026</small>
+                                        <small>{t('Jun 9, 2026')}</small>
                                     </td>
                                     <td>
                                         <div className="inline-actions">
-                                            <button type="button" className="icon-btn small" aria-label="More actions">
+                                            <button type="button" className="icon-btn small" aria-label={t('More actions')}>
                                                 <Icon name="edit" size={13} />
                                             </button>
                                         </div>

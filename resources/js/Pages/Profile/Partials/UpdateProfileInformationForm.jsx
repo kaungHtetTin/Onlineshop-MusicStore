@@ -1,4 +1,4 @@
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@/spa/router';
 import { Transition } from '@headlessui/react';
 import {
     Alert,
@@ -14,9 +14,11 @@ import { routeWithBase } from '@/Utils/url';
 import { storageUrl } from '@/Utils/url';
 import { useEffect, useState } from 'react';
 import CropImageModal from '@/Components/Admin/CropImageModal';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function UpdateProfileInformation({ mustVerifyEmail, status, className }) {
     const { url, props } = usePage();
+    const t = usePhraseTranslation();
     const { auth, admin_app_url, app_base, app_url } = props;
     const user = auth?.user;
     const isAdminContext = typeof url === 'string' && url.includes('/admin');
@@ -84,7 +86,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
         return (
             <Box component="section" className={className}>
                 <Alert severity="warning" variant="outlined">
-                    Please sign in again to manage your profile.
+                    {t('Please sign in again to manage your profile.')}
                 </Alert>
             </Box>
         );
@@ -94,10 +96,10 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
         <Box component="section" className={className}>
             <Stack spacing={0.5}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    Profile Information
+                    {t('Profile Information')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Update your account&apos;s profile information and email address.
+                    {t("Update your account's profile information and email address.")}
                 </Typography>
             </Stack>
 
@@ -110,7 +112,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                             </Avatar>
                             <Box>
                                 <Button variant="outlined" component="label" size="small" startIcon={<PhotoCamera />}>
-                                    Change photo
+                                    {t('Change photo')}
                                     <input
                                         type="file"
                                         name="avatar"
@@ -129,7 +131,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                                     />
                                 </Button>
                                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                                    JPG, PNG, WebP or GIF · max 4MB
+                                    {t('JPG, PNG, WebP or GIF - max 4MB')}
                                 </Typography>
                                 {errors.avatar && (
                                     <Typography variant="caption" color="error" display="block">
@@ -138,7 +140,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                                 )}
                                 {data.avatar instanceof File && (
                                     <Typography variant="caption" color="primary" display="block" sx={{ mt: 0.5 }}>
-                                        Selected: {data.avatar.name}
+                                        {t('Selected')}: {data.avatar.name}
                                     </Typography>
                                 )}
                             </Box>
@@ -147,7 +149,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
 
                     <TextField
                         id="name"
-                        label="Name"
+                        label={t('Name')}
                         fullWidth
                         required
                         autoComplete="name"
@@ -161,7 +163,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                     <TextField
                         id="email"
                         type="email"
-                        label="Email"
+                        label={t('Email')}
                         fullWidth
                         required
                         autoComplete="username"
@@ -175,24 +177,24 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                         <>
                             <TextField
                                 id="phone"
-                                label="Phone number"
+                                label={t('Phone number')}
                                 fullWidth
                                 autoComplete="tel"
                                 value={data.phone}
                                 onChange={(e) => setData('phone', e.target.value)}
                                 error={Boolean(errors.phone)}
-                                helperText={errors.phone || 'Used for shipping and order updates.'}
+                                helperText={errors.phone || t('Used for shipping and order updates.')}
                             />
                             <TextField
                                 id="default_address"
-                                label="Default shipping address"
+                                label={t('Default shipping address')}
                                 fullWidth
                                 multiline
                                 minRows={3}
                                 value={data.default_address}
                                 onChange={(e) => setData('default_address', e.target.value)}
                                 error={Boolean(errors.default_address)}
-                                helperText={errors.default_address || 'Prefills checkout. You can still edit each order.'}
+                                helperText={errors.default_address || t('Prefills checkout. You can still edit each order.')}
                             />
                         </>
                     )}
@@ -200,7 +202,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                     {mustVerifyEmail && user.email_verified_at === null && (
                         <Stack spacing={1}>
                             <Alert severity="warning" variant="outlined">
-                                Your email address is unverified.
+                                {t('Your email address is unverified.')}
                             </Alert>
                             <Typography variant="body2">
                                 <Link
@@ -209,12 +211,12 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                                     as="button"
                                     className="text-sm text-primary-600 underline"
                                 >
-                                    Re-send verification email
+                                    {t('Re-send verification email')}
                                 </Link>
                             </Typography>
                             {status === 'verification-link-sent' && (
                                 <Alert severity="success" variant="outlined">
-                                    A new verification link has been sent to your email address.
+                                    {t('A new verification link has been sent to your email address.')}
                                 </Alert>
                             )}
                         </Stack>
@@ -222,7 +224,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
 
                     <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                         <Button type="submit" variant="contained" disabled={processing}>
-                            Save
+                            {t('Save')}
                         </Button>
                         <Transition
                             show={recentlySuccessful}
@@ -231,7 +233,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                             className="transition ease-in-out"
                         >
                             <Typography variant="body2" color="text.secondary">
-                                Saved.
+                                {t('Saved.')}
                             </Typography>
                         </Transition>
                     </Stack>

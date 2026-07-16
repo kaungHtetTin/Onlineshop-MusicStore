@@ -11,14 +11,14 @@ use App\Services\AuditLogService;
 use App\Services\Inventory\StockAdjustmentService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class StockAdjustmentController extends Controller
 {
     public function index(Request $request)
     {
         $this->authorize('viewAny', StockAdjustment::class);
-        return Inertia::render('Admin/Inventory/Adjustments/Index', [
+        return Spa::render('Admin/Inventory/Adjustments/Index', [
             'adjustments' => StockAdjustment::query()
                 ->whereIn('location_id', $request->user()->accessibleLocationIds())
                 ->with(['location:id,code,name', 'items.sku.product:id,name'])
@@ -59,7 +59,7 @@ class StockAdjustmentController extends Controller
             ->get(['location_id', 'on_hand_qty'])
             ->keyBy('location_id');
 
-        return Inertia::render('Admin/Inventory/Adjustments/Create', [
+        return Spa::render('Admin/Inventory/Adjustments/Create', [
             'locations' => $locations,
             'reasons' => collect(StockAdjustment::REASONS)->map(fn ($label, $value) => compact('value', 'label'))->values(),
             'selectedSku' => [

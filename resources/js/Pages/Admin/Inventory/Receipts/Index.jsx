@@ -1,40 +1,42 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import AdminPagination from '@/Components/Admin/AdminPagination';
 import Icon from '@/Components/Admin/icons';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function ReceiptsIndex({ receipts }) {
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
 
     return (
         <AdminLayout
-            title="Receiving"
-            eyebrow="Inventory"
-            action={<Link className="btn primary" href={routeWithBase('/admin/inventory/receipts/create', app_base)}><Icon name="plus" size={14} /> New receipt</Link>}
+            title={t('Receiving')}
+            eyebrow={t('Inventory')}
+            action={<Link className="btn primary" href={routeWithBase('/admin/inventory/receipts/create', app_base)}><Icon name="plus" size={14} /> {t('New receipt')}</Link>}
         >
-            <Head title="Stock Receipts" />
+            <Head title={t('Stock Receipts')} />
             <section className="panel glass">
-                <PanelHeading eyebrow="Inbound stock" title="Stock receipts" />
+                <PanelHeading eyebrow={t('Inbound stock')} title={t('Stock receipts')} />
                 <div className="table-wrap">
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th>Receipt</th>
-                                <th>Warehouse</th>
-                                <th>Reference</th>
-                                <th>Lines</th>
-                                <th>Units</th>
-                                <th>Status</th>
-                                <th>Date</th>
+                                <th>{t('Receipt')}</th>
+                                <th>{t('Warehouse')}</th>
+                                <th>{t('Reference')}</th>
+                                <th>{t('Lines')}</th>
+                                <th>{t('Units')}</th>
+                                <th>{t('Status')}</th>
+                                <th>{t('Date')}</th>
                                 <th />
                             </tr>
                         </thead>
                         <tbody>
                             {receipts.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="empty-table-cell">No receipts yet.</td>
+                                    <td colSpan="8" className="empty-table-cell">{t('No receipts yet.')}</td>
                                 </tr>
                             ) : receipts.data.map((receipt) => (
                                 <tr key={receipt.id}>
@@ -43,16 +45,16 @@ export default function ReceiptsIndex({ receipts }) {
                                     <td>{receipt.supplier_reference || '-'}</td>
                                     <td>{receipt.items.length}</td>
                                     <td>{receipt.items.reduce((sum, item) => sum + item.received_quantity, 0)}</td>
-                                    <td><StatusBadge status={receipt.status === 'posted' ? 'success' : 'warning'} label={receipt.status} /></td>
+                                    <td><StatusBadge status={receipt.status === 'posted' ? 'success' : 'warning'} label={t(receipt.status)} /></td>
                                     <td>{new Date(receipt.created_at).toLocaleDateString()}</td>
                                     <td>
                                         <div className="inline-actions">
                                             {receipt.status === 'draft' && (
-                                                <Link className="icon-btn small" href={routeWithBase(`/admin/inventory/receipts/${receipt.id}/edit`, app_base)} aria-label="Edit receipt">
+                                                <Link className="icon-btn small" href={routeWithBase(`/admin/inventory/receipts/${receipt.id}/edit`, app_base)} aria-label={t('Edit receipt')}>
                                                     <Icon name="edit" size={13} />
                                                 </Link>
                                             )}
-                                            <Link className="icon-btn small" href={routeWithBase(`/admin/inventory/receipts/${receipt.id}`, app_base)} aria-label="Open receipt">
+                                            <Link className="icon-btn small" href={routeWithBase(`/admin/inventory/receipts/${receipt.id}`, app_base)} aria-label={t('Open receipt')}>
                                                 <Icon name="external" size={13} />
                                             </Link>
                                         </div>
@@ -62,7 +64,7 @@ export default function ReceiptsIndex({ receipts }) {
                         </tbody>
                     </table>
                 </div>
-                <AdminPagination paginator={receipts} label="receipts" />
+                <AdminPagination paginator={receipts} label={t('receipts')} />
             </section>
         </AdminLayout>
     );

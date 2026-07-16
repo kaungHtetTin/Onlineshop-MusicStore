@@ -1,11 +1,13 @@
 import { useRef } from 'react';
-import { useForm, usePage } from '@inertiajs/react';
+import { useForm, usePage } from '@/spa/router';
 import { Transition } from '@headlessui/react';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function UpdatePasswordForm({ className }) {
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
     const passwordInput = useRef();
     const currentPasswordInput = useRef();
 
@@ -39,10 +41,10 @@ export default function UpdatePasswordForm({ className }) {
         <Box component="section" className={className}>
             <Stack spacing={0.5}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    Update Password
+                    {t('Update Password')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Ensure your account is using a long, random password to stay secure.
+                    {t('Ensure your account is using a long, random password to stay secure.')}
                 </Typography>
             </Stack>
 
@@ -51,7 +53,7 @@ export default function UpdatePasswordForm({ className }) {
                     <TextField
                         id="current_password"
                         type="password"
-                        label="Current Password"
+                        label={t('Current Password')}
                         fullWidth
                         inputRef={currentPasswordInput}
                         autoComplete="current-password"
@@ -64,7 +66,7 @@ export default function UpdatePasswordForm({ className }) {
                     <TextField
                         id="password"
                         type="password"
-                        label="New Password"
+                        label={t('New Password')}
                         fullWidth
                         inputRef={passwordInput}
                         autoComplete="new-password"
@@ -77,7 +79,7 @@ export default function UpdatePasswordForm({ className }) {
                     <TextField
                         id="password_confirmation"
                         type="password"
-                        label="Confirm Password"
+                        label={t('Confirm Password')}
                         fullWidth
                         autoComplete="new-password"
                         value={data.password_confirmation}
@@ -88,11 +90,11 @@ export default function UpdatePasswordForm({ className }) {
 
                     <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                         <Button type="submit" variant="contained" disabled={processing}>
-                            Save
+                            {t('Save')}
                         </Button>
                         <Transition show={recentlySuccessful} enterFrom="opacity-0" leaveTo="opacity-0" className="transition ease-in-out">
                             <Typography variant="body2" color="text.secondary">
-                                Saved.
+                                {t('Saved.')}
                             </Typography>
                         </Transition>
                     </Stack>

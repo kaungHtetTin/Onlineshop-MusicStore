@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@/spa/router';
 import axios from 'axios';
 import {
     Alert,
@@ -31,6 +31,7 @@ import {
     sectionShellSxForTheme,
     storefrontBackgroundSx,
 } from '@/Components/User/musicStoreDesign';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const steps = ['Shipping', 'Payment proof', 'Review'];
 
@@ -39,6 +40,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
     const musicColors = getMusicStoreColors(theme);
     const sectionShellSx = sectionShellSxForTheme(theme);
     const { app_base, auth } = usePage().props;
+    const t = usePhraseTranslation();
     const items = useCartStore((s) => s.items);
     const clearCart = useCartStore((s) => s.clear);
     const [activeStep, setActiveStep] = useState(0);
@@ -166,14 +168,14 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
 
             <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
                 <BackLink href={routeWithBase('/cart', app_base)}>
-                    Back to cart
+                    {t('Back to cart')}
                 </BackLink>
 
                 <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
-                    Secure checkout
+                    {t('Secure checkout')}
                 </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>
-                    Finish your order
+                    {t('Finish your order')}
                 </Typography>
 
                 <Stepper
@@ -183,7 +185,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                 >
                     {steps.map((label) => (
                         <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
+                            <StepLabel>{t(label)}</StepLabel>
                         </Step>
                     ))}
                 </Stepper>
@@ -197,7 +199,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             errors.payment_method_id ||
                             errors.payment_proof ||
                             errors.payment_method ||
-                            'Please fix the errors and try again.'}
+                            t('Please fix the errors and try again.')}
                     </Alert>
                 )}
 
@@ -205,7 +207,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                     {activeStep === 0 && (
                         <Stack spacing={2}>
                             <TextField
-                                label="Full name"
+                                label={t('Full name')}
                                 value={data.receiver_name}
                                 onChange={(e) => setData('receiver_name', e.target.value)}
                                 error={!!errors.receiver_name}
@@ -214,7 +216,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 required
                             />
                             <TextField
-                                label="Phone"
+                                label={t('Phone')}
                                 value={data.receiver_phone}
                                 onChange={(e) => setData('receiver_phone', e.target.value)}
                                 error={!!errors.receiver_phone}
@@ -223,7 +225,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 required
                             />
                             <TextField
-                                label="Shipping address"
+                                label={t('Shipping address')}
                                 value={data.shipping_address}
                                 onChange={(e) => setData('shipping_address', e.target.value)}
                                 error={!!errors.shipping_address}
@@ -234,7 +236,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 minRows={3}
                             />
                             <TextField
-                                label="Order notes (optional)"
+                                label={t('Order notes (optional)')}
                                 value={data.order_notes}
                                 onChange={(e) => setData('order_notes', e.target.value)}
                                 fullWidth
@@ -243,7 +245,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             />
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                                 <TextField
-                                    label="Coupon code"
+                                    label={t('Coupon code')}
                                     value={data.coupon_code}
                                     onChange={(e) => setData('coupon_code', e.target.value.toUpperCase())}
                                     error={!!errors.coupon_code}
@@ -251,12 +253,12 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                     fullWidth
                                 />
                                 <TextField
-                                    label={`Redeem points (${loyalty?.points ?? 0} available)`}
+                                    label={`${t('Redeem points')} (${loyalty?.points ?? 0} ${t('available')})`}
                                     type="number"
                                     value={data.redeem_points}
                                     onChange={(e) => setData('redeem_points', Math.max(0, Number(e.target.value || 0)))}
                                     error={!!errors.redeem_points}
-                                    helperText={errors.redeem_points || `${loyalty?.tier ?? 'Bronze'} tier`}
+                                    helperText={errors.redeem_points || `${loyalty?.tier ?? 'Bronze'} ${t('tier')}`}
                                     inputProps={{
                                         min: 0,
                                         max: loyalty?.points ?? 0,
@@ -265,18 +267,18 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                     fullWidth
                                 />
                             </Stack>
-                            {quoteError && <Alert severity="warning">{quoteError}</Alert>}
+                            {quoteError && <Alert severity="warning">{t(quoteError)}</Alert>}
                         </Stack>
                     )}
 
                     {activeStep === 1 && (
                         <Stack spacing={2}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                Choose payment account
+                                {t('Choose payment account')}
                             </Typography>
                             {paymentMethods.length === 0 ? (
                                 <Alert severity="warning" sx={{ borderRadius: 2 }}>
-                                    No payment methods are available right now. Please contact support before placing an order.
+                                    {t('No payment methods are available right now. Please contact support before placing an order.')}
                                 </Alert>
                             ) : (
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1.25 }}>
@@ -342,11 +344,10 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             )}
                             {errors.payment_method_id && <FormHelperText error>{errors.payment_method_id}</FormHelperText>}
                             <Alert severity="info" sx={{ borderRadius: 2 }}>
-                                Pay the order total using your bank or wallet, then upload a clear screenshot of the successful
-                                transfer. The shop team will verify your payment before the order is prepared.
+                                {t('Pay the order total using your bank or wallet, then upload a clear screenshot of the successful transfer. The shop team will verify your payment before the order is prepared.')}
                             </Alert>
                             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                Transaction screenshot (required)
+                                {t('Transaction screenshot (required)')}
                             </Typography>
                             <input
                                 ref={fileInputRef}
@@ -362,7 +363,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 fullWidth
                                 sx={{ py: 1.5, fontWeight: 700 }}
                             >
-                                {data.payment_proof ? 'Change screenshot' : 'Upload screenshot'}
+                                {t(data.payment_proof ? 'Change screenshot' : 'Upload screenshot')}
                             </Button>
                             {errors.payment_proof && <FormHelperText error>{errors.payment_proof}</FormHelperText>}
                             {proofPreview && (
@@ -379,7 +380,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                     <Box
                                         component="img"
                                         src={proofPreview}
-                                        alt="Payment proof preview"
+                                        alt={t('Payment proof preview')}
                                         sx={{
                                             width: 72,
                                             height: 72,
@@ -396,7 +397,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                             </Typography>
                                         </Stack>
                                         <Typography variant="caption" color="text.secondary">
-                                            JPG, PNG or WebP · max 10 MB
+                                            {t('JPG, PNG or WebP - max 10 MB')}
                                         </Typography>
                                     </Stack>
                                 </Paper>
@@ -413,16 +414,16 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                             {line.name}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            {line.skuLabel} × {line.qty}
+                                            {line.skuLabel} x {line.qty}
                                         </Typography>
                                         {line.isPreorder && (
                                             <Typography variant="caption" color="warning.main" display="block" sx={{ fontWeight: 700 }}>
-                                                Pre-order
+                                                {t('Pre-order')}
                                             </Typography>
                                         )}
                                         {line.flashSale && (
                                             <Typography variant="caption" color="error.main" display="block" sx={{ fontWeight: 800 }}>
-                                                Flash Sale
+                                                {t('Flash Sale')}
                                             </Typography>
                                         )}
                                     </Box>
@@ -433,24 +434,24 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             ))}
                             <Divider />
                             <Stack direction="row" justifyContent="space-between">
-                                <Typography variant="body2">Subtotal</Typography>
+                                <Typography variant="body2">{t('Subtotal')}</Typography>
                                 <Typography variant="body2">${Number(quote?.subtotal ?? subtotal).toFixed(2)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between">
-                                <Typography variant="body2">Tax ({((shop?.tax_rate ?? 0) * 100).toFixed(1)}%)</Typography>
+                                <Typography variant="body2">{t('Tax')} ({((shop?.tax_rate ?? 0) * 100).toFixed(1)}%)</Typography>
                                 <Typography variant="body2">${Number(quote?.tax ?? tax).toFixed(2)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between">
-                                <Typography variant="body2">Shipping</Typography>
+                                <Typography variant="body2">{t('Shipping')}</Typography>
                                 <Typography variant="body2">
-                                    {Number(quote?.shipping ?? shipping) === 0 ? 'Free' : `$${Number(quote?.shipping ?? shipping).toFixed(2)}`}
+                                    {Number(quote?.shipping ?? shipping) === 0 ? t('Free') : `$${Number(quote?.shipping ?? shipping).toFixed(2)}`}
                                 </Typography>
                             </Stack>
                             {(quote?.coupon_discount > 0 || quote?.points_value > 0) && (
                                 <>
                                     {quote?.coupon_discount > 0 && (
                                         <Stack direction="row" justifyContent="space-between">
-                                            <Typography variant="body2">Coupon {quote.coupon_code}</Typography>
+                                            <Typography variant="body2">{t('Coupon')} {quote.coupon_code}</Typography>
                                             <Typography variant="body2" color="success.main">
                                                 -${Number(quote.coupon_discount).toFixed(2)}
                                             </Typography>
@@ -458,7 +459,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                     )}
                                     {quote?.points_value > 0 && (
                                         <Stack direction="row" justifyContent="space-between">
-                                            <Typography variant="body2">Points ({quote.redeemed_points})</Typography>
+                                            <Typography variant="body2">{t('Points')} ({quote.redeemed_points})</Typography>
                                             <Typography variant="body2" color="success.main">
                                                 -${Number(quote.points_value).toFixed(2)}
                                             </Typography>
@@ -469,7 +470,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             <Divider />
                             {selectedPaymentMethod && (
                                 <Stack direction="row" justifyContent="space-between" spacing={2}>
-                                    <Typography variant="body2">Payment account</Typography>
+                                    <Typography variant="body2">{t('Payment account')}</Typography>
                                     <Box sx={{ textAlign: 'right' }}>
                                         <Typography variant="body2" sx={{ fontWeight: 800 }}>
                                             {selectedPaymentMethod.banking_service}
@@ -483,7 +484,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             <Divider />
                             <Stack direction="row" justifyContent="space-between">
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                    Total to pay
+                                    {t('Total to pay')}
                                 </Typography>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
                                     ${total.toFixed(2)}
@@ -491,7 +492,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             </Stack>
                             {proofPreview && (
                                 <Typography variant="caption" color="success.main" sx={{ fontWeight: 700 }}>
-                                    Payment screenshot attached
+                                    {t('Payment screenshot attached')}
                                 </Typography>
                             )}
                         </Stack>
@@ -505,7 +506,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             fullWidth
                             sx={{ maxWidth: { sm: 160 } }}
                         >
-                            Back
+                            {t('Back')}
                         </Button>
                         {activeStep < steps.length - 1 ? (
                             <Button
@@ -515,7 +516,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 fullWidth
                                 sx={{ maxWidth: { sm: 200 }, fontWeight: 800 }}
                             >
-                                Continue
+                                {t('Continue')}
                             </Button>
                         ) : (
                             <Button
@@ -525,7 +526,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 fullWidth
                                 sx={{ maxWidth: { sm: 240 }, fontWeight: 800 }}
                             >
-                                {processing ? 'Submitting…' : 'Submit order'}
+                                {t(processing ? 'Submitting...' : 'Submit order')}
                             </Button>
                         )}
                     </Stack>

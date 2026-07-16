@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@/spa/router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { StatusBadge } from '@/Components/Admin/shared';
 import { apiUrl, routeWithBase, storageUrl } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 import {
     compressImageFile,
     ensureSanctumCookie,
@@ -31,6 +32,7 @@ function newClientTempId() {
 
 export function AdminChatPanel({ customer, showBackLink = false, backHref = null, onBack = null, className = '' }) {
     const { app_base, auth, app_url } = usePage().props;
+    const t = usePhraseTranslation();
     const queryClient = useQueryClient();
     const pageVisible = usePageVisible();
 
@@ -293,12 +295,12 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                 onBack ? (
                     <button type="button" className="back-link as-button" onClick={onBack}>
                         <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} />
-                        Back to inbox
+                        {t('Back to inbox')}
                     </button>
                 ) : (
                     <Link href={backHref || routeWithBase('/admin/chats', app_base)} className="back-link">
                         <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} />
-                        Back to inbox
+                        {t('Back to inbox')}
                     </Link>
                 )
             )}
@@ -309,16 +311,16 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                         <div className="rider-cell">
                             <span>{(customerPreview?.name || 'C')[0]}</span>
                             <div>
-                                <strong>{customerPreview?.name || 'Select a conversation'}</strong>
+                                <strong>{customerPreview?.name || t('Select a conversation')}</strong>
                                 <small>
-                                    {customerPreview?.email || 'Choose a customer from the inbox.'}
-                                    {customerPreview.phone ? ` · ${customerPreview.phone}` : ''}
+                                    {customerPreview?.email || t('Choose a customer from the inbox.')}
+                                    {customerPreview.phone ? ` - ${customerPreview.phone}` : ''}
                                 </small>
                             </div>
                         </div>
                         <StatusBadge
                             status={pollQuery.isFetching ? 'info' : 'success'}
-                            label={pollQuery.isFetching ? 'Syncing…' : 'Live'}
+                            label={pollQuery.isFetching ? t('Syncing...') : t('Live')}
                         />
                     </div>
                 </section>
@@ -327,8 +329,8 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                     {!customer?.id ? (
                         <div className="chat-empty-state">
                             <Icon name="chat" size={26} />
-                            <strong>Select a conversation</strong>
-                            <p>Pick a customer from the inbox to view and reply to messages.</p>
+                            <strong>{t('Select a conversation')}</strong>
+                            <p>{t('Pick a customer from the inbox to view and reply to messages.')}</p>
                         </div>
                     ) : !csrfReady || metaQuery.isLoading || messagesBootstrap.isLoading ? (
                         <div className="chat-skeleton">
@@ -338,7 +340,7 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                         </div>
                     ) : metaQuery.isError ? (
                         <div className="flash error" style={{ margin: 14 }}>
-                            Could not load conversation.
+                            {t('Could not load conversation.')}
                         </div>
                     ) : (
                         <>
@@ -352,7 +354,7 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                                             disabled={loadingOlder}
                                             style={{ minHeight: 32, fontSize: 11 }}
                                         >
-                                            {loadingOlder ? 'Loading…' : 'Load older messages'}
+                                            {loadingOlder ? t('Loading...') : t('Load older messages')}
                                         </button>
                                     </div>
                                 )}
@@ -372,7 +374,7 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                                             {m.body ? <div style={{ whiteSpace: 'pre-wrap' }}>{m.body}</div> : null}
                                             <div className="meta">
                                                 <span>{time}</span>
-                                                {mine && !m.failed && !m.seen_at && <span>Sent</span>}
+                                                {mine && !m.failed && !m.seen_at && <span>{t('Sent')}</span>}
                                                 {mine && m.failed && (
                                                     <button
                                                         type="button"
@@ -380,7 +382,7 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                                                         style={{ color: 'inherit' }}
                                                         onClick={() => retryOptimistic(m)}
                                                     >
-                                                        Retry
+                                                        {t('Retry')}
                                                     </button>
                                                 )}
                                             </div>
@@ -416,7 +418,7 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                                     <div className="progress-bar">
                                         <span style={{ width: `${uploadPct}%` }} />
                                     </div>
-                                    <small>Uploading… {uploadPct}%</small>
+                                    <small>{t('Uploading...')} {uploadPct}%</small>
                                 </div>
                             )}
 
@@ -429,7 +431,7 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                                     if (f && /^image\/(jpeg|png|webp)$/i.test(f.type)) pickImage(f);
                                 }}
                             >
-                                <label className="icon-btn" aria-label="Upload image">
+                                <label className="icon-btn" aria-label={t('Upload image')}>
                                     <Icon name="image" size={16} />
                                     <input
                                         hidden
@@ -439,7 +441,7 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                                     />
                                 </label>
                                 <textarea
-                                    placeholder="Reply…"
+                                    placeholder={t('Reply...')}
                                     value={draft}
                                     onChange={(e) => setDraft(e.target.value)}
                                     onKeyDown={(e) => {
@@ -455,7 +457,7 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
                                     style={{ background: 'var(--color-primary)', color: '#fff', borderColor: 'var(--color-primary)' }}
                                     onClick={sendNow}
                                     disabled={busy || (!draft.trim() && !previewFile)}
-                                    aria-label="Send"
+                                    aria-label={t('Send')}
                                 >
                                     <Icon name="navigation" size={16} />
                                 </button>
@@ -477,9 +479,11 @@ export function AdminChatPanel({ customer, showBackLink = false, backHref = null
 }
 
 export default function AdminChatsShow({ customer }) {
+    const t = usePhraseTranslation();
+
     return (
-        <AdminLayout title={customer.name} eyebrow="Customer chat">
-            <Head title={`Chat • ${customer.name}`} />
+        <AdminLayout title={customer.name} eyebrow={t('Customer chat')}>
+            <Head title={t('Chat :value', { value: customer.name })} />
             <AdminChatPanel customer={customer} showBackLink />
         </AdminLayout>
     );

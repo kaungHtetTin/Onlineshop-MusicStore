@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const emptyForm = {
     name: '',
@@ -19,6 +20,7 @@ const emptyForm = {
 
 export default function UsersIndex({ users, filters, roles, permissions }) {
     const { app_base, auth, flash } = usePage().props;
+    const t = usePhraseTranslation();
     const currentUserId = auth?.user?.id;
     const [search, setSearch] = useState(filters.q ?? '');
     const [open, setOpen] = useState(false);
@@ -86,7 +88,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
     };
 
     const toggleStatus = (user) => {
-        if (!confirm(`${user.status === 'active' ? 'Suspend' : 'Activate'} ${user.name}?`)) return;
+        if (!confirm(`${t(user.status === 'active' ? 'Suspend' : 'Activate')} ${user.name}?`)) return;
         router.patch(routeWithBase(`/admin/users/${user.id}/toggle-status`, app_base), {}, { preserveScroll: true });
     };
 
@@ -100,27 +102,27 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
 
     return (
         <AdminLayout
-            title="Team management"
-            eyebrow="Staff accounts"
+            title={t('Team management')}
+            eyebrow={t('Staff accounts')}
             action={
                 <button type="button" className="btn primary" onClick={openCreate}>
                     <Icon name="plus" size={14} />
-                    Add staff
+                    {t('Add staff')}
                 </button>
             }
         >
-            <Head title="Admin Users" />
+            <Head title={t('Admin Users')} />
 
             <AdminFlash flash={flash} errors={form.errors} />
 
             <section className="panel glass">
-                <PanelHeading eyebrow="Access control" title="Admin staff" />
+                <PanelHeading eyebrow={t('Access control')} title={t('Admin staff')} />
 
                 <form className="filter-toolbar staff-filter" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input
-                            placeholder="Search name or email…"
+                            placeholder={t('Search name or email...')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
@@ -129,7 +131,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                         value={filters.role || ''}
                         onChange={(e) => applyFilters({ role: e.target.value || undefined })}
                     >
-                        <option value="">All roles</option>
+                        <option value="">{t('All roles')}</option>
                         {roles.map((r) => (
                             <option key={r.value} value={r.value}>
                                 {r.label}
@@ -140,12 +142,12 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                         value={filters.status || ''}
                         onChange={(e) => applyFilters({ status: e.target.value || undefined })}
                     >
-                        <option value="">All statuses</option>
-                        <option value="active">Active</option>
-                        <option value="suspended">Suspended</option>
+                        <option value="">{t('All statuses')}</option>
+                        <option value="active">{t('Active')}</option>
+                        <option value="suspended">{t('Suspended')}</option>
                     </select>
                     <button type="submit" className="btn primary">
-                        Search
+                        {t('Search')}
                     </button>
                 </form>
 
@@ -159,7 +161,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                             router.get(routeWithBase('/admin/users', app_base));
                         }}
                     >
-                        Reset filters
+                        {t('Reset filters')}
                     </button>
                 )}
 
@@ -167,10 +169,10 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                     <table>
                         <thead>
                             <tr>
-                                <th>Staff</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Updated</th>
+                                <th>{t('Staff')}</th>
+                                <th>{t('Role')}</th>
+                                <th>{t('Status')}</th>
+                                <th>{t('Updated')}</th>
                                 <th />
                             </tr>
                         </thead>
@@ -178,7 +180,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                             {users.length === 0 ? (
                                 <tr>
                                     <td colSpan={5}>
-                                        <span className="muted">No staff accounts match your filters.</span>
+                                        <span className="muted">{t('No staff accounts match your filters.')}</span>
                                     </td>
                                 </tr>
                             ) : (
@@ -194,7 +196,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                                         <strong>{user.name}</strong>
                                                         <small>
                                                             {user.email}
-                                                            {user.phone ? ` · ${user.phone}` : ''}
+                                                            {user.phone ? ` - ${user.phone}` : ''}
                                                         </small>
                                                     </div>
                                                 </div>
@@ -208,7 +210,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                             <td>
                                                 <StatusBadge
                                                     status={user.status === 'active' ? 'success' : 'danger'}
-                                                    label={user.status === 'active' ? 'Active' : 'Suspended'}
+                                                    label={user.status === 'active' ? t('Active') : t('Suspended')}
                                                 />
                                             </td>
                                             <td>
@@ -219,7 +221,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                                     <button
                                                         type="button"
                                                         className="icon-btn small"
-                                                        aria-label="Edit staff"
+                                                        aria-label={t('Edit staff')}
                                                         onClick={() => openEdit(user)}
                                                     >
                                                         <Icon name="edit" size={13} />
@@ -227,9 +229,9 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                                     <button
                                                         type="button"
                                                         className="icon-btn small"
-                                                        aria-label={user.status === 'active' ? 'Suspend' : 'Activate'}
+                                                        aria-label={t(user.status === 'active' ? 'Suspend' : 'Activate')}
                                                         disabled={isSelf}
-                                                        title={isSelf ? 'Cannot change your own status' : undefined}
+                                                        title={isSelf ? t('Cannot change your own status') : undefined}
                                                         onClick={() => toggleStatus(user)}
                                                     >
                                                         <Icon name={user.status === 'active' ? 'lock' : 'check'} size={13} />
@@ -237,9 +239,9 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                                     <button
                                                         type="button"
                                                         className="icon-btn small danger"
-                                                        aria-label="Delete staff"
+                                                        aria-label={t('Delete staff')}
                                                         disabled={isSelf}
-                                                        title={isSelf ? 'Cannot delete your own account' : undefined}
+                                                        title={isSelf ? t('Cannot delete your own account') : undefined}
                                                         onClick={() => setDeleteUser(user)}
                                                     >
                                                         <Icon name="trash" size={13} />
@@ -260,23 +262,23 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                     <form className="operation-modal compact glass" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Staff account</p>
+                                <p className="eyebrow">{t('Staff account')}</p>
                                 <h2 style={{ fontSize: 16, fontWeight: 800 }}>
-                                    {editUser ? 'Edit staff member' : 'New staff member'}
+                                    {editUser ? t('Edit staff member') : t('New staff member')}
                                 </h2>
                             </div>
-                            <button type="button" className="icon-btn small" onClick={closeModal} aria-label="Close">
+                            <button type="button" className="icon-btn small" onClick={closeModal} aria-label={t('Close')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
                         <div className="crud-grid">
                             <label className="form-field span-2">
-                                <span>Full name</span>
+                                <span>{t('Full name')}</span>
                                 <input value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required />
                                 {form.errors.name && <small style={{ color: '#ce4444' }}>{form.errors.name}</small>}
                             </label>
                             <label className="form-field">
-                                <span>Email</span>
+                                <span>{t('Email')}</span>
                                 <input
                                     type="email"
                                     value={form.data.email}
@@ -286,12 +288,12 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                 {form.errors.email && <small style={{ color: '#ce4444' }}>{form.errors.email}</small>}
                             </label>
                             <label className="form-field">
-                                <span>Phone</span>
+                                <span>{t('Phone')}</span>
                                 <input value={form.data.phone} onChange={(e) => form.setData('phone', e.target.value)} />
                                 {form.errors.phone && <small style={{ color: '#ce4444' }}>{form.errors.phone}</small>}
                             </label>
                             <label className="form-field">
-                                <span>Role</span>
+                                <span>{t('Role')}</span>
                                 <select
                                     value={form.data.role}
                                     onChange={(e) => form.setData('role', e.target.value)}
@@ -306,19 +308,19 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                 {form.errors.role && <small style={{ color: '#ce4444' }}>{form.errors.role}</small>}
                             </label>
                             <label className="form-field">
-                                <span>Status</span>
+                                <span>{t('Status')}</span>
                                 <select
                                     value={form.data.status}
                                     onChange={(e) => form.setData('status', e.target.value)}
                                     disabled={editUser?.id === currentUserId}
                                 >
-                                    <option value="active">Active</option>
-                                    <option value="suspended">Suspended</option>
+                                    <option value="active">{t('Active')}</option>
+                                    <option value="suspended">{t('Suspended')}</option>
                                 </select>
                                 {form.errors.status && <small style={{ color: '#ce4444' }}>{form.errors.status}</small>}
                             </label>
                             <label className="form-field span-2">
-                                <span>{editUser ? 'New password (optional)' : 'Password'}</span>
+                                <span>{editUser ? t('New password (optional)') : t('Password')}</span>
                                 <input
                                     type="password"
                                     value={form.data.password}
@@ -329,7 +331,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                 {form.errors.password && <small style={{ color: '#ce4444' }}>{form.errors.password}</small>}
                             </label>
                             <label className="form-field span-2">
-                                <span>Confirm password</span>
+                                <span>{t('Confirm password')}</span>
                                 <input
                                     type="password"
                                     value={form.data.password_confirmation}
@@ -339,7 +341,7 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                 />
                             </label>
                             <div className="form-field span-2">
-                                <span>Additional user permissions</span>
+                                <span>{t('Additional user permissions')}</span>
                                 <div className="stack-sm" style={{ marginTop: 6 }}>
                                     {permissions.map((permission) => (
                                         <label key={permission.value} className="checkbox-row">
@@ -365,10 +367,10 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={closeModal}>
-                                Cancel
+                                {t('Cancel')}
                             </button>
                             <button type="submit" className="btn primary" disabled={form.processing}>
-                                {editUser ? 'Save changes' : 'Create staff'}
+                                {editUser ? t('Save changes') : t('Create staff')}
                             </button>
                         </div>
                     </form>
@@ -380,8 +382,8 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                     <div className="operation-modal compact glass" onClick={(e) => e.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Confirm</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>Remove staff account</h2>
+                                <p className="eyebrow">{t('Confirm')}</p>
+                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('Remove staff account')}</h2>
                             </div>
                             <button type="button" className="icon-btn small" onClick={() => setDeleteUser(null)}>
                                 <Icon name="close" size={14} />
@@ -389,16 +391,15 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                         </div>
                         <div style={{ padding: '0 16px 16px' }}>
                             <p>
-                                Remove <strong>{deleteUser.name}</strong> ({deleteUser.email})? This soft-deletes the
-                                account and revokes admin access.
+                                {t('Remove')} <strong>{deleteUser.name}</strong> ({deleteUser.email})? {t('This soft-deletes the account and revokes admin access.')}
                             </p>
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={() => setDeleteUser(null)}>
-                                Cancel
+                                {t('Cancel')}
                             </button>
                             <button type="button" className="btn danger" onClick={confirmDelete}>
-                                Delete account
+                                {t('Delete account')}
                             </button>
                         </div>
                     </div>

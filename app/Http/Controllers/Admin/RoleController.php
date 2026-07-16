@@ -8,7 +8,7 @@ use App\Models\Role;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class RoleController extends Controller
 {
@@ -46,7 +46,7 @@ class RoleController extends Controller
             ])
             ->values();
 
-        return Inertia::render('Admin/Roles/Index', [
+        return Spa::render('Admin/Roles/Index', [
             'roles' => $roles,
             'permissionGroups' => $permissions,
         ]);

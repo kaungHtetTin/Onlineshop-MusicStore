@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { usePage, router } from '@inertiajs/react';
+import { usePage, router } from '@/spa/router';
 import {
     Box,
     Container,
@@ -35,6 +35,7 @@ import {
     sectionShellSxForTheme,
     storefrontBackgroundSx,
 } from '@/Components/User/musicStoreDesign';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const Index = ({ products, categories, filters }) => {
     const theme = useTheme();
@@ -42,6 +43,7 @@ const Index = ({ products, categories, filters }) => {
     const sectionShellSx = sectionShellSxForTheme(theme);
     const isMobileFilters = useMediaQuery(theme.breakpoints.down('md'));
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
     const [search, setSearch] = useState(filters.search || '');
     const [minPrice, setMinPrice] = useState(filters.min_price || '');
     const [maxPrice, setMaxPrice] = useState(filters.max_price || '');
@@ -161,7 +163,7 @@ const Index = ({ products, categories, filters }) => {
             }}
         >
             <Chip
-                label="All"
+                label={t('All')}
                 onClick={() => handleCategoryClick(null)}
                 variant={!filters.category ? 'filled' : 'outlined'}
                 color={!filters.category ? 'primary' : 'default'}
@@ -197,7 +199,7 @@ const Index = ({ products, categories, filters }) => {
                 <TextField
                     fullWidth
                     size="small"
-                    placeholder="Search guitars, keyboards, microphones..."
+                    placeholder={t('Search guitars, keyboards, microphones...')}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     InputProps={{
@@ -221,23 +223,23 @@ const Index = ({ products, categories, filters }) => {
                         minHeight: 40,
                     }}
                 >
-                    Search
+                    {t('Search')}
                 </Button>
             </Box>
             <FormControl size="small" fullWidth={isMobileFilters} sx={{ width: { md: 220 }, flexShrink: 0 }}>
-                <InputLabel id="products-sort-label">Sort</InputLabel>
+                <InputLabel id="products-sort-label">{t('Sort')}</InputLabel>
                 <Select
                     labelId="products-sort-label"
-                    label="Sort"
+                    label={t('Sort')}
                     value={filters.sort || 'newest'}
                     onChange={handleSortChange}
                     sx={{ borderRadius: 1.5, bgcolor: 'background.paper' }}
                 >
-                    <MenuItem value="newest">Newest</MenuItem>
-                    <MenuItem value="price_low">Price: low to high</MenuItem>
-                    <MenuItem value="price_high">Price: high to low</MenuItem>
-                    <MenuItem value="best_selling">Best selling</MenuItem>
-                    <MenuItem value="rating">Top rated</MenuItem>
+                    <MenuItem value="newest">{t('Newest')}</MenuItem>
+                    <MenuItem value="price_low">{t('Price: low to high')}</MenuItem>
+                    <MenuItem value="price_high">{t('Price: high to low')}</MenuItem>
+                    <MenuItem value="best_selling">{t('Best selling')}</MenuItem>
+                    <MenuItem value="rating">{t('Top rated')}</MenuItem>
                 </Select>
             </FormControl>
         </Stack>
@@ -259,19 +261,19 @@ const Index = ({ products, categories, filters }) => {
                 alignItems: 'stretch',
             }}
         >
-            <TextField size="small" type="number" label="Min price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} sx={fieldSx} />
-            <TextField size="small" type="number" label="Max price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} sx={fieldSx} />
+            <TextField size="small" type="number" label={t('Min price')} value={minPrice} onChange={(e) => setMinPrice(e.target.value)} sx={fieldSx} />
+            <TextField size="small" type="number" label={t('Max price')} value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} sx={fieldSx} />
             <FormControl size="small" sx={fieldSx}>
-                <InputLabel id={isMobileFilters ? 'rating-filter-label-mobile' : 'rating-filter-label'}>Rating</InputLabel>
+                <InputLabel id={isMobileFilters ? 'rating-filter-label-mobile' : 'rating-filter-label'}>{t('Rating')}</InputLabel>
                 <Select
                     labelId={isMobileFilters ? 'rating-filter-label-mobile' : 'rating-filter-label'}
-                    label="Rating"
+                    label={t('Rating')}
                     value={filters.min_rating || ''}
                     onChange={(e) => applyFilters({ min_rating: e.target.value || undefined })}
                 >
-                    <MenuItem value="">Any rating</MenuItem>
-                    <MenuItem value="4">4 stars & up</MenuItem>
-                    <MenuItem value="3">3 stars & up</MenuItem>
+                    <MenuItem value="">{t('Any rating')}</MenuItem>
+                    <MenuItem value="4">{t('4 stars & up')}</MenuItem>
+                    <MenuItem value="3">{t('3 stars & up')}</MenuItem>
                 </Select>
             </FormControl>
             <Button
@@ -293,7 +295,7 @@ const Index = ({ products, categories, filters }) => {
                     },
                 }}
             >
-                Flash sale
+                {t('Flash sale')}
             </Button>
             <Button
                 type="submit"
@@ -306,7 +308,7 @@ const Index = ({ products, categories, filters }) => {
                     whiteSpace: 'nowrap',
                 }}
             >
-                Apply
+                {t('Apply')}
             </Button>
         </Box>
     );
@@ -339,20 +341,20 @@ const Index = ({ products, categories, filters }) => {
                 >
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
-                            Instrument catalog
+                            {t('Instrument catalog')}
                         </Typography>
                         <Typography variant="h4" sx={{ fontWeight: 950, mb: 0.5, color: musicColors.ink, lineHeight: 1.1 }}>
                             {filters.category
                                 ? categories.find((c) => c.slug === filters.category)?.name
-                                : 'All instruments & gear'}
+                                : t('All instruments & gear')}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 650 }}>
-                            Showing {products.from || 0}-{products.to || 0} of {products.total} items for players, studios, and stage setups.
+                            {t('Showing')} {products.from || 0}-{products.to || 0} {t('of')} {products.total} {t('items for players, studios, and stage setups.')}
                         </Typography>
                         {filters.flash_sale ? (
                             <Chip
                                 icon={<LocalFireDepartment />}
-                                label="Flash sale"
+                                label={t('Flash sale')}
                                 color="primary"
                                 size="small"
                                 onDelete={() => applyFilters({ flash_sale: undefined })}
@@ -375,7 +377,7 @@ const Index = ({ products, categories, filters }) => {
                                 size="medium"
                                 startIcon={<Tune />}
                                 onClick={() => setFilterDrawerOpen(true)}
-                                aria-label="Open filters"
+                                aria-label={t('Open filters')}
                                 sx={{
                                     fontWeight: 800,
                                     borderRadius: 2,
@@ -386,7 +388,7 @@ const Index = ({ products, categories, filters }) => {
                                     boxShadow: activeFilterCount > 0 ? 2 : 0,
                                 }}
                             >
-                                Filters
+                                {t('Filters')}
                             </Button>
                         </Badge>
                     ) : null}
@@ -417,7 +419,7 @@ const Index = ({ products, categories, filters }) => {
                                 <TextField
                                     fullWidth
                                     size="small"
-                                    placeholder="Search guitars, keyboards, microphones..."
+                                    placeholder={t('Search guitars, keyboards, microphones...')}
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     InputProps={{
@@ -441,23 +443,23 @@ const Index = ({ products, categories, filters }) => {
                                         minHeight: 40,
                                     }}
                                 >
-                                    Search
+                                    {t('Search')}
                                 </Button>
                             </Box>
                             <FormControl size="small" sx={{ width: { xs: '100%', md: 220 }, flexShrink: 0 }}>
-                                <InputLabel id="products-sort-label-desktop">Sort</InputLabel>
+                                <InputLabel id="products-sort-label-desktop">{t('Sort')}</InputLabel>
                                 <Select
                                     labelId="products-sort-label-desktop"
-                                    label="Sort"
+                                    label={t('Sort')}
                                     value={filters.sort || 'newest'}
                                     onChange={handleSortChange}
                                     sx={{ borderRadius: 1.5, bgcolor: 'background.paper' }}
                                 >
-                                    <MenuItem value="newest">Newest</MenuItem>
-                                    <MenuItem value="price_low">Price: low to high</MenuItem>
-                                    <MenuItem value="price_high">Price: high to low</MenuItem>
-                                    <MenuItem value="best_selling">Best selling</MenuItem>
-                                    <MenuItem value="rating">Top rated</MenuItem>
+                                    <MenuItem value="newest">{t('Newest')}</MenuItem>
+                                    <MenuItem value="price_low">{t('Price: low to high')}</MenuItem>
+                                    <MenuItem value="price_high">{t('Price: high to low')}</MenuItem>
+                                    <MenuItem value="best_selling">{t('Best selling')}</MenuItem>
+                                    <MenuItem value="rating">{t('Top rated')}</MenuItem>
                                 </Select>
                             </FormControl>
                         </Stack>
@@ -494,12 +496,12 @@ const Index = ({ products, categories, filters }) => {
                         }}
                     >
                         <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
-                            Categories & filters
+                            {t('Categories & filters')}
                         </Typography>
                         <IconButton
                             edge="end"
                             onClick={() => setFilterDrawerOpen(false)}
-                            aria-label="Close filters"
+                            aria-label={t('Close filters')}
                             size="small"
                         >
                             <Close />
@@ -508,21 +510,21 @@ const Index = ({ products, categories, filters }) => {
 
                     <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 2 }}>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>
-                            Category
+                            {t('Category')}
                         </Typography>
                         {categoryChips}
 
                         <Divider sx={{ my: 2 }} />
 
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>
-                            Search & sort
+                            {t('Search & sort')}
                         </Typography>
                         {searchAndSort}
 
                         <Divider sx={{ my: 2 }} />
 
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>
-                            Price & rating
+                            {t('Price & rating')}
                         </Typography>
                         {advancedFilters}
 
@@ -536,7 +538,7 @@ const Index = ({ products, categories, filters }) => {
                             onClick={clearFilters}
                             sx={{ fontWeight: 800 }}
                         >
-                            Reset all filters
+                            {t('Reset all filters')}
                         </Button>
                     </Box>
                 </Drawer>
@@ -574,10 +576,10 @@ const Index = ({ products, categories, filters }) => {
                             </Box>
                             <Box>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
-                                    Limited-time gear deals
+                                    {t('Limited-time gear deals')}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-                                    Instruments and accessories while stock lasts
+                                    {t('Instruments and accessories while stock lasts')}
                                 </Typography>
                             </Box>
                         </Stack>
@@ -588,7 +590,7 @@ const Index = ({ products, categories, filters }) => {
                             onClick={() => applyFilters({ flash_sale: undefined })}
                             sx={{ borderRadius: 1.5, fontWeight: 900, bgcolor: 'background.paper' }}
                         >
-                            Show all
+                            {t('Show all')}
                         </Button>
                     </Box>
                 ) : null}
@@ -607,13 +609,13 @@ const Index = ({ products, categories, filters }) => {
                 ) : (
                     <Stack alignItems="center" justifyContent="center" sx={{ py: 12 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                            No products found
+                            {t('No products found')}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center', px: 2 }}>
-                            Try a different category or clear your search.
+                            {t('Try a different category or clear your search.')}
                         </Typography>
                         <Button variant="outlined" onClick={clearFilters} startIcon={<Clear />}>
-                            Reset filters
+                            {t('Reset filters')}
                         </Button>
                     </Stack>
                 )}

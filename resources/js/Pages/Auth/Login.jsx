@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@/spa/router';
 import React, { useEffect } from 'react';
 import { routeWithBase } from '@/Utils/url';
 import {
@@ -30,6 +30,7 @@ import {
 import { alpha, darken, useTheme } from '@mui/material/styles';
 import { eyebrowSx, getMusicStoreColors, musicGradientForTheme } from '@/Components/User/musicStoreDesign';
 import PwaHeadTags from '@/Components/User/PwaHeadTags';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function Login({ status, error, isAdminLogin = false, googleAuthAvailable = false }) {
     const theme = useTheme();
@@ -38,6 +39,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
     const { app_base, app_settings } = props;
     const isAdmin = isAdminLogin || (typeof url === 'string' && url.includes('/admin/login'));
     const [showPassword, setShowPassword] = React.useState(false);
+    const t = usePhraseTranslation();
 
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
@@ -73,7 +75,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                 color: 'white',
             }}
         >
-            <Head title="Admin Login" />
+            <Head title={t('Admin Login')} />
 
             <Box
                 sx={{
@@ -114,7 +116,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                 >
                     <Box sx={{ display: { xs: 'none', md: 'block' }, maxWidth: 520 }}>
                         <Typography sx={{ ...eyebrowSx, color: musicColors.amber, mb: 1 }}>
-                            Back office
+                            {t('Back office')}
                         </Typography>
                         <Typography
                             variant="h2"
@@ -125,10 +127,10 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                 mb: 2,
                             }}
                         >
-                            Keep the store in tune.
+                            {t('Keep the store in tune.')}
                         </Typography>
                         <Typography sx={{ color: alpha('#fff', 0.78), fontWeight: 650, lineHeight: 1.7, maxWidth: 440 }}>
-                            Manage instruments, inventory, orders, and customer requests from the staff console.
+                            {t('Manage instruments, inventory, orders, and customer requests from the staff console.')}
                         </Typography>
                         <Stack direction="row" spacing={1.25} sx={{ mt: 3 }} useFlexGap flexWrap="wrap">
                             {[
@@ -153,7 +155,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                 >
                                     <Icon sx={{ fontSize: 18, color: musicColors.amber }} />
                                     <Typography variant="caption" sx={{ fontWeight: 850 }}>
-                                        {label}
+                                        {t(label)}
                                     </Typography>
                                 </Stack>
                             ))}
@@ -192,10 +194,10 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                             </Box>
                             <Box>
                                 <Typography variant="h4" sx={{ fontWeight: 950, color: musicColors.ink, lineHeight: 1.05 }}>
-                                    Staff Login
+                                    {t('Staff Login')}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, fontWeight: 650 }}>
-                                    Sign in to manage {appName}.
+                                    {t('Sign in to manage')} {appName}.
                                 </Typography>
                             </Box>
                         </Stack>
@@ -216,7 +218,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                             <Stack spacing={2.25}>
                                 <TextField
                                     fullWidth
-                                    label="Email"
+                                    label={t('Email')}
                                     value={data.email}
                                     onChange={(e) => setData('email', e.target.value)}
                                     error={!!errors.email}
@@ -233,7 +235,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
 
                                 <TextField
                                     fullWidth
-                                    label="Password"
+                                    label={t('Password')}
                                     type={showPassword ? 'text' : 'password'}
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
@@ -266,11 +268,11 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                                 sx={{ color: musicColors.rosin, '&.Mui-checked': { color: musicColors.rosin } }}
                                             />
                                         }
-                                        label={<Typography variant="body2" sx={{ fontWeight: 650 }}>Remember me</Typography>}
+                                        label={<Typography variant="body2" sx={{ fontWeight: 650 }}>{t('Remember me')}</Typography>}
                                     />
                                     <Link href={routeWithBase('/forgot-password', app_base)} style={{ textDecoration: 'none' }}>
                                         <Typography variant="body2" sx={{ color: musicColors.rosin, fontWeight: 850 }}>
-                                            Forgot?
+                                            {t('Forgot?')}
                                         </Typography>
                                     </Link>
                                 </Box>
@@ -291,7 +293,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                         '&:hover': { bgcolor: darken(musicColors.rosin, 0.08) },
                                     }}
                                 >
-                                    {processing ? 'Logging in...' : 'Enter admin'}
+                                    {t(processing ? 'Logging in...' : 'Enter admin')}
                                 </Button>
                             </Stack>
                         </form>
@@ -314,7 +316,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
             background: musicGradientForTheme(theme),
             py: 4,
         }}>
-            <Head title="Log in">
+            <Head title={t('Log in')}>
                 <PwaHeadTags />
             </Head>
 
@@ -329,10 +331,10 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                     textAlign: 'center',
                 }}>
                     <Typography variant="h4" sx={{ fontWeight: 950, color: musicColors.ink, mb: 1 }}>
-                        {`Welcome to ${appName}`}
+                        {t('Welcome to')} {appName}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                        Log in to save instruments, track orders, and chat with the shop team.
+                        {t('Log in to save instruments, track orders, and chat with the shop team.')}
                     </Typography>
 
                     {status && (
@@ -351,7 +353,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                         <Stack spacing={2.5}>
                             <TextField
                                 fullWidth
-                                label="Email or phone"
+                                label={t('Email or phone')}
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
                                 error={!!errors.email}
@@ -368,7 +370,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
 
                             <TextField
                                 fullWidth
-                                label="Password"
+                                label={t('Password')}
                                 type={showPassword ? 'text' : 'password'}
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
@@ -401,11 +403,11 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                             color="primary"
                                         />
                                     }
-                                    label={<Typography variant="body2">Remember me</Typography>}
+                                    label={<Typography variant="body2">{t('Remember me')}</Typography>}
                                 />
                                 <Link href={routeWithBase('/forgot-password', app_base)} style={{ textDecoration: 'none' }}>
                                     <Typography variant="body2" color="primary" sx={{ fontWeight: 600 }}>
-                                        Forgot?
+                                        {t('Forgot?')}
                                     </Typography>
                                 </Link>
                             </Box>
@@ -418,7 +420,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                 disabled={processing}
                                 sx={{ py: 1.5, fontSize: '1rem' }}
                             >
-                                {processing ? 'Logging in...' : 'Sign In'}
+                                {t(processing ? 'Logging in...' : 'Sign In')}
                             </Button>
                         </Stack>
                     </form>
@@ -427,7 +429,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                         <Box sx={{ my: 4 }}>
                             <Divider>
                                 <Typography variant="caption" color="text.secondary">
-                                    OR CONTINUE WITH
+                                    {t('OR CONTINUE WITH')}
                                 </Typography>
                             </Divider>
                         </Box>
@@ -450,15 +452,15 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
 
                         {!googleAuthAvailable && (
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25 }}>
-                                Add Google OAuth credentials in .env to enable this button.
+                                {t('Add Google OAuth credentials in .env to enable this button.')}
                             </Typography>
                         )}
 
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 4 }}>
-                            Don't have an account?{' '}
+                            {t("Don't have an account?")}{' '}
                             <Link href={routeWithBase('/register', app_base)} style={{ textDecoration: 'none' }}>
                                 <Typography component="span" variant="body2" color="primary" sx={{ fontWeight: 700 }}>
-                                    Sign Up
+                                    {t('Sign Up')}
                                 </Typography>
                             </Link>
                         </Typography>

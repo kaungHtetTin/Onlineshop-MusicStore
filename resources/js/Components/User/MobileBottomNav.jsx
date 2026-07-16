@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { Paper, BottomNavigation, BottomNavigationAction, Box, Badge } from '@mui/material';
 import { Home, ShoppingBag, ShoppingCart, ReceiptLong, Person } from '@mui/icons-material';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@/spa/router';
 import { routeWithBase } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
 import { useTheme } from '@mui/material/styles';
 import { getMusicStoreColors } from '@/Components/User/musicStoreDesign';
+import { useTranslation } from '@/Utils/i18n';
 
 /** BottomNavigation height — use for chat layout padding above fixed nav */
 export const MOBILE_BOTTOM_NAV_HEIGHT = 56;
@@ -23,7 +24,7 @@ export function MobileBottomNavSpacer() {
 }
 
 /**
- * Strip app subdirectory from Inertia `url` so matching works (e.g. `/larlarpick/public/products` → `/products`).
+ * Strip app subdirectory from the SPA `url` so matching works (e.g. `/larlarpick/public/products` -> `/products`).
  */
 function normalizedPath(url, appBase) {
     let path = (url || '/').split('?')[0];
@@ -61,6 +62,7 @@ const MobileBottomNav = () => {
     const page = usePage();
     const { app_base, auth } = page.props;
     const cartCount = useCartStore((s) => s.itemCount());
+    const t = useTranslation();
 
     const value = useMemo(() => bottomNavIndex(normalizedPath(page.url, app_base)), [page.url, app_base]);
 
@@ -80,7 +82,7 @@ const MobileBottomNav = () => {
                     showLabels
                     value={value}
                     onChange={() => {
-                        /* Selection is driven by URL; each action uses Inertia <Link> */
+                        /* Selection is driven by URL; each action uses SPA <Link> */
                     }}
                     sx={{
                         height: MOBILE_BOTTOM_NAV_HEIGHT,
@@ -89,21 +91,21 @@ const MobileBottomNav = () => {
                     }}
                 >
                     <BottomNavigationAction
-                        label="Home"
+                        label={t('storefront.home', 'Home')}
                         component={Link}
                         href={routeWithBase('/', app_base)}
                         icon={<Home sx={{ fontSize: '1.2rem' }} />}
                         sx={{ minWidth: 'auto', '& .MuiBottomNavigationAction-label': { fontSize: '0.65rem' } }}
                     />
                     <BottomNavigationAction
-                        label="Shop"
+                        label={t('storefront.shop', 'Shop')}
                         component={Link}
                         href={routeWithBase('/products', app_base)}
                         icon={<ShoppingBag sx={{ fontSize: '1.2rem' }} />}
                         sx={{ minWidth: 'auto', '& .MuiBottomNavigationAction-label': { fontSize: '0.65rem' } }}
                     />
                     <BottomNavigationAction
-                        label="Cart"
+                        label={t('storefront.cart', 'Cart')}
                         component={Link}
                         href={routeWithBase('/cart', app_base)}
                         icon={
@@ -119,14 +121,14 @@ const MobileBottomNav = () => {
                         sx={{ minWidth: 'auto', '& .MuiBottomNavigationAction-label': { fontSize: '0.65rem' } }}
                     />
                     <BottomNavigationAction
-                        label="Orders"
+                        label={t('storefront.orders', 'Orders')}
                         component={Link}
                         href={routeWithBase(auth?.user ? '/orders' : '/login', app_base)}
                         icon={<ReceiptLong sx={{ fontSize: '1.2rem' }} />}
                         sx={{ minWidth: 'auto', '& .MuiBottomNavigationAction-label': { fontSize: '0.65rem' } }}
                     />
                     <BottomNavigationAction
-                        label="Profile"
+                        label={t('storefront.profile', 'Profile')}
                         component={Link}
                         href={routeWithBase(auth?.user ? '/profile' : '/login', app_base)}
                         icon={<Person sx={{ fontSize: '1.2rem' }} />}

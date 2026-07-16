@@ -2,6 +2,7 @@ import Icon from '@/Components/Admin/icons';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { normalizeOptionKey, variantLabel } from '@/Components/Admin/productFormUtils';
 import { storageUrl } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function ProductFormUI({
     mode,
@@ -32,6 +33,7 @@ export default function ProductFormUI({
     onRegenerateSku,
     onSkuStructureChange,
 }) {
+    const t = usePhraseTranslation();
     const isEdit = mode === 'edit';
     const existingImages = isEdit ? product.images.filter((img) => data.imageAttachmentIds.includes(img.id)) : [];
 
@@ -88,7 +90,7 @@ export default function ProductFormUI({
                     role="button"
                     tabIndex={0}
                 >
-                    None
+                    {t('None')}
                 </div>
                 {isEdit
                     ? existingImages.map((img) => (
@@ -120,12 +122,12 @@ export default function ProductFormUI({
                     <PanelHeading eyebrow="General" title="Product information" />
                     <div className="crud-grid" style={{ padding: 0 }}>
                         <label className="form-field span-2">
-                            <span>Product name</span>
+                            <span>{t('Product name')}</span>
                             <input value={data.name} onChange={(e) => onProductNameChange(e.target.value)} required />
                             {errors.name && <small style={{ color: '#ce4444' }}>{errors.name}</small>}
                         </label>
                         <label className="form-field span-2">
-                            <span>Description</span>
+                            <span>{t('Description')}</span>
                             <textarea value={data.description} onChange={(e) => setData('description', e.target.value)} />
                             {errors.description && <small style={{ color: '#ce4444' }}>{errors.description}</small>}
                         </label>
@@ -134,20 +136,20 @@ export default function ProductFormUI({
 
                 <section className="panel glass">
                     <PanelHeading eyebrow="Media" title="Product images" />
-                    <p>Add multiple images. Select one for new variant defaults.</p>
+                    <p>{t('Add multiple images. Select one for new variant defaults.')}</p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '12px 0' }}>
                         <label className="btn primary" style={{ cursor: 'pointer' }}>
                             <Icon name="image" size={14} />
-                            {isEdit ? 'Add more images' : 'Upload images'}
+                            {t(isEdit ? 'Add more images' : 'Upload images')}
                             <input type="file" hidden multiple accept="image/*" onChange={onImageChange} disabled={processing} />
                         </label>
                         {!isEdit && data.images.length > 0 && onClearAllImages && (
                             <button type="button" className="btn danger" onClick={onClearAllImages}>
-                                Remove all
+                                {t('Remove all')}
                             </button>
                         )}
                         {(data.images.length > 0 || existingImages.length > 0) && (
-                            <StatusBadge status="info" label={`${existingImages.length + previews.length} images`} />
+                            <StatusBadge status="info" label={`${existingImages.length + previews.length} ${t('images')}`} />
                         )}
                     </div>
 
@@ -163,8 +165,8 @@ export default function ProductFormUI({
                                 >
                                     <img src={storageUrl(img.image_path, app_url)} alt="" />
                                     <div className="actions">
-                                        {isCover && <span className="chip">Cover</span>}
-                                        {isSelected && <span className="chip">SKU default</span>}
+                                        {isCover && <span className="chip">{t('Cover')}</span>}
+                                        {isSelected && <span className="chip">{t('SKU default')}</span>}
                                         <button
                                             type="button"
                                             className="btn secondary full"
@@ -174,7 +176,7 @@ export default function ProductFormUI({
                                                 onRemoveExistingImage(img.id);
                                             }}
                                         >
-                                            Remove
+                                            {t('Remove')}
                                         </button>
                                         {!isCover && (
                                             <button
@@ -184,9 +186,9 @@ export default function ProductFormUI({
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     onSetCover(img.id);
-                                                }}
-                                            >
-                                                Set cover
+                                            }}
+                                        >
+                                                {t('Set cover')}
                                             </button>
                                         )}
                                     </div>
@@ -203,8 +205,8 @@ export default function ProductFormUI({
                                 >
                                     <img src={url} alt="" />
                                     <div className="actions">
-                                        {index === 0 && !isEdit && <span className="chip">Cover</span>}
-                                        {isSelected && <span className="chip">SKU default</span>}
+                                        {index === 0 && !isEdit && <span className="chip">{t('Cover')}</span>}
+                                        {isSelected && <span className="chip">{t('SKU default')}</span>}
                                         <button
                                             type="button"
                                             className="btn secondary full"
@@ -214,7 +216,7 @@ export default function ProductFormUI({
                                                 onRemoveNewPreview(index);
                                             }}
                                         >
-                                            {isEdit ? 'Cancel upload' : 'Remove'}
+                                            {t(isEdit ? 'Cancel upload' : 'Remove')}
                                         </button>
                                     </div>
                                 </div>
@@ -231,7 +233,7 @@ export default function ProductFormUI({
                                     placeItems: 'center',
                                 }}
                             >
-                                <small>No images yet</small>
+                                <small>{t('No images yet')}</small>
                             </div>
                         )}
                     </div>
@@ -244,7 +246,7 @@ export default function ProductFormUI({
                         action={
                             <button type="button" className="btn secondary" onClick={addOption} disabled={options.length >= 3 || processing}>
                                 <Icon name="plus" size={14} />
-                                Add option
+                                {t('Add option')}
                             </button>
                         }
                     />
@@ -252,31 +254,31 @@ export default function ProductFormUI({
                         {options.length === 0 && (
                             <div className="variant-options-empty">
                                 <Icon name="tag" size={20} />
-                                <strong>No variant options</strong>
+                                <strong>{t('No variant options')}</strong>
                             </div>
                         )}
                         {options.map((opt, idx) => (
                             <div key={opt.id} className="variant-option-card">
                                 <div className="variant-option-heading">
                                     <span className="variant-option-number">{idx + 1}</span>
-                                    <strong>{opt.name.trim() || `Option ${idx + 1}`}</strong>
+                                    <strong>{opt.name.trim() || `${t('Option')} ${idx + 1}`}</strong>
                                     <button
                                         type="button"
                                         className="icon-btn danger"
                                         onClick={() => removeOption(idx)}
                                         disabled={processing}
-                                        aria-label={`Remove option ${idx + 1}`}
-                                        title="Remove option"
+                                        aria-label={`${t('Remove option')} ${idx + 1}`}
+                                        title={t('Remove option')}
                                     >
                                         <Icon name="trash" size={15} />
                                     </button>
                                 </div>
                                 <div className="variant-option-fields">
                                     <label className="form-field">
-                                        <span>Option name</span>
+                                        <span>{t('Option name')}</span>
                                         <input
                                             value={opt.name}
-                                            placeholder="Color"
+                                            placeholder={t('Color')}
                                             autoComplete="off"
                                             onChange={(e) => renameOption(idx, e.target.value)}
                                         />
@@ -294,13 +296,13 @@ export default function ProductFormUI({
                         action={
                             <button type="button" className="btn secondary" style={{ minHeight: 32 }} onClick={onAddSku} disabled={processing}>
                                 <Icon name="plus" size={14} />
-                                Add SKU
+                                {t('Add SKU')}
                             </button>
                         }
                     />
 
                     {data.skus.length === 0 ? (
-                        <p>No variants yet.</p>
+                        <p>{t('No variants yet.')}</p>
                     ) : (
                         data.skus.map((v, idx) => (
                             <div key={idx} className="variant-card">
@@ -316,7 +318,7 @@ export default function ProductFormUI({
                                         </div>
                                     </div>
                                     <button type="button" className="btn danger" style={{ minHeight: 32 }} onClick={() => onRemoveSku(idx)} disabled={processing}>
-                                        Remove
+                                        {t('Remove')}
                                     </button>
                                 </div>
 
@@ -339,7 +341,7 @@ export default function ProductFormUI({
                                         );
                                     })}
                                     <label className="form-field">
-                                        <span>SKU code</span>
+                                        <span>{t('SKU code')}</span>
                                         <div className="field-with-action">
                                             <input
                                                 value={v.sku_code}
@@ -349,27 +351,27 @@ export default function ProductFormUI({
                                                 type="button"
                                                 className={`icon-btn ${v.sku_code_auto ? 'active' : ''}`}
                                                 onClick={() => onRegenerateSku(idx)}
-                                                aria-label="Generate SKU code"
-                                                title="Generate SKU code"
+                                                aria-label={t('Generate SKU code')}
+                                                title={t('Generate SKU code')}
                                             >
                                                 <Icon name="bolt" size={15} />
                                             </button>
                                         </div>
                                     </label>
                                     <label className="form-field">
-                                        <span>Barcode</span>
+                                        <span>{t('Barcode')}</span>
                                         <input value={v.barcode} onChange={(e) => onUpdateSku(idx, { barcode: e.target.value })} />
                                     </label>
                                     <label className="form-field">
-                                        <span>Original price</span>
+                                        <span>{t('Original price')}</span>
                                         <input type="number" value={v.cost ?? ''} onChange={(e) => onUpdateSku(idx, { cost: e.target.value })} />
                                     </label>
                                     <label className="form-field">
-                                        <span>Wholesale price</span>
+                                        <span>{t('Wholesale price')}</span>
                                         <input type="number" value={v.wholesale_price ?? ''} onChange={(e) => onUpdateSku(idx, { wholesale_price: e.target.value })} />
                                     </label>
                                     <label className="form-field">
-                                        <span>Retail price</span>
+                                        <span>{t('Retail price')}</span>
                                         <input type="number" value={v.price} onChange={(e) => onUpdateSku(idx, { price: e.target.value })} />
                                     </label>
                                     <label className="form-field checkbox-row">
@@ -378,7 +380,7 @@ export default function ProductFormUI({
                                             checked={!!v.is_active}
                                             onChange={(e) => onUpdateSku(idx, { is_active: e.target.checked })}
                                         />
-                                        <span>Active</span>
+                                        <span>{t('Active')}</span>
                                     </label>
                                 </div>
                             </div>
@@ -391,26 +393,26 @@ export default function ProductFormUI({
                 <section className="panel glass">
                     <PanelHeading eyebrow="Status" title="Visibility" />
                     <label className="form-field">
-                        <span>Product status</span>
+                        <span>{t('Product status')}</span>
                         <select value={data.status} onChange={(e) => setData('status', e.target.value)} required>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                            <option value="draft">Draft</option>
+                            <option value="active">{t('Active')}</option>
+                            <option value="inactive">{t('Inactive')}</option>
+                            <option value="draft">{t('Draft')}</option>
                         </select>
                         {errors.status && <small style={{ color: '#ce4444' }}>{errors.status}</small>}
                     </label>
                     <label className="form-field checkbox-row" style={{ marginTop: 10 }}>
                         <input type="checkbox" checked={data.is_featured} onChange={(e) => setData('is_featured', e.target.checked)} />
-                        <span>Featured product</span>
+                        <span>{t('Featured product')}</span>
                     </label>
                 </section>
 
                 <section className="panel glass">
                     <PanelHeading eyebrow="Catalog" title="Category" />
                     <label className="form-field">
-                        <span>Category</span>
+                        <span>{t('Category')}</span>
                         <select value={data.category_id} onChange={(e) => setData('category_id', e.target.value)} required>
-                            <option value="">Select category</option>
+                            <option value="">{t('Select category')}</option>
                             {categories.map((cat) => (
                                 <option key={cat.id} value={cat.id}>
                                     {cat.name}

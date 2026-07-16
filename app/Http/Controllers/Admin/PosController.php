@@ -18,7 +18,7 @@ use App\Services\POS\PosShiftService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class PosController extends Controller
 {
@@ -39,7 +39,7 @@ class PosController extends Controller
             ->orderBy('name')
             ->get(['id', 'parent_id', 'name']);
 
-        return Inertia::render('Admin/POS/Index', [
+        return Spa::render('Admin/POS/Index', [
             'locations' => $locations,
             'categories' => $categories,
             'can' => [
@@ -253,7 +253,7 @@ class PosController extends Controller
 
         $order->load(['items.product', 'items.sku', 'payments', 'location', 'register', 'shift.cashier', 'server', 'user']);
 
-        return Inertia::render('Admin/POS/Receipt', ['order' => $order]);
+        return Spa::render('Admin/POS/Receipt', ['order' => $order]);
     }
 
     private function heldCarts(Request $request)

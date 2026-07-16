@@ -9,7 +9,7 @@ use App\Services\OrderPaymentService;
 use App\Services\OrderVoucherService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class OrderController extends Controller
 {
@@ -52,7 +52,7 @@ class OrderController extends Controller
 
         $user = $request->user();
 
-        return Inertia::render('Admin/Orders/Index', [
+        return Spa::render('Admin/Orders/Index', [
             'orders' => $orders,
             'stats' => $orderManagementService->stats(),
             'filters' => [
@@ -80,7 +80,7 @@ class OrderController extends Controller
 
         $user = $request->user();
 
-        return Inertia::render('Admin/Orders/Show', [
+        return Spa::render('Admin/Orders/Show', [
             'order' => $order,
             'voucherLinks' => [
                 'print' => route('admin.orders.voucher.show', $order),

@@ -13,7 +13,7 @@ use App\Services\OperationsReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class ReportController extends Controller
 {
@@ -178,7 +178,7 @@ class ReportController extends Controller
                 "),
             ]);
 
-        return Inertia::render('Admin/Reports/Index', [
+        return Spa::render('Admin/Reports/Index', [
             'view' => $view,
             'filters' => $filters,
             'locations' => Location::query()

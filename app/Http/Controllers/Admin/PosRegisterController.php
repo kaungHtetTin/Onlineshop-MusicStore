@@ -8,7 +8,7 @@ use App\Models\PosRegister;
 use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class PosRegisterController extends Controller
 {
@@ -16,7 +16,7 @@ class PosRegisterController extends Controller
     {
         abort_unless($request->user()->hasAdminPermission('registers.manage'), 403);
 
-        return Inertia::render('Admin/Registers/Index', [
+        return Spa::render('Admin/Registers/Index', [
             'registers' => PosRegister::query()
                 ->with(['location:id,code,name,type'])
                 ->withCount(['shifts', 'shifts as open_shifts_count' => fn ($query) => $query->where('status', 'open')])

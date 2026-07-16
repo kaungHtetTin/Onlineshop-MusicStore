@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link } from '@/spa/router';
 
 export default function ResponsiveNavLink({ active = false, className = '', children, ...props }) {
     return (

@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const emptyLocation = {
     code: '',
@@ -20,6 +21,7 @@ const emptyLocation = {
 
 export default function LocationsIndex({ locations, staff, canManage }) {
     const { app_base, flash } = usePage().props;
+    const t = usePhraseTranslation();
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState(null);
     const form = useForm({ ...emptyLocation });
@@ -69,7 +71,7 @@ export default function LocationsIndex({ locations, staff, canManage }) {
     };
 
     const removeLocation = (location) => {
-        if (location.is_system || !confirm(`Delete ${location.name}?`)) return;
+        if (location.is_system || !confirm(`${t('Delete')} ${location.name}?`)) return;
         router.delete(routeWithBase(`/admin/locations/${location.id}`, app_base), { preserveScroll: true });
     };
 
@@ -83,50 +85,50 @@ export default function LocationsIndex({ locations, staff, canManage }) {
 
     return (
         <AdminLayout
-            title="Warehouses"
-            eyebrow="Inventory"
+            title={t('Warehouses')}
+            eyebrow={t('Inventory')}
             action={
                 canManage ? (
                     <button type="button" className="btn primary" onClick={openCreate}>
                         <Icon name="plus" size={14} />
-                        Add warehouse
+                        {t('Add warehouse')}
                     </button>
                 ) : null
             }
         >
-            <Head title="Warehouses" />
+            <Head title={t('Warehouses')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
-            <section className="location-summary" aria-label="Warehouse summary">
+            <section className="location-summary" aria-label={t('Warehouse summary')}>
                 <div>
-                    <span>Warehouses</span>
+                    <span>{t('Warehouses')}</span>
                     <strong>{locations.length}</strong>
                 </div>
                 <div>
-                    <span>Active</span>
+                    <span>{t('Active')}</span>
                     <strong>{activeCount}</strong>
                 </div>
                 <div>
-                    <span>Total units</span>
+                    <span>{t('Total units')}</span>
                     <strong>{locations.reduce((sum, item) => sum + item.on_hand_total, 0)}</strong>
                 </div>
                 <div>
-                    <span>Assigned staff</span>
+                    <span>{t('Assigned staff')}</span>
                     <strong>{new Set(locations.flatMap((item) => item.staff_ids || [])).size}</strong>
                 </div>
             </section>
 
             <section className="panel glass">
-                <PanelHeading eyebrow="Warehouse management" title="Stock warehouses" />
+                <PanelHeading eyebrow={t('Warehouse management')} title={t('Stock warehouses')} />
                 <div className="table-wrap">
                     <table className="data-table location-table">
                         <thead>
                             <tr>
-                                <th>Warehouse</th>
-                                <th>Inventory</th>
-                                <th>Assigned staff</th>
-                                <th>Status</th>
-                                {canManage && <th aria-label="Actions" />}
+                                <th>{t('Warehouse')}</th>
+                                <th>{t('Inventory')}</th>
+                                <th>{t('Assigned staff')}</th>
+                                <th>{t('Status')}</th>
+                                {canManage && <th aria-label={t('Actions')} />}
                             </tr>
                         </thead>
                         <tbody>
@@ -141,14 +143,14 @@ export default function LocationsIndex({ locations, staff, canManage }) {
                                                 <strong>{location.name}</strong>
                                                 <small>
                                                     {location.code}
-                                                    {location.is_default_fulfillment ? ' / Default fulfillment' : ''}
+                                                    {location.is_default_fulfillment ? ` / ${t('Default fulfillment')}` : ''}
                                                 </small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <strong>{location.on_hand_total.toLocaleString()}</strong>
-                                        <small className="table-subline">{location.balances_count} SKUs</small>
+                                        <small className="table-subline">{location.balances_count} {t('SKUs')}</small>
                                     </td>
                                     <td>
                                         <div className="location-staff-stack">
@@ -158,23 +160,23 @@ export default function LocationsIndex({ locations, staff, canManage }) {
                                                 </span>
                                             ))}
                                             {location.staff.length > 3 && <small>+{location.staff.length - 3}</small>}
-                                            {location.staff.length === 0 && <small className="muted">Unassigned</small>}
+                                            {location.staff.length === 0 && <small className="muted">{t('Unassigned')}</small>}
                                         </div>
                                     </td>
                                     <td>
                                         <StatusBadge
                                             status={location.is_active ? 'success' : 'inactive'}
-                                            label={location.is_active ? 'Active' : 'Inactive'}
+                                            label={location.is_active ? t('Active') : t('Inactive')}
                                         />
                                     </td>
                                     {canManage && (
                                         <td>
                                             <div className="inline-actions">
-                                                <button type="button" className="icon-btn small" onClick={() => openEdit(location)} aria-label={`Edit ${location.name}`}>
+                                                <button type="button" className="icon-btn small" onClick={() => openEdit(location)} aria-label={`${t('Edit')} ${location.name}`}>
                                                     <Icon name="edit" size={13} />
                                                 </button>
                                                 {!location.is_system && (
-                                                    <button type="button" className="icon-btn small danger" onClick={() => removeLocation(location)} aria-label={`Delete ${location.name}`}>
+                                                    <button type="button" className="icon-btn small danger" onClick={() => removeLocation(location)} aria-label={`${t('Delete')} ${location.name}`}>
                                                         <Icon name="trash" size={13} />
                                                     </button>
                                                 )}
@@ -193,10 +195,10 @@ export default function LocationsIndex({ locations, staff, canManage }) {
                     <form className="operation-modal glass location-modal" onSubmit={submit} onClick={(event) => event.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Inventory network</p>
-                                <h2>{editing ? 'Edit warehouse' : 'New warehouse'}</h2>
+                                <p className="eyebrow">{t('Inventory network')}</p>
+                                <h2>{editing ? t('Edit warehouse') : t('New warehouse')}</h2>
                             </div>
-                            <button type="button" className="icon-btn small" onClick={closeModal} aria-label="Close">
+                            <button type="button" className="icon-btn small" onClick={closeModal} aria-label={t('Close')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
@@ -204,11 +206,11 @@ export default function LocationsIndex({ locations, staff, canManage }) {
                         <div className="location-form-section">
                             <div className="crud-grid">
                                 <label className="form-field">
-                                    <span>Name</span>
+                                    <span>{t('Name')}</span>
                                     <input value={form.data.name} onChange={(event) => form.setData('name', event.target.value)} required />
                                 </label>
                                 <label className="form-field">
-                                    <span>Code</span>
+                                    <span>{t('Code')}</span>
                                     <input
                                         value={form.data.code}
                                         onChange={(event) => form.setData('code', event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
@@ -217,28 +219,28 @@ export default function LocationsIndex({ locations, staff, canManage }) {
                                     />
                                 </label>
                                 <label className="form-field">
-                                    <span>Phone</span>
+                                    <span>{t('Phone')}</span>
                                     <input value={form.data.phone} onChange={(event) => form.setData('phone', event.target.value)} />
                                 </label>
                                 <label className="form-field">
-                                    <span>Timezone</span>
+                                    <span>{t('Timezone')}</span>
                                     <input value={form.data.timezone} onChange={(event) => form.setData('timezone', event.target.value)} required />
                                 </label>
                                 <label className="form-field span-2">
-                                    <span>Address</span>
+                                    <span>{t('Address')}</span>
                                     <textarea rows="2" value={form.data.address} onChange={(event) => form.setData('address', event.target.value)} />
                                 </label>
                             </div>
                             <div className="location-switches">
-                                <label><input type="checkbox" checked={form.data.is_active} onChange={(event) => form.setData('is_active', event.target.checked)} /> Active</label>
-                                <label><input type="checkbox" checked={form.data.is_default_fulfillment} onChange={(event) => form.setData('is_default_fulfillment', event.target.checked)} /> Default fulfillment warehouse</label>
+                                <label><input type="checkbox" checked={form.data.is_active} onChange={(event) => form.setData('is_active', event.target.checked)} /> {t('Active')}</label>
+                                <label><input type="checkbox" checked={form.data.is_default_fulfillment} onChange={(event) => form.setData('is_default_fulfillment', event.target.checked)} /> {t('Default fulfillment warehouse')}</label>
                             </div>
                         </div>
 
                         <div className="location-form-section">
                             <div className="location-section-heading">
-                                <strong>Assigned staff</strong>
-                                <small>{form.data.staff_ids.length} selected</small>
+                                <strong>{t('Assigned staff')}</strong>
+                                <small>{form.data.staff_ids.length} {t('selected')}</small>
                             </div>
                             <div className="location-staff-options">
                                 {staff.map((member) => (
@@ -254,10 +256,10 @@ export default function LocationsIndex({ locations, staff, canManage }) {
                         </div>
 
                         <div className="modal-actions">
-                            <button type="button" className="btn secondary" onClick={closeModal}>Cancel</button>
+                            <button type="button" className="btn secondary" onClick={closeModal}>{t('Cancel')}</button>
                             <button type="submit" className="btn primary" disabled={form.processing}>
                                 <Icon name="check" size={14} />
-                                {editing ? 'Save warehouse' : 'Create warehouse'}
+                                {editing ? t('Save warehouse') : t('Create warehouse')}
                             </button>
                         </div>
                     </form>

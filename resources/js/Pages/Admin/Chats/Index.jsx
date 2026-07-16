@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@/spa/router';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import AdminLayout from '@/Layouts/AdminLayout';
@@ -8,6 +8,7 @@ import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { apiUrl, routeWithBase } from '@/Utils/url';
 import { ensureSanctumCookie } from '@/lib/chat/supportChatCore';
 import { AdminChatPanel } from './Show';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 function useDebouncedValue(value, delayMs) {
     const [debounced, setDebounced] = useState(value);
@@ -20,6 +21,7 @@ function useDebouncedValue(value, delayMs) {
 
 export default function AdminChatsIndex() {
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
     const [q, setQ] = useState('');
     const debouncedQ = useDebouncedValue(q, 350);
     const [page, setPage] = useState(1);
@@ -83,24 +85,24 @@ export default function AdminChatsIndex() {
 
     return (
         <AdminLayout
-            title="Customer chats"
-            eyebrow="Support inbox"
+            title={t('Customer chats')}
+            eyebrow={t('Support inbox')}
             mainClassName="admin-main-chat"
             contentClassName="admin-content-chat"
             showPageHeading={false}
         >
-            <Head title="Chats" />
+            <Head title={t('Chats')} />
 
             <div className="chat-split-shell">
             <section className="panel glass chat-inbox-panel">
                 <PanelHeading
-                    eyebrow="Inbox"
-                    title="Customer conversations"
+                    eyebrow={t('Inbox')}
+                    title={t('Customer conversations')}
                     action={
                         unreadTotal > 0 ? (
-                            <StatusBadge status="danger" label={`${unreadTotal} unread`} />
+                            <StatusBadge status="danger" label={t(':count unread', { count: unreadTotal })} />
                         ) : (
-                            <StatusBadge status="success" label="All read" />
+                            <StatusBadge status="success" label={t('All read')} />
                         )
                     }
                 />
@@ -108,7 +110,7 @@ export default function AdminChatsIndex() {
                 <div className="search-box" style={{ marginBottom: 12 }}>
                     <Icon name="search" size={16} />
                     <input
-                        placeholder="Search name or email…"
+                        placeholder={t('Search name or email...')}
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
                     />
@@ -121,15 +123,15 @@ export default function AdminChatsIndex() {
                         <div className="bar" />
                     </div>
                 ) : conversationsQuery.isError ? (
-                    <div className="flash error">Failed to load conversations.</div>
+                    <div className="flash error">{t('Failed to load conversations.')}</div>
                 ) : rows.length === 0 ? (
-                    <p>No conversations match your search.</p>
+                    <p>{t('No conversations match your search.')}</p>
                 ) : (
                     <div className="chat-list">
                         {rows.map((row) => {
                             const c = row.customer;
                             const last = row.last_message;
-                            const subtitle = last?.body || (last?.image_url ? 'Photo' : 'Open conversation');
+                            const subtitle = last?.body || (last?.image_url ? t('Photo') : t('Open conversation'));
                             const active = selectedCustomer?.id === c.id;
 
                             return (
@@ -163,13 +165,13 @@ export default function AdminChatsIndex() {
 
                 {conversationsQuery.isFetching && (
                     <p style={{ textAlign: 'center', marginTop: 10 }}>
-                        <small>Refreshing…</small>
+                        <small>{t('Refreshing...')}</small>
                     </p>
                 )}
                 {meta && meta.last_page > 1 && (
                     <div className="ledger-pagination">
                         <small>
-                            Page {meta.current_page} of {meta.last_page} - {meta.total} conversations
+                            {t('Page :current of :last - :total conversations', { current: meta.current_page, last: meta.last_page, total: meta.total })}
                         </small>
                         <div className="pagination-links">
                             <button
@@ -178,7 +180,7 @@ export default function AdminChatsIndex() {
                                 disabled={meta.current_page <= 1}
                                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                             >
-                                Previous
+                                {t('Previous')}
                             </button>
                             <button
                                 type="button"
@@ -186,7 +188,7 @@ export default function AdminChatsIndex() {
                                 disabled={meta.current_page >= meta.last_page}
                                 onClick={() => setPage((current) => Math.min(meta.last_page, current + 1))}
                             >
-                                Next
+                                {t('Next')}
                             </button>
                         </div>
                     </div>

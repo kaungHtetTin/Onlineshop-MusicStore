@@ -1,1 +1,0 @@
-import{a as o}from"./app-a00c7961.js";import t from"./Form-320b40eb.js";import"./AdminLayout-324aa3c6.js";import"./icons-9ff29f85.js";import"./url-e9a55f60.js";import"./AdminFlash-7762e8ec.js";import"./CropImageModal-f0889a6f.js";function s(r){return o(t,{...r,mode:"create"})}export{s as default};

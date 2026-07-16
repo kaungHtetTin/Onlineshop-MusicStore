@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\PwaController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +33,17 @@ Route::get('/csrf-token', function (Request $request) {
         ->json(['csrf_token' => $request->session()->token()])
         ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
 })->name('csrf-token');
+Route::post('/locale', function (Request $request) {
+    $supportedLocales = array_keys(config('app.supported_locales'));
+    $data = $request->validate([
+        'locale' => ['required', 'string', 'in:'.implode(',', $supportedLocales)],
+    ]);
+
+    $request->session()->put('locale', $data['locale']);
+    App::setLocale($data['locale']);
+
+    return back();
+})->name('locale.update');
 Route::get('/manifest.webmanifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('/categories/{slug}', [CategoryController::class, 'show'])->name('categories.show');

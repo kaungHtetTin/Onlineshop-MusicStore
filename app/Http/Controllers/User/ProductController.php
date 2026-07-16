@@ -10,7 +10,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Inertia\Inertia;
+use App\Support\Spa;
 use App\Services\FlashSalePricingService;
 use App\Services\Inventory\StorefrontInventoryService;
 use App\Models\FlashSaleItem;
@@ -134,7 +134,7 @@ class ProductController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return Inertia::render('User/Products/Index', [
+        return Spa::render('User/Products/Index', [
             'products' => $products,
             'categories' => $categories,
             'filters' => $request->only(['search', 'category', 'sort', 'min_price', 'max_price', 'min_rating', 'flash_sale'])
@@ -250,7 +250,7 @@ class ProductController extends Controller
                 ->unique('id')
         );
 
-        return Inertia::render('User/Products/Show', [
+        return Spa::render('User/Products/Show', [
             'product' => $product,
             'relatedProducts' => $relatedProducts,
             'recommendedProducts' => $recommendedProducts,

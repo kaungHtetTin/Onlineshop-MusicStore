@@ -1,5 +1,5 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@/spa/router';
 import { routeWithBase } from '@/Utils/url';
 
 export default function Guest({ children }) {

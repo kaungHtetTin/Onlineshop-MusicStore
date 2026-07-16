@@ -7,7 +7,7 @@ use App\Models\OrderItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class CustomerController extends Controller
 {
@@ -32,7 +32,7 @@ class CustomerController extends Controller
             $query->where('tier', $request->tier);
         }
 
-        return Inertia::render('Admin/Customers/Index', [
+        return Spa::render('Admin/Customers/Index', [
             'customers' => $query->paginate(15)->withQueryString(),
             'filters' => [
                 'q' => $request->string('q')->toString(),
@@ -84,7 +84,7 @@ class CustomerController extends Controller
             ->take(8)
             ->get();
 
-        return Inertia::render('Admin/Customers/Show', [
+        return Spa::render('Admin/Customers/Show', [
             'customer' => $customer,
             'stats' => [
                 'orders' => $customer->orders_count,

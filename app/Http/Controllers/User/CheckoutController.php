@@ -18,13 +18,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class CheckoutController extends Controller
 {
     public function create()
     {
-        return Inertia::render('User/Checkout/Index', [
+        return Spa::render('User/Checkout/Index', [
             'shop' => config('shop'),
             'paymentMethods' => PaymentMethod::active()->ordered()->get(),
             'loyalty' => [

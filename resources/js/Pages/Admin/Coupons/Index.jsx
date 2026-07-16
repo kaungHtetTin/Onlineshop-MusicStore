@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import AdminPagination from '@/Components/Admin/AdminPagination';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const emptyCoupon = {
     code: '',
@@ -20,6 +21,7 @@ const emptyCoupon = {
 
 export default function CouponsIndex({ coupons, filters }) {
     const { app_base, flash } = usePage().props;
+    const t = usePhraseTranslation();
     const [search, setSearch] = useState(filters.q ?? '');
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -68,41 +70,41 @@ export default function CouponsIndex({ coupons, filters }) {
     };
 
     const remove = (coupon) => {
-        if (!confirm(`Delete or deactivate ${coupon.code}?`)) return;
+        if (!confirm(`${t('Delete or deactivate')} ${coupon.code}?`)) return;
         router.delete(routeWithBase(`/admin/coupons/${coupon.id}`, app_base), { preserveScroll: true });
     };
 
     return (
         <AdminLayout
-            title="Coupons"
-            eyebrow="Promotions"
+            title={t('Coupons')}
+            eyebrow={t('Promotions')}
             action={
                 <button type="button" className="btn primary" onClick={() => openModal()}>
                     <Icon name="plus" size={14} />
-                    Add coupon
+                    {t('Add coupon')}
                 </button>
             }
         >
-            <Head title="Coupons" />
+            <Head title={t('Coupons')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
             <section className="panel glass">
-                <PanelHeading eyebrow="Checkout discounts" title="Promo codes" />
+                <PanelHeading eyebrow={t('Checkout discounts')} title={t('Promo codes')} />
                 <form className="filter-toolbar compact flash-sales-filter" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input
-                            placeholder="Search coupon code..."
+                            placeholder={t('Search coupon code...')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
                     <select value={filters.status || ''} onChange={(e) => applyFilters({ status: e.target.value || undefined })}>
-                        <option value="">All statuses</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="">{t('All statuses')}</option>
+                        <option value="active">{t('Active')}</option>
+                        <option value="inactive">{t('Inactive')}</option>
                     </select>
-                    <button type="submit" className="btn primary">Search</button>
+                    <button type="submit" className="btn primary">{t('Search')}</button>
                 </form>
 
                 {(filters.q || filters.status) && (
@@ -112,7 +114,7 @@ export default function CouponsIndex({ coupons, filters }) {
                         style={{ marginBottom: 10 }}
                         onClick={() => router.get(routeWithBase('/admin/coupons', app_base))}
                     >
-                        Reset filters
+                        {t('Reset filters')}
                     </button>
                 )}
 
@@ -120,30 +122,30 @@ export default function CouponsIndex({ coupons, filters }) {
                     <table>
                         <thead>
                             <tr>
-                                <th>Code</th>
-                                <th>Discount</th>
-                                <th>Minimum</th>
-                                <th>Usage</th>
-                                <th>Status</th>
+                                <th>{t('Code')}</th>
+                                <th>{t('Discount')}</th>
+                                <th>{t('Minimum')}</th>
+                                <th>{t('Usage')}</th>
+                                <th>{t('Status')}</th>
                                 <th />
                             </tr>
                         </thead>
                         <tbody>
                             {coupons.data.length === 0 ? (
-                                <tr><td colSpan={6}><span className="muted">No coupons found.</span></td></tr>
+                                <tr><td colSpan={6}><span className="muted">{t('No coupons found.')}</span></td></tr>
                             ) : coupons.data.map((coupon) => (
                                 <tr key={coupon.id}>
                                     <td><strong>{coupon.code}</strong></td>
                                     <td>{coupon.type === 'percentage' ? `${Number(coupon.value).toFixed(0)}%` : `$${Number(coupon.value).toFixed(2)}`}</td>
                                     <td>${Number(coupon.min_order_amount).toFixed(2)}</td>
                                     <td>{coupon.used_count}{coupon.usage_limit ? ` / ${coupon.usage_limit}` : ''}</td>
-                                    <td><StatusBadge status={coupon.is_active ? 'success' : 'neutral'} label={coupon.is_active ? 'Active' : 'Inactive'} /></td>
+                                    <td><StatusBadge status={coupon.is_active ? 'success' : 'neutral'} label={coupon.is_active ? t('Active') : t('Inactive')} /></td>
                                     <td>
                                         <div className="inline-actions">
-                                            <button type="button" className="icon-btn small" onClick={() => openModal(coupon)} aria-label="Edit coupon">
+                                            <button type="button" className="icon-btn small" onClick={() => openModal(coupon)} aria-label={t('Edit coupon')}>
                                                 <Icon name="edit" size={13} />
                                             </button>
-                                            <button type="button" className="icon-btn small danger" onClick={() => remove(coupon)} aria-label="Delete coupon">
+                                            <button type="button" className="icon-btn small danger" onClick={() => remove(coupon)} aria-label={t('Delete coupon')}>
                                                 <Icon name="trash" size={13} />
                                             </button>
                                         </div>
@@ -153,7 +155,7 @@ export default function CouponsIndex({ coupons, filters }) {
                         </tbody>
                     </table>
                 </div>
-                <AdminPagination paginator={coupons} label="coupons" />
+                <AdminPagination paginator={coupons} label={t('coupons')} />
             </section>
 
             {open && (
@@ -161,51 +163,51 @@ export default function CouponsIndex({ coupons, filters }) {
                     <form className="operation-modal compact glass" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Coupon</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editing ? 'Edit coupon' : 'New coupon'}</h2>
+                                <p className="eyebrow">{t('Coupon')}</p>
+                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editing ? t('Edit coupon') : t('New coupon')}</h2>
                             </div>
                             <button type="button" className="icon-btn small" onClick={closeModal}><Icon name="close" size={14} /></button>
                         </div>
                         <div className="crud-grid">
                             <label className="form-field">
-                                <span>Code</span>
+                                <span>{t('Code')}</span>
                                 <input value={form.data.code} onChange={(e) => form.setData('code', e.target.value.toUpperCase())} required />
                             </label>
                             <label className="form-field">
-                                <span>Type</span>
+                                <span>{t('Type')}</span>
                                 <select value={form.data.type} onChange={(e) => form.setData('type', e.target.value)}>
-                                    <option value="percentage">Percentage</option>
-                                    <option value="fixed">Fixed amount</option>
+                                    <option value="percentage">{t('Percentage')}</option>
+                                    <option value="fixed">{t('Fixed amount')}</option>
                                 </select>
                             </label>
                             <label className="form-field">
-                                <span>Value</span>
+                                <span>{t('Value')}</span>
                                 <input type="number" step="0.01" value={form.data.value} onChange={(e) => form.setData('value', e.target.value)} required />
                             </label>
                             <label className="form-field">
-                                <span>Minimum order</span>
+                                <span>{t('Minimum order')}</span>
                                 <input type="number" step="0.01" value={form.data.min_order_amount} onChange={(e) => form.setData('min_order_amount', e.target.value)} />
                             </label>
                             <label className="form-field">
-                                <span>Starts</span>
+                                <span>{t('Starts')}</span>
                                 <input type="date" value={form.data.starts_at} onChange={(e) => form.setData('starts_at', e.target.value)} />
                             </label>
                             <label className="form-field">
-                                <span>Expires</span>
+                                <span>{t('Expires')}</span>
                                 <input type="date" value={form.data.expires_at} onChange={(e) => form.setData('expires_at', e.target.value)} />
                             </label>
                             <label className="form-field">
-                                <span>Usage limit</span>
+                                <span>{t('Usage limit')}</span>
                                 <input type="number" value={form.data.usage_limit} onChange={(e) => form.setData('usage_limit', e.target.value)} />
                             </label>
                             <label className="form-field checkbox-row">
                                 <input type="checkbox" checked={form.data.is_active} onChange={(e) => form.setData('is_active', e.target.checked)} />
-                                <span>Active</span>
+                                <span>{t('Active')}</span>
                             </label>
                         </div>
                         <div className="modal-actions">
-                            <button type="button" className="btn secondary" onClick={closeModal}>Cancel</button>
-                            <button type="submit" className="btn primary" disabled={form.processing}>{editing ? 'Save changes' : 'Create coupon'}</button>
+                            <button type="button" className="btn secondary" onClick={closeModal}>{t('Cancel')}</button>
+                            <button type="submit" className="btn primary" disabled={form.processing}>{editing ? t('Save changes') : t('Create coupon')}</button>
                         </div>
                     </form>
                 </div>

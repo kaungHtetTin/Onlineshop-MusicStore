@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, IconButton, Badge, InputBase, Box, Container, Stack, Button } from '@mui/material';
 import { Search, ShoppingCart, ChatBubbleOutlined, Favorite, MusicNote, Piano, Headphones } from '@mui/icons-material';
 import { styled, alpha, useTheme } from '@mui/material/styles';
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@/spa/router';
 import { routeWithBase } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
 import { useWishlistStore } from '@/stores/wishlistStore';
 import ProfileMenu from '@/Components/User/ProfileMenu';
 import { getMusicStoreColors } from '@/Components/User/musicStoreDesign';
+import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import { useTranslation } from '@/Utils/i18n';
 
 const SearchContainer = styled('form')(({ theme }) => ({
     position: 'relative',
@@ -76,6 +78,7 @@ const Navbar = () => {
     const cartCount = useCartStore((s) => s.itemCount());
     const wishCount = useWishlistStore((s) => s.count());
     const appName = app_settings?.app_name || 'Harmony House';
+    const t = useTranslation();
 
     useEffect(() => {
         const queryString = typeof url === 'string' ? url.split('?')[1] : '';
@@ -99,14 +102,14 @@ const Navbar = () => {
 
     const renderSearch = (placeholder) => (
         <SearchContainer onSubmit={submitSearch}>
-            <SearchIconWrapper type="submit" aria-label="Search products">
+            <SearchIconWrapper type="submit" aria-label={t('storefront.search_products', 'Search products')}>
                 <Search sx={{ fontSize: '1.1rem' }} />
             </SearchIconWrapper>
             <StyledInputBase
                 placeholder={placeholder}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                inputProps={{ 'aria-label': 'Search products' }}
+                inputProps={{ 'aria-label': t('storefront.search_products', 'Search products') }}
             />
         </SearchContainer>
     );
@@ -179,7 +182,7 @@ const Navbar = () => {
                                 {appName}
                             </Typography>
                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.68)', fontWeight: 700, display: { sm: 'none', md: 'block' } }}>
-                                Instruments, gear & studio essentials
+                                {t('storefront.tagline', 'Instruments, gear & studio essentials')}
                             </Typography>
                         </Box>
                     </Box>
@@ -199,23 +202,23 @@ const Navbar = () => {
                         }}
                     >
                         <Button component={Link} href={routeWithBase('/products', app_base)} startIcon={<Piano fontSize="small" />}>
-                            Shop
+                            {t('storefront.shop', 'Shop')}
                         </Button>
                         <Button component={Link} href={routeWithBase('/categories', app_base)} startIcon={<Headphones fontSize="small" />}>
-                            Categories
+                            {t('storefront.categories', 'Categories')}
                         </Button>
                     </Stack>
 
                     <Box sx={{ flexGrow: 1 }} />
                     
                     <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                        {renderSearch('Search instruments, cables, amps...')}
+                        {renderSearch(t('storefront.search_desktop', 'Search instruments, cables, amps...'))}
                     </Box>
 
                     <Box sx={{ display: 'flex', gap: { xs: 0.25, sm: 0.5 }, alignItems: 'center' }}>
                         <IconButton
                             size="small"
-                            aria-label="Open support chat"
+                            aria-label={t('storefront.support_chat', 'Open support chat')}
                             component={Link}
                             href={routeWithBase(auth?.user ? '/chat' : '/login', app_base)}
                             sx={{ color: musicColors.amber }}
@@ -233,7 +236,7 @@ const Navbar = () => {
                             size="small"
                             component={Link}
                             href={routeWithBase('/wishlist', app_base)}
-                            aria-label="Wishlist"
+                            aria-label={t('storefront.wishlist', 'Wishlist')}
                             sx={{ display: { xs: 'none', sm: 'flex' }, color: musicColors.amber }}
                         >
                             <Badge
@@ -249,6 +252,7 @@ const Navbar = () => {
                             size="small" 
                             component={Link}
                             href={routeWithBase('/cart', app_base)}
+                            aria-label={t('storefront.cart', 'Cart')}
                             sx={{ color: musicColors.amber }}
                         >
                             <Badge
@@ -260,11 +264,12 @@ const Navbar = () => {
                                 <ShoppingCart sx={{ fontSize: '1.25rem' }} />
                             </Badge>
                         </IconButton>
+                        <LanguageSwitcher compact className="storefront-language-switcher" />
                         <ProfileMenu />
                     </Box>
                 </Toolbar>
                 <Box sx={{ pb: 1, px: 1, display: { xs: 'block', md: 'none' } }}>
-                    {renderSearch('Search guitars, keys, drums...')}
+                    {renderSearch(t('storefront.search_mobile', 'Search guitars, keys, drums...'))}
                 </Box>
             </Container>
         </AppBar>

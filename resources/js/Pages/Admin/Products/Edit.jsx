@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import CropImageModal from '@/Components/Admin/CropImageModal';
 import ProductFormUI from '@/Components/Admin/ProductFormUI';
 import { normalizeOptionKey, refreshAutoSkuCodes } from '@/Components/Admin/productFormUtils';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function Edit({ product, categories, app_base }) {
     const { app_url } = usePage().props;
+    const t = usePhraseTranslation();
     const { data, setData, transform, post, processing, errors } = useForm({
         _method: 'PATCH',
         category_id: product.category_id,
@@ -147,27 +149,27 @@ export default function Edit({ product, categories, app_base }) {
 
     return (
         <AdminLayout
-            title={`Edit: ${product.name}`}
-            eyebrow="Catalog"
+            title={`${t('Edit')}: ${product.name}`}
+            eyebrow={t('Catalog')}
             action={
                 <button type="button" className="btn primary" onClick={handleSubmit} disabled={processing}>
                     <Icon name="check" size={14} />
-                    {processing ? 'Saving…' : 'Save changes'}
+                    {processing ? t('Saving...') : t('Save changes')}
                 </button>
             }
         >
-            <Head title="Edit Product" />
+            <Head title={t('Edit Product')} />
 
             <div className="sticky-toolbar">
                 <Link href={routeWithBase('/admin/products', app_base)} className="back-link" style={{ marginBottom: 0 }}>
                     <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} />
-                    Back to products
+                    {t('Back to products')}
                 </Link>
             </div>
 
             {Object.keys(errors).length > 0 && (
                 <div className="flash error">
-                    Please correct the errors below.
+                    {t('Please correct the errors below.')}
                     {Object.entries(errors).map(([key, err]) => (
                         <div key={key}>
                             <small>

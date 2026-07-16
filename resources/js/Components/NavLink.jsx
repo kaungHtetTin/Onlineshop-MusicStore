@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link } from '@/spa/router';
 
 export default function NavLink({ active = false, className = '', children, ...props }) {
     return (

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class AuditLogController extends Controller
 {
@@ -21,7 +21,7 @@ class AuditLogController extends Controller
             });
         }
 
-        return Inertia::render('Admin/AuditLogs/Index', [
+        return Spa::render('Admin/AuditLogs/Index', [
             'logs' => $query->paginate(20)->withQueryString(),
             'filters' => [
                 'q' => $request->string('q')->toString(),

@@ -14,13 +14,13 @@ use App\Services\Inventory\InventoryService;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class ProductController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Admin/Products/Index', [
+        return Spa::render('Admin/Products/Index', [
             'products' => Product::with(['category', 'primaryImage', 'skus.inventoryBalances'])
                 ->latest()
                 ->paginate(15)
@@ -38,7 +38,7 @@ class ProductController extends Controller
 
     public function create()
     {
-        return Inertia::render('Admin/Products/Create', [
+        return Spa::render('Admin/Products/Create', [
             'categories' => Category::where('is_active', true)->get()
         ]);
     }
@@ -124,7 +124,7 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        return Inertia::render('Admin/Products/Edit', [
+        return Spa::render('Admin/Products/Edit', [
             'product' => $product->load(['images', 'skus']),
             'categories' => Category::where('is_active', true)->get()
         ]);

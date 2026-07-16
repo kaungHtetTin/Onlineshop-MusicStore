@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class PaymentMethodController extends Controller
 {
@@ -30,7 +30,7 @@ class PaymentMethodController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        return Inertia::render('Admin/PaymentMethods/Index', [
+        return Spa::render('Admin/PaymentMethods/Index', [
             'methods' => $methods,
             'activeCount' => PaymentMethod::active()->count(),
             'filters' => [

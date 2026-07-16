@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const createDefaults = {
     name: '',
@@ -68,6 +69,7 @@ function PermissionGroups({ groups, selected, disabled, onChange }) {
 
 export default function RolesIndex({ roles, permissionGroups }) {
     const { app_base, flash } = usePage().props;
+    const t = usePhraseTranslation();
     const [selectedName, setSelectedName] = useState(roles[0]?.name || null);
     const [createOpen, setCreateOpen] = useState(false);
     const selectedRole = useMemo(
@@ -112,7 +114,7 @@ export default function RolesIndex({ roles, permissionGroups }) {
 
     const deleteRole = () => {
         if (!selectedRole || selectedRole.is_system || selectedRole.users_count > 0) return;
-        if (!confirm(`Delete ${selectedRole.display_name}?`)) return;
+        if (!confirm(`${t('Delete')} ${selectedRole.display_name}?`)) return;
 
         router.delete(routeWithBase(`/admin/roles/${selectedRole.id}`, app_base), {
             preserveScroll: true,
@@ -122,23 +124,23 @@ export default function RolesIndex({ roles, permissionGroups }) {
 
     return (
         <AdminLayout
-            title="Roles & permissions"
-            eyebrow="Access control"
+            title={t('Roles & permissions')}
+            eyebrow={t('Access control')}
             action={
                 <button type="button" className="btn primary" onClick={openCreate}>
                     <Icon name="plus" size={14} />
-                    Add role
+                    {t('Add role')}
                 </button>
             }
         >
-            <Head title="Roles & Permissions" />
+            <Head title={t('Roles & Permissions')} />
             <AdminFlash flash={flash} errors={{ ...form.errors, ...createForm.errors }} />
 
             <section className="panel glass">
-                <PanelHeading eyebrow="Team access" title="Roles & permissions" />
+                <PanelHeading eyebrow={t('Team access')} title={t('Roles & permissions')} />
 
                 <div className="role-permission-layout">
-                    <aside className="role-list" aria-label="Admin roles">
+                    <aside className="role-list" aria-label={t('Admin roles')}>
                         {roles.map((role) => (
                             <button
                                 key={role.name}
@@ -148,7 +150,7 @@ export default function RolesIndex({ roles, permissionGroups }) {
                             >
                                 <span>
                                     <strong>{role.display_name}</strong>
-                                    <small>{role.users_count} staff</small>
+                                    <small>{role.users_count} {t('staff')}</small>
                                 </span>
                                 <small>{role.permissions.length}</small>
                             </button>
@@ -161,7 +163,7 @@ export default function RolesIndex({ roles, permissionGroups }) {
                                 <div>
                                     <div className="inline-actions">
                                         <h2>{selectedRole.display_name}</h2>
-                                        {selectedRole.is_system && <StatusBadge status="info" label="System role" />}
+                                        {selectedRole.is_system && <StatusBadge status="info" label={t('System role')} />}
                                     </div>
                                     <code>{selectedRole.name}</code>
                                 </div>
@@ -173,7 +175,7 @@ export default function RolesIndex({ roles, permissionGroups }) {
 
                             <div className="crud-grid role-fields">
                                 <label className="form-field">
-                                    <span>Display name</span>
+                                    <span>{t('Display name')}</span>
                                     <input
                                         value={form.data.display_name}
                                         onChange={(event) => form.setData('display_name', event.target.value)}
@@ -182,7 +184,7 @@ export default function RolesIndex({ roles, permissionGroups }) {
                                     />
                                 </label>
                                 <label className="form-field">
-                                    <span>Description</span>
+                                    <span>{t('Description')}</span>
                                     <input
                                         value={form.data.description}
                                         onChange={(event) => form.setData('description', event.target.value)}
@@ -205,15 +207,15 @@ export default function RolesIndex({ roles, permissionGroups }) {
                                         className="btn danger"
                                         onClick={deleteRole}
                                         disabled={selectedRole.users_count > 0}
-                                        title={selectedRole.users_count > 0 ? 'Move assigned staff before deleting' : undefined}
+                                        title={selectedRole.users_count > 0 ? t('Move assigned staff before deleting') : undefined}
                                     >
                                         <Icon name="trash" size={14} />
-                                        Delete
+                                        {t('Delete')}
                                     </button>
                                 )}
                                 <button type="submit" className="btn primary" disabled={form.processing || selectedRole.is_locked}>
                                     <Icon name="check" size={14} />
-                                    Save permissions
+                                    {t('Save permissions')}
                                 </button>
                             </div>
                         </form>
@@ -226,16 +228,16 @@ export default function RolesIndex({ roles, permissionGroups }) {
                     <form className="operation-modal glass role-create-modal" onSubmit={submitCreate} onClick={(event) => event.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Access control</p>
-                                <h2>New role</h2>
+                                <p className="eyebrow">{t('Access control')}</p>
+                                <h2>{t('New role')}</h2>
                             </div>
-                            <button type="button" className="icon-btn small" onClick={() => setCreateOpen(false)} aria-label="Close">
+                            <button type="button" className="icon-btn small" onClick={() => setCreateOpen(false)} aria-label={t('Close')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
                         <div className="crud-grid">
                             <label className="form-field">
-                                <span>Display name</span>
+                                <span>{t('Display name')}</span>
                                 <input
                                     value={createForm.data.display_name}
                                     onChange={(event) => createForm.setData('display_name', event.target.value)}
@@ -243,7 +245,7 @@ export default function RolesIndex({ roles, permissionGroups }) {
                                 />
                             </label>
                             <label className="form-field">
-                                <span>System key</span>
+                                <span>{t('System key')}</span>
                                 <input
                                     value={createForm.data.name}
                                     onChange={(event) => createForm.setData('name', event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
@@ -252,7 +254,7 @@ export default function RolesIndex({ roles, permissionGroups }) {
                                 />
                             </label>
                             <label className="form-field span-2">
-                                <span>Description</span>
+                                <span>{t('Description')}</span>
                                 <input
                                     value={createForm.data.description}
                                     onChange={(event) => createForm.setData('description', event.target.value)}
@@ -267,10 +269,10 @@ export default function RolesIndex({ roles, permissionGroups }) {
                         />
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={() => setCreateOpen(false)}>
-                                Cancel
+                                {t('Cancel')}
                             </button>
                             <button type="submit" className="btn primary" disabled={createForm.processing}>
-                                Create role
+                                {t('Create role')}
                             </button>
                         </div>
                     </form>

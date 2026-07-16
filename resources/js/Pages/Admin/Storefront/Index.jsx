@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading } from '@/Components/Admin/shared';
 import CropImageModal from '@/Components/Admin/CropImageModal';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const sectionLabels = {
     categories: 'Category strip',
@@ -58,6 +59,7 @@ function useObjectUrl(file) {
 }
 
 function ImagePicker({ label, block, onChange, onFileSelect, cropHint }) {
+    const t = usePhraseTranslation();
     const objectUrl = useObjectUrl(block.image);
     const previewUrl = block.remove_image ? null : objectUrl || block.image_url;
 
@@ -71,14 +73,14 @@ function ImagePicker({ label, block, onChange, onFileSelect, cropHint }) {
                 )}
             </div>
             <div className="storefront-image-meta">
-                <strong>{label}</strong>
-                <small>{block.image?.name || (previewUrl ? 'Current image' : 'No image selected')}</small>
-                {cropHint && <small className="storefront-crop-hint">{cropHint}</small>}
+                <strong>{t(label)}</strong>
+                <small>{block.image?.name || (previewUrl ? t('Current image') : t('No image selected'))}</small>
+                {cropHint && <small className="storefront-crop-hint">{t(cropHint)}</small>}
             </div>
             <div className="storefront-image-actions">
                 <label className="btn secondary">
                     <Icon name="image" size={13} />
-                    Upload
+                    {t('Upload')}
                     <input
                         className="sr-only-file"
                         type="file"
@@ -101,6 +103,7 @@ function ImagePicker({ label, block, onChange, onFileSelect, cropHint }) {
 }
 
 export default function StorefrontIndex({ hero, promos, sections }) {
+    const t = usePhraseTranslation();
     const { app_base, flash } = usePage().props;
     const [cropper, setCropper] = useState(null);
 
@@ -183,45 +186,45 @@ export default function StorefrontIndex({ hero, promos, sections }) {
     };
 
     return (
-        <AdminLayout title="Storefront" eyebrow="Client decoration">
-            <Head title="Storefront" />
+        <AdminLayout title={t('Storefront')} eyebrow={t('Client decoration')}>
+            <Head title={t('Storefront')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
             <form onSubmit={submit} className="storefront-editor">
                 <section className="panel glass">
-                    <PanelHeading eyebrow="Homepage hero" title="Hero banner" />
+                    <PanelHeading eyebrow={t('Homepage hero')} title={t('Hero banner')} />
                     <div className="storefront-hero-grid">
                         <div className="storefront-preview-card" style={{ background: form.data.hero.accent_color || '#087f74' }}>
                             {(!form.data.hero.remove_image && (form.data.hero.image || form.data.hero.image_url)) && (
                                 <ImagePreviewOverlay block={form.data.hero} />
                             )}
                             <div>
-                                <small>Hero preview</small>
-                                <h2>{form.data.hero.title || 'Hero title'}</h2>
-                                <p>{form.data.hero.subtitle || 'Hero subtitle'}</p>
-                                <span>{form.data.hero.button_label || 'Button label'}</span>
+                                <small>{t('Hero preview')}</small>
+                                <h2>{form.data.hero.title || t('Hero title')}</h2>
+                                <p>{form.data.hero.subtitle || t('Hero subtitle')}</p>
+                                <span>{form.data.hero.button_label || t('Button label')}</span>
                             </div>
                         </div>
                         <div className="storefront-controls">
                             <div className="crud-grid">
                                 <label className="form-field">
-                                    <span>Hero title</span>
+                                    <span>{t('Hero title')}</span>
                                     <input value={form.data.hero.title} onChange={(e) => updateHero({ title: e.target.value })} />
                                 </label>
                                 <label className="form-field">
-                                    <span>Button label</span>
+                                    <span>{t('Button label')}</span>
                                     <input value={form.data.hero.button_label} onChange={(e) => updateHero({ button_label: e.target.value })} />
                                 </label>
                                 <label className="form-field span-2">
-                                    <span>Subtitle</span>
+                                    <span>{t('Subtitle')}</span>
                                     <input value={form.data.hero.subtitle} onChange={(e) => updateHero({ subtitle: e.target.value })} />
                                 </label>
                                 <label className="form-field">
-                                    <span>Button link</span>
+                                    <span>{t('Button link')}</span>
                                     <input value={form.data.hero.link_url} onChange={(e) => updateHero({ link_url: e.target.value })} placeholder="/products" />
                                 </label>
                                 <label className="form-field">
-                                    <span>Accent color</span>
+                                    <span>{t('Accent color')}</span>
                                     <input type="color" value={form.data.hero.accent_color} onChange={(e) => updateHero({ accent_color: e.target.value })} />
                                 </label>
                                 <div className="span-2">
@@ -235,7 +238,7 @@ export default function StorefrontIndex({ hero, promos, sections }) {
                                 </div>
                                 <label className="form-field checkbox-row span-2">
                                     <input type="checkbox" checked={form.data.hero.is_active} onChange={(e) => updateHero({ is_active: e.target.checked })} />
-                                    <span>Show hero on homepage</span>
+                                    <span>{t('Show hero on homepage')}</span>
                                 </label>
                             </div>
                         </div>
@@ -243,40 +246,40 @@ export default function StorefrontIndex({ hero, promos, sections }) {
                 </section>
 
                 <section className="panel glass">
-                    <PanelHeading eyebrow="Marketing tiles" title="Promo tiles" />
+                    <PanelHeading eyebrow={t('Marketing tiles')} title={t('Promo tiles')} />
                     <div className="storefront-promo-list">
                         {form.data.promos.map((promo, index) => (
                             <article key={promo.key || index} className="storefront-promo-row">
                                 <div className="storefront-promo-preview" style={{ background: promo.accent_color || '#f2f6f6' }}>
                                     <ImagePreviewOverlay block={promo} />
-                                    <strong>{promo.title || 'Promo title'}</strong>
-                                    <small>{promo.subtitle || 'Promo subtitle'}</small>
+                                    <strong>{promo.title || t('Promo title')}</strong>
+                                    <small>{promo.subtitle || t('Promo subtitle')}</small>
                                 </div>
                                 <div className="storefront-promo-fields">
                                     <div className="crud-grid">
                                         <label className="form-field">
-                                            <span>Title</span>
+                                            <span>{t('Title')}</span>
                                             <input value={promo.title} onChange={(e) => updatePromo(index, { title: e.target.value })} />
                                         </label>
                                         <label className="form-field">
-                                            <span>Subtitle</span>
+                                            <span>{t('Subtitle')}</span>
                                             <input value={promo.subtitle} onChange={(e) => updatePromo(index, { subtitle: e.target.value })} />
                                         </label>
                                         <label className="form-field">
-                                            <span>Link</span>
+                                            <span>{t('Link')}</span>
                                             <input value={promo.link_url} onChange={(e) => updatePromo(index, { link_url: e.target.value })} />
                                         </label>
                                         <label className="form-field">
-                                            <span>Color</span>
+                                            <span>{t('Color')}</span>
                                             <input type="color" value={promo.accent_color} onChange={(e) => updatePromo(index, { accent_color: e.target.value })} />
                                         </label>
                                         <label className="form-field">
-                                            <span>Order</span>
+                                            <span>{t('Order')}</span>
                                             <input type="number" value={promo.sort_order} onChange={(e) => updatePromo(index, { sort_order: e.target.value })} />
                                         </label>
                                         <label className="form-field checkbox-row">
                                             <input type="checkbox" checked={promo.is_active} onChange={(e) => updatePromo(index, { is_active: e.target.checked })} />
-                                            <span>Visible</span>
+                                            <span>{t('Visible')}</span>
                                         </label>
                                         <div className="span-2">
                                             <ImagePicker
@@ -295,27 +298,27 @@ export default function StorefrontIndex({ hero, promos, sections }) {
                 </section>
 
                 <section className="panel glass">
-                    <PanelHeading eyebrow="Homepage controls" title="Sections" />
+                    <PanelHeading eyebrow={t('Homepage controls')} title={t('Sections')} />
                     <div className="storefront-section-grid">
                         {form.data.sections.map((section, index) => (
                             <article key={section.key} className="storefront-section-card">
                                 <div className="stack-row">
-                                    <strong>{sectionLabels[section.key] || section.key}</strong>
+                                    <strong>{t(sectionLabels[section.key] || section.key)}</strong>
                                     <label className="switch-lite">
                                         <input type="checkbox" checked={section.is_active} onChange={(e) => updateSection(index, { is_active: e.target.checked })} />
                                         <span />
                                     </label>
                                 </div>
                                 <label className="form-field">
-                                    <span>Section title</span>
+                                    <span>{t('Section title')}</span>
                                     <input value={section.title} onChange={(e) => updateSection(index, { title: e.target.value })} />
                                 </label>
                                 <label className="form-field">
-                                    <span>Subtitle</span>
+                                    <span>{t('Subtitle')}</span>
                                     <input value={section.subtitle} onChange={(e) => updateSection(index, { subtitle: e.target.value })} />
                                 </label>
                                 <label className="form-field">
-                                    <span>Order</span>
+                                    <span>{t('Order')}</span>
                                     <input type="number" value={section.sort_order} onChange={(e) => updateSection(index, { sort_order: e.target.value })} />
                                 </label>
                             </article>
@@ -326,7 +329,7 @@ export default function StorefrontIndex({ hero, promos, sections }) {
                 <div className="sticky-toolbar">
                     <button type="submit" className="btn primary" disabled={form.processing}>
                         <Icon name="check" size={14} />
-                        {form.processing ? 'Saving...' : 'Save storefront'}
+                        {form.processing ? t('Saving...') : t('Save storefront')}
                     </button>
                 </div>
             </form>
@@ -337,7 +340,7 @@ export default function StorefrontIndex({ hero, promos, sections }) {
                 onCropComplete={handleCropComplete}
                 onCancel={() => setCropper(null)}
                 aspect={cropper?.aspect || 16 / 9}
-                title={cropper?.title || 'Crop image'}
+                title={t(cropper?.title || 'Crop image')}
                 ratioLabel={cropper?.ratioLabel}
                 outputType={cropper?.outputType || 'image/jpeg'}
             />

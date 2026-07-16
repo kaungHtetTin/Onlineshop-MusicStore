@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link } from '@/spa/router';
 
 const cleanLabel = (label = '') =>
     label.includes('&laquo;')

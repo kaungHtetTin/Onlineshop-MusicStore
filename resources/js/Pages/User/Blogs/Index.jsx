@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@/spa/router';
 import { routeWithBase } from '@/Utils/url';
 import {
     Box,
@@ -16,6 +16,7 @@ import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const formatDate = (value) => {
     if (!value) return '';
@@ -24,6 +25,7 @@ const formatDate = (value) => {
 
 function BlogCard({ post }) {
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
 
     return (
         <Box
@@ -51,7 +53,7 @@ function BlogCard({ post }) {
                 {post.youtube_video_id && (
                     <Chip
                         icon={<PlayCircle />}
-                        label="Video"
+                        label={t('Video')}
                         size="small"
                         sx={{ position: 'absolute', right: 10, bottom: 10, bgcolor: 'rgba(255,255,255,0.92)', fontWeight: 800 }}
                     />
@@ -81,6 +83,7 @@ function BlogCard({ post }) {
 
 export default function BlogsIndex({ posts, filters, categories, tags }) {
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
     const [search, setSearch] = useState(filters.q || '');
 
     const applyFilters = (patch) => {
@@ -95,25 +98,25 @@ export default function BlogsIndex({ posts, filters, categories, tags }) {
     return (
         <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title="Blog" />
-            <Head title="Blog" />
+            <Head title={t('Blog')} />
             <Navbar />
 
             <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
                 <Stack spacing={1.5} sx={{ mb: 3 }}>
-                    <Typography variant="overline" color="primary" sx={{ fontWeight: 900, letterSpacing: 1.5 }}>Journal</Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 950 }}>Ideas, guides, and updates</Typography>
+                    <Typography variant="overline" color="primary" sx={{ fontWeight: 900, letterSpacing: 1.5 }}>{t('Journal')}</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 950 }}>{t('Ideas, guides, and updates')}</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 620 }}>
-                        Shop smarter with product stories, gift guides, care tips, and campaign videos.
+                        {t('Shop smarter with product stories, gift guides, care tips, and campaign videos.')}
                     </Typography>
                 </Stack>
 
                 <Box component="form" onSubmit={submit} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto' }, gap: 1.25, mb: 2 }}>
-                    <TextField size="small" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search blog posts..." />
-                    <Button type="submit" variant="contained">Search</Button>
+                    <TextField size="small" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('Search blog posts...')} />
+                    <Button type="submit" variant="contained">{t('Search')}</Button>
                 </Box>
 
                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1, mb: 3 }}>
-                    <Chip label="All" color={!filters.category && !filters.tag ? 'primary' : 'default'} onClick={() => router.get(routeWithBase('/blogs', app_base))} />
+                    <Chip label={t('All')} color={!filters.category && !filters.tag ? 'primary' : 'default'} onClick={() => router.get(routeWithBase('/blogs', app_base))} />
                     {categories.map((category) => (
                         <Chip
                             key={category.id}
@@ -140,9 +143,9 @@ export default function BlogsIndex({ posts, filters, categories, tags }) {
                     </Box>
                 ) : (
                     <Box sx={{ p: 4, bgcolor: 'white', borderRadius: 1, textAlign: 'center' }}>
-                        <Typography sx={{ fontWeight: 800 }}>No blog posts found</Typography>
+                        <Typography sx={{ fontWeight: 800 }}>{t('No blog posts found')}</Typography>
                         <Button component={Link} href={routeWithBase('/products', app_base)} endIcon={<ArrowForward />} sx={{ mt: 1 }}>
-                            Browse products
+                            {t('Browse products')}
                         </Button>
                     </Box>
                 )}

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import Cropper from 'react-easy-crop';
 import Icon from '@/Components/Admin/icons';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 async function getCroppedImg(imageSrc, pixelCrop, outputType = 'image/jpeg') {
     const image = await createImage(imageSrc);
@@ -60,6 +61,7 @@ export default function CropImageModal({
     ratioLabel = null,
     outputType = 'image/jpeg',
 }) {
+    const t = usePhraseTranslation();
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
@@ -84,12 +86,12 @@ export default function CropImageModal({
             <div className="operation-modal compact glass crop-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="drawer-header">
                     <div>
-                        <p className="eyebrow">Media</p>
+                        <p className="eyebrow">{t('Media')}</p>
                         <h2 style={{ fontSize: 16, fontWeight: 800 }}>
-                            {title}{(ratioLabel || defaultRatioLabel(aspect)) ? ` (${ratioLabel || defaultRatioLabel(aspect)})` : ''}
+                            {t(title)}{(ratioLabel || defaultRatioLabel(aspect)) ? ` (${ratioLabel || defaultRatioLabel(aspect)})` : ''}
                         </h2>
                     </div>
-                    <button type="button" className="icon-btn small" onClick={onCancel} aria-label="Close">
+                    <button type="button" className="icon-btn small" onClick={onCancel} aria-label={t('Close')}>
                         <Icon name="close" size={14} />
                     </button>
                 </div>
@@ -108,7 +110,7 @@ export default function CropImageModal({
                 </div>
                 <div className="crop-zoom">
                     <label className="form-field">
-                        <span>Zoom</span>
+                        <span>{t('Zoom')}</span>
                         <input
                             type="range"
                             min={1}
@@ -121,10 +123,10 @@ export default function CropImageModal({
                 </div>
                 <div className="modal-actions">
                     <button type="button" className="btn secondary" onClick={onCancel}>
-                        Cancel
+                        {t('Cancel')}
                     </button>
                     <button type="button" className="btn primary" onClick={handleCrop}>
-                        Crop & save
+                        {t('Crop & save')}
                     </button>
                 </div>
             </div>

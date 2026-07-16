@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import AdminPagination from '@/Components/Admin/AdminPagination';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const emptyMethod = {
     banking_service: '',
@@ -19,6 +20,7 @@ const emptyMethod = {
 
 export default function PaymentMethodsIndex({ methods, filters }) {
     const { app_base, flash } = usePage().props;
+    const t = usePhraseTranslation();
     const [search, setSearch] = useState(filters.q ?? '');
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -62,7 +64,7 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                 : { ...emptyMethod },
         );
         setIconPreview(method?.icon_url || null);
-        setIconName(method?.icon_path ? 'Current icon' : '');
+        setIconName(method?.icon_path ? t('Current icon') : '');
         setOpen(true);
     };
 
@@ -79,7 +81,7 @@ export default function PaymentMethodsIndex({ methods, filters }) {
             URL.revokeObjectURL(iconPreview);
         }
         form.setData({ ...form.data, icon: file, remove_icon: false });
-        setIconName(file?.name || (editing?.icon_url ? 'Current icon' : ''));
+        setIconName(file?.name || (editing?.icon_url ? t('Current icon') : ''));
         setIconPreview(file ? URL.createObjectURL(file) : editing?.icon_url || null);
     };
 
@@ -107,41 +109,41 @@ export default function PaymentMethodsIndex({ methods, filters }) {
     };
 
     const remove = (method) => {
-        if (!confirm(`Delete or deactivate ${method.banking_service}?`)) return;
+        if (!confirm(`${t('Delete or deactivate')} ${method.banking_service}?`)) return;
         router.delete(routeWithBase(`/admin/payment-methods/${method.id}`, app_base), { preserveScroll: true });
     };
 
     return (
         <AdminLayout
-            title="Payment methods"
-            eyebrow="Checkout settings"
+            title={t('Payment methods')}
+            eyebrow={t('Checkout settings')}
             action={
                 <button type="button" className="btn primary" onClick={() => openModal()}>
                     <Icon name="plus" size={14} />
-                    Add method
+                    {t('Add method')}
                 </button>
             }
         >
-            <Head title="Payment Methods" />
+            <Head title={t('Payment Methods')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
             <section className="panel glass">
-                <PanelHeading eyebrow="Manual transfer accounts" title="Payment methods" />
+                <PanelHeading eyebrow={t('Manual transfer accounts')} title={t('Payment methods')} />
                 <form className="filter-toolbar payment-method-filter" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input
-                            placeholder="Search service, account name or number..."
+                            placeholder={t('Search service, account name or number...')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
                     <select value={filters.status || ''} onChange={(e) => applyFilters({ status: e.target.value || undefined })}>
-                        <option value="">All statuses</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="">{t('All statuses')}</option>
+                        <option value="active">{t('Active')}</option>
+                        <option value="inactive">{t('Inactive')}</option>
                     </select>
-                    <button type="submit" className="btn primary">Search</button>
+                    <button type="submit" className="btn primary">{t('Search')}</button>
                 </form>
 
                 {(filters.q || filters.status) && (
@@ -151,7 +153,7 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                         style={{ marginBottom: 10 }}
                         onClick={() => router.get(routeWithBase('/admin/payment-methods', app_base))}
                     >
-                        Reset filters
+                        {t('Reset filters')}
                     </button>
                 )}
 
@@ -159,17 +161,17 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                     <table>
                         <thead>
                             <tr>
-                                <th>Service</th>
-                                <th>Account name</th>
-                                <th>Account no.</th>
-                                <th>Sort</th>
-                                <th>Status</th>
+                                <th>{t('Service')}</th>
+                                <th>{t('Account name')}</th>
+                                <th>{t('Account no.')}</th>
+                                <th>{t('Sort')}</th>
+                                <th>{t('Status')}</th>
                                 <th />
                             </tr>
                         </thead>
                         <tbody>
                             {methods.data.length === 0 ? (
-                                <tr><td colSpan={6}><span className="muted">No payment methods found.</span></td></tr>
+                                <tr><td colSpan={6}><span className="muted">{t('No payment methods found.')}</span></td></tr>
                             ) : methods.data.map((method) => (
                                 <tr key={method.id}>
                                     <td>
@@ -194,15 +196,15 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                                     <td>
                                         <StatusBadge
                                             status={method.is_active ? 'success' : 'neutral'}
-                                            label={method.is_active ? 'Active' : 'Inactive'}
+                                            label={method.is_active ? t('Active') : t('Inactive')}
                                         />
                                     </td>
                                     <td>
                                         <div className="inline-actions">
-                                            <button type="button" className="icon-btn small" onClick={() => openModal(method)} aria-label="Edit payment method">
+                                            <button type="button" className="icon-btn small" onClick={() => openModal(method)} aria-label={t('Edit payment method')}>
                                                 <Icon name="edit" size={13} />
                                             </button>
-                                            <button type="button" className="icon-btn small danger" onClick={() => remove(method)} aria-label="Delete payment method">
+                                            <button type="button" className="icon-btn small danger" onClick={() => remove(method)} aria-label={t('Delete payment method')}>
                                                 <Icon name="trash" size={13} />
                                             </button>
                                         </div>
@@ -212,7 +214,7 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                         </tbody>
                     </table>
                 </div>
-                <AdminPagination paginator={methods} label="payment methods" />
+                <AdminPagination paginator={methods} label={t('payment methods')} />
             </section>
 
             {open && (
@@ -220,8 +222,8 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                     <form className="operation-modal compact glass" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Payment method</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editing ? 'Edit method' : 'New method'}</h2>
+                                <p className="eyebrow">{t('Payment method')}</p>
+                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editing ? t('Edit method') : t('New method')}</h2>
                             </div>
                             <button type="button" className="icon-btn small" onClick={closeModal}>
                                 <Icon name="close" size={14} />
@@ -230,17 +232,17 @@ export default function PaymentMethodsIndex({ methods, filters }) {
 
                         <div className="crud-grid">
                             <label className="form-field">
-                                <span>Banking service</span>
+                                <span>{t('Banking service')}</span>
                                 <input
                                     value={form.data.banking_service}
                                     onChange={(e) => form.setData('banking_service', e.target.value)}
-                                    placeholder="KBZ Pay, AYA Bank, WavePay..."
+                                    placeholder={t('KBZ Pay, AYA Bank, WavePay...')}
                                     required
                                 />
                                 {form.errors.banking_service && <small className="field-error">{form.errors.banking_service}</small>}
                             </label>
                             <label className="form-field">
-                                <span>Account name</span>
+                                <span>{t('Account name')}</span>
                                 <input
                                     value={form.data.account_name}
                                     onChange={(e) => form.setData('account_name', e.target.value)}
@@ -249,7 +251,7 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                                 {form.errors.account_name && <small className="field-error">{form.errors.account_name}</small>}
                             </label>
                             <label className="form-field">
-                                <span>Account no.</span>
+                                <span>{t('Account no.')}</span>
                                 <input
                                     value={form.data.account_no}
                                     onChange={(e) => form.setData('account_no', e.target.value)}
@@ -258,7 +260,7 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                                 {form.errors.account_no && <small className="field-error">{form.errors.account_no}</small>}
                             </label>
                             <label className="form-field">
-                                <span>Sort order</span>
+                                <span>{t('Sort order')}</span>
                                 <input
                                     type="number"
                                     min="0"
@@ -268,7 +270,7 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                                 {form.errors.sort_order && <small className="field-error">{form.errors.sort_order}</small>}
                             </label>
                             <label className="form-field span-2">
-                                <span>Icon (optional)</span>
+                                <span>{t('Icon (optional)')}</span>
                                 <input
                                     ref={iconInputRef}
                                     type="file"
@@ -292,7 +294,7 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                                     <button
                                         type="button"
                                         onClick={() => iconInputRef.current?.click()}
-                                        aria-label="Choose payment method icon"
+                                        aria-label={t('Choose payment method icon')}
                                         style={{
                                             width: 52,
                                             height: 52,
@@ -318,20 +320,20 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                                     </button>
                                     <div style={{ minWidth: 0 }}>
                                         <strong style={{ display: 'block', fontSize: 13 }}>
-                                            {iconName || 'No icon selected'}
+                                            {iconName || t('No icon selected')}
                                         </strong>
                                         <small className="muted">
-                                            JPG, PNG, WebP or SVG. Square icon works best.
+                                            {t('JPG, PNG, WebP or SVG. Square icon works best.')}
                                         </small>
                                     </div>
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                         <button type="button" className="btn secondary" onClick={() => iconInputRef.current?.click()}>
                                             <Icon name="image" size={13} />
-                                            Upload
+                                             {t('Upload')}
                                         </button>
                                         {iconPreview && (
                                             <button type="button" className="btn secondary" onClick={removeIcon}>
-                                                Remove
+                                                {t('Remove')}
                                             </button>
                                         )}
                                     </div>
@@ -344,13 +346,13 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                                     checked={form.data.is_active}
                                     onChange={(e) => form.setData('is_active', e.target.checked)}
                                 />
-                                <span>Active on checkout</span>
+                                <span>{t('Active on checkout')}</span>
                             </label>
                         </div>
                         <div className="modal-actions">
-                            <button type="button" className="btn secondary" onClick={closeModal}>Cancel</button>
+                            <button type="button" className="btn secondary" onClick={closeModal}>{t('Cancel')}</button>
                             <button type="submit" className="btn primary" disabled={form.processing}>
-                                {editing ? 'Save changes' : 'Create method'}
+                                {editing ? t('Save changes') : t('Create method')}
                             </button>
                         </div>
                     </form>

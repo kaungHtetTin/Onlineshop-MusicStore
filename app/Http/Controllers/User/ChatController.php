@@ -4,7 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class ChatController extends Controller
 {
@@ -13,6 +13,6 @@ class ChatController extends Controller
      */
     public function index(Request $request)
     {
-        return Inertia::render('User/Chat/Show');
+        return Spa::render('User/Chat/Show');
     }
 }

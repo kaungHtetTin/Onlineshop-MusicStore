@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { Head, Link, router, useForm, usePage } from '@/spa/router';
 import '@/styles/admin.css';
 import Icon from '@/Components/Admin/icons';
 import { AdminLogo } from '@/Components/Admin/shared';
+import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import { usePhraseTranslation, useTranslation } from '@/Utils/i18n';
 import { useStoredState } from '@/Utils/useStoredState';
 import { routeWithBase } from '@/Utils/url';
 
@@ -59,17 +61,12 @@ function NavLink({ item, currentPath, appBase, onNavigate }) {
     );
 }
 
-export default function AdminLayout({
-    children,
-    title = 'Admin Panel',
-    eyebrow,
-    action,
-    mainClassName = '',
-    contentClassName = '',
-    showPageHeading = true,
-}) {
+const AdminShellContext = createContext(null);
+
+function AdminChrome({ children, mainClassName = '' }) {
     const { url, props } = usePage();
     const { app_base, app_url, app_settings, orders_pending_payment_count, chat_unread_count, is_super_admin } = props;
+    const t = useTranslation();
     const authUser = props.auth?.user;
     const [mobileOpen, setMobileOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
@@ -80,6 +77,14 @@ export default function AdminLayout({
     const currentPath = useMemo(() => normalizeAdminPath(url, app_base), [url, app_base]);
     const closeMobile = () => setMobileOpen(false);
     const closeProfile = () => setProfileOpen(false);
+    const goBack = () => {
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+
+        router.visit(routeWithBase('/admin/dashboard', app_base), { replace: true });
+    };
     const storefrontHref = app_url || routeWithBase('/', app_base);
     const roleLabel = authUser?.role_label || (authUser?.role || 'staff').replace(/_/g, ' ');
     const can = (permission) => is_super_admin || (authUser?.permissions || []).includes(permission);
@@ -111,22 +116,22 @@ export default function AdminLayout({
     const navSections = useMemo(
         () => [
             {
-                title: 'Overview',
+                title: t('admin.sections.overview', 'Overview'),
                 items: [
                     {
-                        label: 'Dashboard',
+                        label: t('admin.items.dashboard', 'Dashboard'),
                         href: routeWithBase('/admin/dashboard', app_base),
                         icon: 'grid',
                     },
                 ],
             },
             {
-                title: 'Sales',
+                title: t('admin.sections.sales', 'Sales'),
                 items: [
                     ...(can('pos.access')
                         ? [
                               {
-                                  label: 'POS',
+                                  label: t('admin.items.pos', 'POS'),
                                   href: routeWithBase('/admin/pos', app_base),
                                   icon: 'card',
                               },
@@ -135,7 +140,7 @@ export default function AdminLayout({
                     ...(can('orders.view')
                         ? [
                               {
-                                  label: 'Orders',
+                                  label: t('admin.items.orders', 'Orders'),
                                   href: routeWithBase('/admin/orders', app_base),
                                   icon: 'receipt',
                                   badge: orders_pending_payment_count,
@@ -145,7 +150,7 @@ export default function AdminLayout({
                     ...(can('manage_finance')
                         ? [
                               {
-                                  label: 'Finance',
+                                  label: t('admin.items.finance', 'Finance'),
                                   href: routeWithBase('/admin/finance', app_base),
                                   icon: 'card',
                               },
@@ -154,7 +159,7 @@ export default function AdminLayout({
                     ...(can('manage_payment_methods')
                         ? [
                               {
-                                  label: 'Payment methods',
+                                  label: t('admin.items.payment_methods', 'Payment methods'),
                                   href: routeWithBase('/admin/payment-methods', app_base),
                                   icon: 'wallet',
                               },
@@ -163,7 +168,7 @@ export default function AdminLayout({
                     ...(['view_reports', 'reports.sales', 'reports.inventory'].some(can)
                         ? [
                               {
-                                  label: 'Reports',
+                                  label: t('admin.items.reports', 'Reports'),
                                   href: routeWithBase('/admin/reports', app_base),
                                   icon: 'chart',
                               },
@@ -174,12 +179,12 @@ export default function AdminLayout({
             ...(is_super_admin || can('manage_coupons') || can('manage_flash_sales') || can('manage_blogs')
                 ? [
                       {
-                          title: 'Marketing',
+                          title: t('admin.sections.marketing', 'Marketing'),
                           items: [
                               ...(can('manage_blogs')
                                   ? [
                                         {
-                                            label: 'Blogs',
+                                            label: t('admin.items.blogs', 'Blogs'),
                                             href: routeWithBase('/admin/blogs', app_base),
                                             icon: 'book',
                                         },
@@ -188,7 +193,7 @@ export default function AdminLayout({
                               ...(can('manage_flash_sales')
                                   ? [
                                         {
-                                            label: 'Flash sales',
+                                            label: t('admin.items.flash_sales', 'Flash sales'),
                                             href: routeWithBase('/admin/flash-sales', app_base),
                                             icon: 'bolt',
                                         },
@@ -197,7 +202,7 @@ export default function AdminLayout({
                               ...(can('manage_coupons')
                                   ? [
                                         {
-                                            label: 'Coupons',
+                                            label: t('admin.items.coupons', 'Coupons'),
                                             href: routeWithBase('/admin/coupons', app_base),
                                             icon: 'wallet',
                                         },
@@ -210,15 +215,15 @@ export default function AdminLayout({
             ...(can('catalog.view')
                 ? [
                       {
-                          title: 'Catalog',
+                          title: t('admin.sections.catalog', 'Catalog'),
                           items: [
                               {
-                                  label: 'Products',
+                                  label: t('admin.items.products', 'Products'),
                                   href: routeWithBase('/admin/products', app_base),
                                   icon: 'shop',
                               },
                               {
-                                  label: 'Categories',
+                                  label: t('admin.items.categories', 'Categories'),
                                   href: routeWithBase('/admin/categories', app_base),
                                   icon: 'tag',
                               },
@@ -229,12 +234,12 @@ export default function AdminLayout({
             ...(['locations.view', 'inventory.view', 'inventory.receive', 'inventory.adjust.create', 'inventory.transfer.create'].some(can)
                 ? [
                       {
-                          title: 'Inventory',
+                          title: t('admin.sections.inventory', 'Inventory'),
                           items: [
                               ...(can('inventory.view')
                                   ? [
                                         {
-                                            label: 'Stock overview',
+                                            label: t('admin.items.stock_overview', 'Stock overview'),
                                             href: routeWithBase('/admin/inventory', app_base),
                                             icon: 'box',
                                             excludeActivePaths: [
@@ -246,31 +251,31 @@ export default function AdminLayout({
                                     ]
                                   : []),
                               ...(can('inventory.receive')
-                                  ? [{ label: 'Receiving', href: routeWithBase('/admin/inventory/receipts', app_base), icon: 'receipt' }]
+                                  ? [{ label: t('admin.items.receiving', 'Receiving'), href: routeWithBase('/admin/inventory/receipts', app_base), icon: 'receipt' }]
                                   : []),
                               ...(can('inventory.adjust.create')
-                                  ? [{ label: 'Adjustments', href: routeWithBase('/admin/inventory/adjustments', app_base), icon: 'edit' }]
+                                  ? [{ label: t('admin.items.adjustments', 'Adjustments'), href: routeWithBase('/admin/inventory/adjustments', app_base), icon: 'edit' }]
                                   : []),
                               ...(can('inventory.transfer.create')
-                                  ? [{ label: 'Transfers', href: routeWithBase('/admin/inventory/transfers', app_base), icon: 'truck' }]
+                                  ? [{ label: t('admin.items.transfers', 'Transfers'), href: routeWithBase('/admin/inventory/transfers', app_base), icon: 'truck' }]
                                   : []),
                               ...(can('locations.view')
-                                  ? [{ label: 'Warehouses', href: routeWithBase('/admin/locations', app_base), icon: 'box' }]
+                                  ? [{ label: t('admin.items.warehouses', 'Warehouses'), href: routeWithBase('/admin/locations', app_base), icon: 'box' }]
                                   : []),
                               ...(can('registers.manage')
-                                  ? [{ label: 'Registers', href: routeWithBase('/admin/registers', app_base), icon: 'card' }]
+                                  ? [{ label: t('admin.items.registers', 'Registers'), href: routeWithBase('/admin/registers', app_base), icon: 'card' }]
                                   : []),
                           ],
                       },
                   ]
                 : []),
             {
-                title: 'Support',
+                title: t('admin.sections.support', 'Support'),
                 items: [
                     ...(can('chat.manage')
                         ? [
                               {
-                                  label: 'Customer chats',
+                                  label: t('admin.items.customer_chats', 'Customer chats'),
                                   href: routeWithBase('/admin/chats', app_base),
                                   icon: 'chat',
                                   badge: chat_unread_count,
@@ -280,7 +285,7 @@ export default function AdminLayout({
                     ...(can('moderate_reviews')
                         ? [
                               {
-                                  label: 'Reviews',
+                                  label: t('admin.items.reviews', 'Reviews'),
                                   href: routeWithBase('/admin/reviews', app_base),
                                   icon: 'check',
                               },
@@ -289,7 +294,7 @@ export default function AdminLayout({
                     ...(can('view_customers')
                         ? [
                               {
-                                  label: 'Customers',
+                                  label: t('admin.items.customers', 'Customers'),
                                   href: routeWithBase('/admin/customers', app_base),
                                   icon: 'users',
                               },
@@ -300,12 +305,12 @@ export default function AdminLayout({
             ...(can('staff.manage') || can('roles.manage') || can('settings.manage')
                 ? [
                       {
-                          title: 'Team',
+                          title: t('admin.sections.team', 'Team'),
                           items: [
                               ...(can('staff.manage')
                                   ? [
                                         {
-                                            label: 'Staff accounts',
+                                            label: t('admin.items.staff_accounts', 'Staff accounts'),
                                             href: routeWithBase('/admin/users', app_base),
                                             icon: 'users',
                                         },
@@ -314,7 +319,7 @@ export default function AdminLayout({
                               ...(can('roles.manage')
                                   ? [
                                         {
-                                            label: 'Roles & permissions',
+                                            label: t('admin.items.roles_permissions', 'Roles & permissions'),
                                             href: routeWithBase('/admin/roles', app_base),
                                             icon: 'lock',
                                         },
@@ -323,7 +328,7 @@ export default function AdminLayout({
                               ...(can('settings.manage')
                                   ? [
                                         {
-                                            label: 'Settings',
+                                            label: t('admin.items.settings', 'Settings'),
                                             href: routeWithBase('/admin/settings', app_base),
                                             icon: 'settings',
                                         },
@@ -336,10 +341,10 @@ export default function AdminLayout({
             ...(can('view_audit_logs')
                 ? [
                       {
-                          title: 'Security',
+                          title: t('admin.sections.security', 'Security'),
                           items: [
                               {
-                                  label: 'Audit logs',
+                                  label: t('admin.items.audit_logs', 'Audit logs'),
                                   href: routeWithBase('/admin/audit-logs', app_base),
                                   icon: 'lock',
                               },
@@ -348,19 +353,19 @@ export default function AdminLayout({
                   ]
                 : []),
             {
-                title: 'Tools',
+                title: t('admin.sections.tools', 'Tools'),
                 items: [
                     ...(can('storefront.manage')
                         ? [
                               {
-                                  label: 'Storefront',
+                                  label: t('admin.items.storefront', 'Storefront'),
                                   href: routeWithBase('/admin/storefront', app_base),
                                   icon: 'image',
                               },
                           ]
                         : []),
                     {
-                        label: 'View storefront',
+                        label: t('admin.view_storefront', 'View storefront'),
                         href: storefrontHref,
                         icon: 'storefront',
                         external: true,
@@ -368,33 +373,24 @@ export default function AdminLayout({
                 ],
             },
         ],
-        [app_base, storefrontHref, orders_pending_payment_count, chat_unread_count, is_super_admin, authUser?.role, authUser?.permissions],
+        [app_base, storefrontHref, orders_pending_payment_count, chat_unread_count, is_super_admin, authUser?.role, authUser?.permissions, t],
     );
-
-    const today = new Date().toLocaleDateString(undefined, {
-        weekday: 'long',
-        month: 'short',
-        day: 'numeric',
-    });
 
     return (
         <div className="app-root" data-theme={theme} style={{ '--color-primary': brand || app_settings?.theme_color || '#087f74' }}>
-            <Head title={title ? `${title} | ${app_settings?.app_name || 'LaLaPick'} Admin` : undefined}>
-                {app_settings?.favicon_url && <link rel="icon" href={app_settings.favicon_url} />}
-            </Head>
             <div className="admin-app">
                 {mobileOpen && (
                     <button
                         type="button"
                         className="admin-sidebar-overlay"
-                        aria-label="Close navigation"
+                        aria-label={t('admin.close_navigation', 'Close navigation')}
                         onClick={closeMobile}
                     />
                 )}
 
                 <aside className={`admin-sidebar glass ${mobileOpen ? 'open' : ''}`}>
                     <AdminLogo settings={app_settings} />
-                    <nav aria-label="Admin navigation">
+                    <nav aria-label={t('admin.navigation', 'Admin navigation')}>
                         {navSections.map((section) => (
                             <div key={section.title}>
                                 <div className="nav-section-label">{section.title}</div>
@@ -413,7 +409,7 @@ export default function AdminLayout({
                     <div className="admin-profile">
                         <span>{initials}</span>
                         <div>
-                            <strong>{authUser?.name || 'Admin'}</strong>
+                            <strong>{authUser?.name || t('admin.admin', 'Admin')}</strong>
                             <small className="muted">{roleLabel}</small>
                         </div>
                     </div>
@@ -423,25 +419,31 @@ export default function AdminLayout({
                     <header className="admin-topbar glass">
                         <button
                             type="button"
+                            className="icon-btn admin-back-button"
+                            aria-label={t('admin.go_back', 'Go back')}
+                            title={t('admin.go_back', 'Go back')}
+                            onClick={goBack}
+                        >
+                            <Icon name="arrowLeft" size={17} />
+                        </button>
+                        <button
+                            type="button"
                             className="icon-btn admin-mobile-toggle"
-                            aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
+                            aria-label={mobileOpen ? t('admin.close_navigation', 'Close navigation') : t('admin.open_navigation', 'Open navigation')}
                             onClick={() => setMobileOpen((open) => !open)}
                         >
                             <Icon name={mobileOpen ? 'close' : 'menu'} size={16} />
                         </button>
-                        <div className="search-box global-search">
-                            <Icon name="search" size={16} />
-                            <input type="search" placeholder="Search admin..." aria-label="Search admin" />
-                        </div>
                         <div className="admin-topbar-actions">
+                            <LanguageSwitcher compact className="admin-language-switcher" />
                             <Link
                                 href={routeWithBase('/admin/orders?tab=payments', app_base)}
                                 className={`icon-btn notification-bell ${orders_pending_payment_count > 0 ? 'has-count' : ''}`}
-                                aria-label={`${orders_pending_payment_count || 0} orders awaiting payment review`}
+                                aria-label={t('admin.orders_waiting', `${orders_pending_payment_count || 0} orders awaiting payment review`, { count: orders_pending_payment_count || 0 })}
                                 title={
                                     orders_pending_payment_count > 0
-                                        ? `${orders_pending_payment_count} orders awaiting payment review`
-                                        : 'No pending order notifications'
+                                        ? t('admin.orders_waiting', `${orders_pending_payment_count} orders awaiting payment review`, { count: orders_pending_payment_count })
+                                        : t('admin.no_notifications', 'No pending order notifications')
                                 }
                             >
                                 <Icon name="bell" size={16} />
@@ -464,7 +466,7 @@ export default function AdminLayout({
                                 >
                                     <span className="profile-menu-avatar">{initials}</span>
                                     <span className="profile-menu-copy">
-                                        <strong>{authUser?.name || 'Admin'}</strong>
+                                        <strong>{authUser?.name || t('admin.admin', 'Admin')}</strong>
                                         <small>{roleLabel}</small>
                                     </span>
                                     <Icon name="navigation" size={12} style={{ transform: profileOpen ? 'rotate(-90deg)' : 'rotate(90deg)' }} />
@@ -474,17 +476,17 @@ export default function AdminLayout({
                                         <div className="profile-dropdown-head">
                                             <span className="profile-menu-avatar">{initials}</span>
                                             <div>
-                                                <strong>{authUser?.name || 'Admin'}</strong>
+                                                <strong>{authUser?.name || t('admin.admin', 'Admin')}</strong>
                                                 <small>{authUser?.email || roleLabel}</small>
                                             </div>
                                         </div>
                                         <Link href={routeWithBase('/admin/profile', app_base)} role="menuitem" onClick={closeProfile}>
                                             <Icon name="user" size={14} />
-                                            Profile settings
+                                            {t('admin.profile_settings', 'Profile settings')}
                                         </Link>
                                         <a href={storefrontHref} target="_blank" rel="noopener noreferrer" role="menuitem" onClick={closeProfile}>
                                             <Icon name="storefront" size={14} />
-                                            View storefront
+                                            {t('admin.view_storefront', 'View storefront')}
                                         </a>
                                         <button
                                             type="button"
@@ -496,7 +498,7 @@ export default function AdminLayout({
                                             }}
                                         >
                                             <Icon name="logout" size={14} />
-                                            Log out
+                                            {t('admin.log_out', 'Log out')}
                                         </button>
                                     </div>
                                 )}
@@ -504,20 +506,114 @@ export default function AdminLayout({
                         </div>
                     </header>
 
-                    <div className={`admin-content ${contentClassName}`.trim()}>
-                        {showPageHeading && (
-                            <div className="admin-page-heading">
-                                <div>
-                                    <p className="eyebrow">{eyebrow || today}</p>
-                                    <h1>{title}</h1>
-                                </div>
-                                {action}
-                            </div>
-                        )}
-                        {children}
-                    </div>
+                    {children}
                 </main>
             </div>
         </div>
+    );
+}
+
+function AdminPageContent({
+    children,
+    title = 'Admin Panel',
+    eyebrow,
+    action,
+    contentClassName = '',
+    showPageHeading = true,
+}) {
+    const { props } = usePage();
+    const { app_settings } = props;
+    const t = useTranslation();
+    const tp = usePhraseTranslation();
+    const today = new Date().toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+    });
+    const displayTitle = tp(title);
+    const displayEyebrow = eyebrow ? tp(eyebrow) : today;
+
+    return (
+        <>
+            <Head title={displayTitle ? `${displayTitle} | ${app_settings?.app_name || 'LaLaPick'} ${t('admin.panel', 'Admin Panel')}` : undefined}>
+                {app_settings?.favicon_url && <link rel="icon" href={app_settings.favicon_url} />}
+            </Head>
+            <div className={`admin-content ${contentClassName}`.trim()}>
+                {showPageHeading && (
+                    <div className="admin-page-heading">
+                        <div>
+                            <p className="eyebrow">{displayEyebrow}</p>
+                            <h1>{displayTitle}</h1>
+                        </div>
+                        {action}
+                    </div>
+                )}
+                {children}
+            </div>
+        </>
+    );
+}
+
+export function AdminPersistentShell({ active = false, children }) {
+    const [mainClassName, setMainClassName] = useState('');
+    const contextValue = useMemo(() => ({ setMainClassName }), []);
+
+    useEffect(() => {
+        if (!active) {
+            setMainClassName('');
+        }
+    }, [active]);
+
+    if (!active) {
+        return children;
+    }
+
+    return (
+        <AdminShellContext.Provider value={contextValue}>
+            <AdminChrome mainClassName={mainClassName}>
+                {children}
+            </AdminChrome>
+        </AdminShellContext.Provider>
+    );
+}
+
+export default function AdminLayout({
+    children,
+    title = 'Admin Panel',
+    eyebrow,
+    action,
+    mainClassName = '',
+    contentClassName = '',
+    showPageHeading = true,
+}) {
+    const shell = useContext(AdminShellContext);
+
+    useLayoutEffect(() => {
+        if (!shell) return undefined;
+
+        shell.setMainClassName(mainClassName || '');
+        return () => shell.setMainClassName('');
+    }, [shell, mainClassName]);
+
+    const page = (
+        <AdminPageContent
+            title={title}
+            eyebrow={eyebrow}
+            action={action}
+            contentClassName={contentClassName}
+            showPageHeading={showPageHeading}
+        >
+            {children}
+        </AdminPageContent>
+    );
+
+    if (shell) {
+        return page;
+    }
+
+    return (
+        <AdminChrome mainClassName={mainClassName}>
+            {page}
+        </AdminChrome>
     );
 }

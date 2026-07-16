@@ -10,14 +10,14 @@ use App\Models\StockReceipt;
 use App\Services\AuditLogService;
 use App\Services\Inventory\StockReceiptService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class StockReceiptController extends Controller
 {
     public function index(Request $request)
     {
         $this->authorize('viewAny', StockReceipt::class);
-        return Inertia::render('Admin/Inventory/Receipts/Index', [
+        return Spa::render('Admin/Inventory/Receipts/Index', [
             'receipts' => StockReceipt::query()
                 ->whereIn('location_id', $request->user()->accessibleLocationIds())
                 ->with(['location:id,code,name', 'items'])
@@ -28,7 +28,7 @@ class StockReceiptController extends Controller
     public function create(Request $request)
     {
         $this->authorize('create', StockReceipt::class);
-        return Inertia::render('Admin/Inventory/Receipts/Create', [
+        return Spa::render('Admin/Inventory/Receipts/Create', [
             'locations' => Location::query()->whereIn('id', $request->user()->accessibleLocationIds())->orderBy('name')->get(['id', 'code', 'name', 'type']),
             'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
         ]);
@@ -56,7 +56,7 @@ class StockReceiptController extends Controller
             'items.sku.inventoryBalances' => fn ($query) => $query->where('location_id', $receipt->location_id),
         ]);
 
-        return Inertia::render('Admin/Inventory/Receipts/Edit', [
+        return Spa::render('Admin/Inventory/Receipts/Edit', [
             'receipt' => [
                 'id' => $receipt->id,
                 'receipt_number' => $receipt->receipt_number,
@@ -94,7 +94,7 @@ class StockReceiptController extends Controller
     public function show(Request $request, StockReceipt $receipt)
     {
         $this->authorize('view', $receipt);
-        return Inertia::render('Admin/Inventory/Receipts/Show', [
+        return Spa::render('Admin/Inventory/Receipts/Show', [
             'receipt' => $receipt->load(['location:id,code,name,type', 'items.sku.product:id,name']),
             'canEdit' => $request->user()->can('update', $receipt),
             'canPost' => $request->user()->hasAdminPermission('inventory.receive') && $receipt->status === 'draft',

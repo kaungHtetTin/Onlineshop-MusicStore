@@ -85,6 +85,11 @@ return [
 
     'locale' => 'en',
 
+    'supported_locales' => [
+        'en' => 'English',
+        'my' => 'မြန်မာ',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application Fallback Locale

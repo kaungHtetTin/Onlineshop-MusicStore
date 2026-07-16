@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class StorefrontController extends Controller
 {
@@ -17,7 +17,7 @@ class StorefrontController extends Controller
     {
         $this->ensureDefaults();
 
-        return Inertia::render('Admin/Storefront/Index', [
+        return Spa::render('Admin/Storefront/Index', [
             'hero' => StorefrontBlock::where('type', StorefrontBlock::TYPE_HERO)->orderBy('id')->first(),
             'promos' => StorefrontBlock::where('type', StorefrontBlock::TYPE_PROMO)->orderBy('sort_order')->orderBy('id')->get(),
             'sections' => StorefrontBlock::where('type', StorefrontBlock::TYPE_SECTION)->where('key', '!=', 'newsletter')->orderBy('sort_order')->orderBy('id')->get(),

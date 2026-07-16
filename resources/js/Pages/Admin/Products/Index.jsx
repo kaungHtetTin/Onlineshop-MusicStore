@@ -1,17 +1,19 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import AdminPagination from '@/Components/Admin/AdminPagination';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase, storageUrl } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function Index({ products, app_base }) {
     const { app_url } = usePage().props;
     const { delete: destroy } = useForm({});
     const productRows = products.data || products;
+    const t = usePhraseTranslation();
 
     const handleDelete = (id) => {
-        if (confirm('Are you sure you want to delete this product?')) {
+        if (confirm(t('Are you sure you want to delete this product?'))) {
             destroy(routeWithBase(`/admin/products/${id}`, app_base));
         }
     };
@@ -28,28 +30,28 @@ export default function Index({ products, app_base }) {
 
     return (
         <AdminLayout
-            title="Products"
-            eyebrow="Catalog management"
+            title={t('Products')}
+            eyebrow={t('Catalog management')}
             action={
                 <Link href={routeWithBase('/admin/products/create', app_base)} className="btn primary">
                     <Icon name="plus" size={14} />
-                    Add product
+                    {t('Add product')}
                 </Link>
             }
         >
-            <Head title="Manage Products" />
+            <Head title={t('Manage Products')} />
 
             <section className="panel glass">
-                <PanelHeading eyebrow="Inventory" title="Shop products" />
+                <PanelHeading eyebrow={t('Inventory')} title={t('Shop products')} />
                 <div className="table-wrap">
                     <table>
                         <thead>
                             <tr>
-                                <th>Product</th>
-                                <th>Category</th>
-                                <th>Price</th>
-                                <th>Stock</th>
-                                <th>Status</th>
+                                <th>{t('Product')}</th>
+                                <th>{t('Category')}</th>
+                                <th>{t('Price')}</th>
+                                <th>{t('Stock')}</th>
+                                <th>{t('Status')}</th>
                                 <th />
                             </tr>
                         </thead>
@@ -57,7 +59,7 @@ export default function Index({ products, app_base }) {
                             {productRows.length === 0 ? (
                                 <tr>
                                     <td colSpan={6}>
-                                        <span className="muted">No products found.</span>
+                                        <span className="muted">{t('No products found.')}</span>
                                     </td>
                                 </tr>
                             ) : (
@@ -87,7 +89,7 @@ export default function Index({ products, app_base }) {
                                                     )}
                                                     <div>
                                                         <strong>{product.name}</strong>
-                                                        <small>{product.skus?.length || 0} variants</small>
+                                                        <small>{product.skus?.length || 0} {t('variants')}</small>
                                                     </div>
                                                 </div>
                                             </td>
@@ -99,9 +101,9 @@ export default function Index({ products, app_base }) {
                                                 <strong style={{ color: stock <= 5 ? '#ce4444' : undefined }}>{stock}</strong>
                                             </td>
                                             <td>
-                                                <StatusBadge status={status} label={(product.status || 'active').toUpperCase()} />
+                                                <StatusBadge status={status} label={t(product.status || 'active')} />
                                                 {product.is_featured && (
-                                                    <StatusBadge status="info" label="FEATURED" />
+                                                    <StatusBadge status="info" label={t('FEATURED')} />
                                                 )}
                                             </td>
                                             <td>
@@ -109,14 +111,14 @@ export default function Index({ products, app_base }) {
                                                     <Link
                                                         href={routeWithBase(`/admin/products/${product.id}/edit`, app_base)}
                                                         className="icon-btn small"
-                                                        aria-label="Edit product"
+                                                        aria-label={t('Edit product')}
                                                     >
                                                         <Icon name="edit" size={13} />
                                                     </Link>
                                                     <button
                                                         type="button"
                                                         className="icon-btn small danger"
-                                                        aria-label="Delete product"
+                                                        aria-label={t('Delete product')}
                                                         onClick={() => handleDelete(product.id)}
                                                     >
                                                         <Icon name="trash" size={13} />
@@ -130,7 +132,7 @@ export default function Index({ products, app_base }) {
                         </tbody>
                     </table>
                 </div>
-                <AdminPagination paginator={products} label="products" />
+                <AdminPagination paginator={products} label={t('products')} />
             </section>
         </AdminLayout>
     );

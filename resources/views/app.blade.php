@@ -13,19 +13,21 @@
             <link rel="apple-touch-icon" href="{{ $publicSettings['favicon_url'] }}">
         @endif
 
-        <title inertia>{{ $publicSettings['app_name'] ?? config('app.name', 'Laravel') }}</title>
+        <title>{{ $publicSettings['app_name'] ?? config('app.name', 'Laravel') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
         <!-- Scripts -->
         @viteReactRefresh
-        @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
-        @inertiaHead
+        @vite(['resources/js/app.jsx'])
     </head>
     <body class="font-sans antialiased">
-        @inertia
+        <div id="app"></div>
+        <script>
+            window.__SPA_PAGE__ = @json($page ?? null);
+        </script>
     </body>
 </html>

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading } from '@/Components/Admin/shared';
 import CropImageModal from '@/Components/Admin/CropImageModal';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 const emptyPost = {
     title: '',
@@ -81,8 +82,19 @@ const extractYoutubeId = (value) => {
     return null;
 };
 
-function RichTextEditor({ value, onChange }) {
+function RichTextEditor({ value, onChange, t }) {
     const ref = useRef(null);
+    const tools = [
+        { label: 'Bold', text: 'B', action: () => command('bold') },
+        { label: 'Italic', text: 'I', action: () => command('italic') },
+        { label: 'Underline', text: 'U', action: () => command('underline') },
+        { label: 'Heading 2', text: 'H2', action: () => command('formatBlock', 'h2') },
+        { label: 'Heading 3', text: 'H3', action: () => command('formatBlock', 'h3') },
+        { label: 'Unordered list', text: 'UL', action: () => command('insertUnorderedList') },
+        { label: 'Ordered list', text: '1.', action: () => command('insertOrderedList') },
+        { label: 'Quote', text: 'Q', action: () => command('formatBlock', 'blockquote') },
+        { label: 'Paragraph', text: 'P', action: () => command('formatBlock', 'p') },
+    ];
 
     useEffect(() => {
         if (ref.current && ref.current.innerHTML !== (value || '')) {
@@ -98,16 +110,12 @@ function RichTextEditor({ value, onChange }) {
 
     return (
         <div className="rich-editor">
-            <div className="rich-editor-toolbar">
-                <button type="button" onClick={() => command('bold')}>B</button>
-                <button type="button" onClick={() => command('italic')}>I</button>
-                <button type="button" onClick={() => command('underline')}>U</button>
-                <button type="button" onClick={() => command('formatBlock', 'h2')}>H2</button>
-                <button type="button" onClick={() => command('formatBlock', 'h3')}>H3</button>
-                <button type="button" onClick={() => command('insertUnorderedList')}>UL</button>
-                <button type="button" onClick={() => command('insertOrderedList')}>1.</button>
-                <button type="button" onClick={() => command('formatBlock', 'blockquote')}>Q</button>
-                <button type="button" onClick={() => command('formatBlock', 'p')}>P</button>
+            <div className="rich-editor-toolbar" aria-label={t('Text formatting')}>
+                {tools.map((tool) => (
+                    <button key={tool.label} type="button" onClick={tool.action} title={t(tool.label)} aria-label={t(tool.label)}>
+                        {tool.text}
+                    </button>
+                ))}
             </div>
             <div
                 ref={ref}
@@ -122,6 +130,7 @@ function RichTextEditor({ value, onChange }) {
 
 export default function BlogForm({ post = null, categories = [], tags = [], statuses = [], mode = 'create' }) {
     const { app_base, flash } = usePage().props;
+    const t = usePhraseTranslation();
     const [cropper, setCropper] = useState(null);
     const form = useForm(buildInitialData(post));
     const coverObjectUrl = useObjectUrl(form.data.cover_image);
@@ -158,97 +167,97 @@ export default function BlogForm({ post = null, categories = [], tags = [], stat
 
     return (
         <AdminLayout
-            title={mode === 'edit' ? `Edit: ${post.title}` : 'New blog post'}
-            eyebrow="Marketing"
+            title={mode === 'edit' ? `${t('Edit')}: ${post.title}` : t('New blog post')}
+            eyebrow={t('Marketing')}
             action={
                 <button type="button" className="btn primary" onClick={submit} disabled={form.processing}>
                     <Icon name="check" size={14} />
-                    {form.processing ? 'Saving...' : mode === 'edit' ? 'Save changes' : 'Publish draft'}
+                    {form.processing ? t('Saving...') : mode === 'edit' ? t('Save changes') : t('Publish draft')}
                 </button>
             }
         >
-            <Head title={mode === 'edit' ? 'Edit Blog' : 'Create Blog'} />
+            <Head title={mode === 'edit' ? t('Edit Blog') : t('Create Blog')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
             <div className="sticky-toolbar">
                 <Link href={routeWithBase('/admin/blogs', app_base)} className="back-link" style={{ marginBottom: 0 }}>
                     <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} />
-                    Back to blogs
+                    {t('Back to blogs')}
                 </Link>
             </div>
 
             <form onSubmit={submit} className="blog-form-layout">
                 <section className="panel glass">
-                    <PanelHeading eyebrow="Article" title="Content" />
+                    <PanelHeading eyebrow={t('Article')} title={t('Content')} />
                     <div className="crud-grid">
                         <label className="form-field span-2">
-                            <span>Title</span>
+                            <span>{t('Title')}</span>
                             <input value={form.data.title} onChange={(e) => form.setData('title', e.target.value)} required />
                         </label>
                         <label className="form-field span-2">
-                            <span>Slug</span>
-                            <input value={form.data.slug} onChange={(e) => form.setData('slug', e.target.value)} placeholder="Auto-generated from title" />
+                            <span>{t('Slug')}</span>
+                            <input value={form.data.slug} onChange={(e) => form.setData('slug', e.target.value)} placeholder={t('Auto-generated from title')} />
                         </label>
                         <label className="form-field span-2">
-                            <span>Excerpt</span>
+                            <span>{t('Excerpt')}</span>
                             <textarea value={form.data.excerpt} onChange={(e) => form.setData('excerpt', e.target.value)} rows={3} />
                         </label>
                         <div className="form-field span-2">
-                            <span>Content</span>
-                            <RichTextEditor value={form.data.content} onChange={(value) => form.setData('content', value)} />
+                            <span>{t('Content')}</span>
+                            <RichTextEditor value={form.data.content} onChange={(value) => form.setData('content', value)} t={t} />
                         </div>
                     </div>
                 </section>
 
                 <aside className="blog-form-side">
                     <section className="panel glass">
-                        <PanelHeading eyebrow="Publishing" title="Settings" />
+                        <PanelHeading eyebrow={t('Publishing')} title={t('Settings')} />
                         <div className="crud-grid">
                             <label className="form-field span-2">
-                                <span>Status</span>
+                                <span>{t('Status')}</span>
                                 <select value={form.data.status} onChange={(e) => form.setData('status', e.target.value)}>
                                     {(statuses.length ? statuses : ['draft', 'published', 'archived']).map((status) => (
-                                        <option key={status} value={status}>{status}</option>
+                                        <option key={status} value={status}>{t(status)}</option>
                                     ))}
                                 </select>
                             </label>
                             <label className="form-field span-2">
-                                <span>Published date</span>
+                                <span>{t('Published date')}</span>
                                 <input type="datetime-local" value={form.data.published_at} onChange={(e) => form.setData('published_at', e.target.value)} />
                             </label>
                             <label className="form-field span-2">
-                                <span>Category</span>
+                                <span>{t('Category')}</span>
                                 <select
                                     value={form.data.blog_category_id}
                                     onChange={(e) => form.setData({ ...form.data, blog_category_id: e.target.value, category_name: '' })}
                                 >
-                                    <option value="">No category</option>
+                                    <option value="">{t('No category')}</option>
                                     {categories.map((category) => (
                                         <option key={category.id} value={category.id}>{category.name}</option>
                                     ))}
                                 </select>
                             </label>
                             <label className="form-field span-2">
-                                <span>New category</span>
+                                <span>{t('New category')}</span>
                                 <input
                                     value={form.data.category_name}
                                     onChange={(e) => form.setData({ ...form.data, category_name: e.target.value, blog_category_id: '' })}
-                                    placeholder="Optional"
+                                    placeholder={t('Optional')}
                                 />
                             </label>
                             <label className="form-field span-2">
-                                <span>Tags</span>
+                                <span>{t('Tags')}</span>
                                 <input
                                     value={form.data.tags}
                                     onChange={(e) => form.setData('tags', e.target.value)}
-                                    placeholder={tags.slice(0, 3).map((tag) => tag.name).join(', ') || 'Gift guide, New arrival'}
+                                    placeholder={tags.slice(0, 3).map((tag) => tag.name).join(', ') || t('Gift guide, New arrival')}
                                 />
                             </label>
                         </div>
                     </section>
 
                     <section className="panel glass">
-                        <PanelHeading eyebrow="Media" title="Cover and video" />
+                        <PanelHeading eyebrow={t('Media')} title={t('Cover and video')} />
                         <div className="blog-cover-picker">
                             <div className="blog-cover-preview">
                                 {coverPreview ? <img src={coverPreview} alt="" /> : <Icon name="image" size={22} />}
@@ -256,7 +265,7 @@ export default function BlogForm({ post = null, categories = [], tags = [], stat
                             <div className="storefront-image-actions">
                                 <label className="btn secondary">
                                     <Icon name="image" size={13} />
-                                    Upload cover
+                                    {t('Upload cover')}
                                     <input
                                         className="sr-only-file"
                                         type="file"
@@ -274,17 +283,17 @@ export default function BlogForm({ post = null, categories = [], tags = [], stat
                                     </button>
                                 )}
                             </div>
-                            <small className="muted">Fixed crop: 16:9 article cover</small>
+                            <small className="muted">{t('Fixed crop: 16:9 article cover')}</small>
                         </div>
 
                         <label className="form-field" style={{ marginTop: 14 }}>
-                            <span>YouTube URL</span>
+                            <span>{t('YouTube URL')}</span>
                             <input value={form.data.youtube_url} onChange={(e) => form.setData('youtube_url', e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
                         </label>
                         {youtubeId && (
                             <div className="blog-video-preview">
                                 <iframe
-                                    title="YouTube preview"
+                                    title={t('YouTube preview')}
                                     src={`https://www.youtube.com/embed/${youtubeId}`}
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                                     allowFullScreen
@@ -301,7 +310,7 @@ export default function BlogForm({ post = null, categories = [], tags = [], stat
                 onCropComplete={handleCropComplete}
                 onCancel={() => setCropper(null)}
                 aspect={16 / 9}
-                title="Crop blog cover"
+                title={t('Crop blog cover')}
                 ratioLabel="16:9"
             />
         </AdminLayout>

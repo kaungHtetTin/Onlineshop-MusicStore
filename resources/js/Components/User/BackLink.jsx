@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link } from '@/spa/router';
 import { Box, Button } from '@mui/material';
 import { ArrowBackRounded } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';

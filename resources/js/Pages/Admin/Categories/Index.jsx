@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import AdminPagination from '@/Components/Admin/AdminPagination';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import CropImageModal from '@/Components/Admin/CropImageModal';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 function useObjectUrl(file) {
     const [url, setUrl] = useState(null);
@@ -31,6 +32,7 @@ const croppedIconName = (sourceName) => {
 
 export default function Index({ categories, parentCategories }) {
     const { app_base } = usePage().props;
+    const t = usePhraseTranslation();
     const categoryRows = categories.data || categories;
     const [open, setOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
@@ -119,35 +121,35 @@ export default function Index({ categories, parentCategories }) {
     };
 
     const handleDelete = (id) => {
-        if (confirm('Are you sure you want to delete this category?')) {
+        if (confirm(t('Are you sure you want to delete this category?'))) {
             destroy(routeWithBase(`/admin/categories/${id}`, app_base));
         }
     };
 
     return (
         <AdminLayout
-            title="Categories"
-            eyebrow="Catalog management"
+            title={t('Categories')}
+            eyebrow={t('Catalog management')}
             action={
                 <button type="button" className="btn primary" onClick={() => handleOpen()}>
                     <Icon name="plus" size={14} />
-                    Add category
+                    {t('Add category')}
                 </button>
             }
         >
-            <Head title="Manage Categories" />
+            <Head title={t('Manage Categories')} />
 
             <section className="panel glass">
-                <PanelHeading eyebrow="Taxonomy" title="Product categories" />
+                <PanelHeading eyebrow={t('Taxonomy')} title={t('Product categories')} />
                 <div className="table-wrap">
                     <table>
                         <thead>
                             <tr>
-                                <th>Icon</th>
-                                <th>Name</th>
-                                <th>Parent</th>
-                                <th>Order</th>
-                                <th>Status</th>
+                                <th>{t('Icon')}</th>
+                                <th>{t('Name')}</th>
+                                <th>{t('Parent')}</th>
+                                <th>{t('Order')}</th>
+                                <th>{t('Status')}</th>
                                 <th />
                             </tr>
                         </thead>
@@ -155,7 +157,7 @@ export default function Index({ categories, parentCategories }) {
                             {categoryRows.length === 0 ? (
                                 <tr>
                                     <td colSpan={6}>
-                                        <span className="muted">No categories found.</span>
+                                        <span className="muted">{t('No categories found.')}</span>
                                     </td>
                                 </tr>
                             ) : (
@@ -190,7 +192,7 @@ export default function Index({ categories, parentCategories }) {
                                         <td>
                                             <StatusBadge
                                                 status={category.is_active ? 'success' : 'neutral'}
-                                                label={category.is_active ? 'Active' : 'Inactive'}
+                                                label={category.is_active ? t('Active') : t('Inactive')}
                                             />
                                         </td>
                                         <td>
@@ -198,7 +200,7 @@ export default function Index({ categories, parentCategories }) {
                                                 <button
                                                     type="button"
                                                     className="icon-btn small"
-                                                    aria-label="Edit category"
+                                                    aria-label={t('Edit category')}
                                                     onClick={() => handleOpen(category)}
                                                 >
                                                     <Icon name="edit" size={13} />
@@ -206,7 +208,7 @@ export default function Index({ categories, parentCategories }) {
                                                 <button
                                                     type="button"
                                                     className="icon-btn small danger"
-                                                    aria-label="Delete category"
+                                                    aria-label={t('Delete category')}
                                                     onClick={() => handleDelete(category.id)}
                                                 >
                                                     <Icon name="trash" size={13} />
@@ -219,7 +221,7 @@ export default function Index({ categories, parentCategories }) {
                         </tbody>
                     </table>
                 </div>
-                <AdminPagination paginator={categories} label="categories" />
+                <AdminPagination paginator={categories} label={t('categories')} />
             </section>
 
             {open && (
@@ -231,23 +233,23 @@ export default function Index({ categories, parentCategories }) {
                     >
                         <div className="drawer-header">
                             <div>
-                                <p className="eyebrow">Category</p>
+                                <p className="eyebrow">{t('Category')}</p>
                                 <h2 style={{ fontSize: 16, fontWeight: 800 }}>
-                                    {editMode ? 'Edit category' : 'New category'}
+                                    {editMode ? t('Edit category') : t('New category')}
                                 </h2>
                             </div>
-                            <button type="button" className="icon-btn small" onClick={handleClose} aria-label="Close">
+                            <button type="button" className="icon-btn small" onClick={handleClose} aria-label={t('Close')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
                         <div className="crud-grid">
                             <label className="form-field">
-                                <span>Parent category</span>
+                                <span>{t('Parent category')}</span>
                                 <select
                                     value={data.parent_id}
                                     onChange={(e) => setData('parent_id', e.target.value)}
                                 >
-                                    <option value="">None (top level)</option>
+                                    <option value="">{t('None (top level)')}</option>
                                     {parentCategories
                                         .filter((pc) => !currentCategory || pc.id !== currentCategory.id)
                                         .map((pc) => (
@@ -258,7 +260,7 @@ export default function Index({ categories, parentCategories }) {
                                 </select>
                             </label>
                             <label className="form-field">
-                                <span>Display order</span>
+                                <span>{t('Display order')}</span>
                                 <input
                                     type="number"
                                     value={data.sort_order}
@@ -266,7 +268,7 @@ export default function Index({ categories, parentCategories }) {
                                 />
                             </label>
                             <label className="form-field span-2">
-                                <span>Category name</span>
+                                <span>{t('Category name')}</span>
                                 <input
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
@@ -275,15 +277,15 @@ export default function Index({ categories, parentCategories }) {
                                 {errors.name && <small style={{ color: '#ce4444' }}>{errors.name}</small>}
                             </label>
                             <label className="form-field">
-                                <span>Icon</span>
+                                <span>{t('Icon')}</span>
                                 <input
                                     value={data.icon}
                                     onChange={(e) => setData('icon', e.target.value)}
-                                    placeholder="Emoji fallback"
+                                    placeholder={t('Emoji fallback')}
                                 />
                             </label>
                             <label className="form-field">
-                                <span>Color</span>
+                                <span>{t('Color')}</span>
                                 <input
                                     type="color"
                                     value={data.metadata.color}
@@ -299,13 +301,13 @@ export default function Index({ categories, parentCategories }) {
                                     )}
                                 </div>
                                 <div className="storefront-image-meta">
-                                    <strong>Category icon image</strong>
-                                    <small>{data.icon_image?.name || (iconPreviewUrl ? 'Current image' : 'No image selected')}</small>
+                                    <strong>{t('Category icon image')}</strong>
+                                    <small>{data.icon_image?.name || (iconPreviewUrl ? t('Current image') : t('No image selected'))}</small>
                                 </div>
                                 <div className="storefront-image-actions">
                                     <label className="btn secondary">
                                         <Icon name="image" size={13} />
-                                        Upload
+                                        {t('Upload')}
                                         <input
                                             className="sr-only-file"
                                             type="file"
@@ -325,7 +327,7 @@ export default function Index({ categories, parentCategories }) {
                                 </div>
                             </div>
                             <label className="form-field span-2">
-                                <span>Description</span>
+                                <span>{t('Description')}</span>
                                 <textarea
                                     value={data.description}
                                     onChange={(e) => setData('description', e.target.value)}
@@ -338,7 +340,7 @@ export default function Index({ categories, parentCategories }) {
                                         checked={data.is_active}
                                         onChange={(e) => setData('is_active', e.target.checked)}
                                     />
-                                    <span>Active status</span>
+                                    <span>{t('Active status')}</span>
                                 </label>
                             )}
                             <label className={`form-field checkbox-row ${editMode ? '' : 'span-2'}`}>
@@ -347,15 +349,15 @@ export default function Index({ categories, parentCategories }) {
                                     checked={data.homepage_featured}
                                     onChange={(e) => setData('homepage_featured', e.target.checked)}
                                 />
-                                <span>Show on homepage</span>
+                                <span>{t('Show on homepage')}</span>
                             </label>
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={handleClose}>
-                                Cancel
+                                {t('Cancel')}
                             </button>
                             <button type="submit" className="btn primary" disabled={processing}>
-                                {editMode ? 'Update category' : 'Create category'}
+                                {editMode ? t('Update category') : t('Create category')}
                             </button>
                         </div>
                     </form>
@@ -368,7 +370,7 @@ export default function Index({ categories, parentCategories }) {
                 onCropComplete={handleIconCropComplete}
                 onCancel={() => setIconCropper(null)}
                 aspect={1}
-                title="Crop category icon"
+                title={t('Crop category icon')}
                 ratioLabel="1:1"
                 outputType="image/png"
             />

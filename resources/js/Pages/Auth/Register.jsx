@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@/spa/router';
 import React, { useEffect } from 'react';
 import { routeWithBase } from '@/Utils/url';
 import {
@@ -24,12 +24,14 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import { getMusicStoreColors, musicGradientForTheme } from '@/Components/User/musicStoreDesign';
 import PwaHeadTags from '@/Components/User/PwaHeadTags';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function Register({ error, googleAuthAvailable = false }) {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
     const { app_base, app_settings } = usePage().props;
     const [showPassword, setShowPassword] = React.useState(false);
+    const t = usePhraseTranslation();
 
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
@@ -58,9 +60,8 @@ export default function Register({ error, googleAuthAvailable = false }) {
             background: musicGradientForTheme(theme),
             py: 4,
         }}>
-            <Head title="Register">
-                <PwaHeadTags />
-            </Head>
+            <Head title={t('Register')} />
+            <PwaHeadTags />
 
             <Container maxWidth="xs">
                 <Paper elevation={0} sx={{
@@ -73,10 +74,10 @@ export default function Register({ error, googleAuthAvailable = false }) {
                     textAlign: 'center',
                 }}>
                     <Typography variant="h4" sx={{ fontWeight: 950, color: musicColors.ink, mb: 1 }}>
-                        Join {app_settings?.app_name || 'the music shop'}
+                        {t('Join')} {app_settings?.app_name || t('the music shop')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                        Save instruments, track orders, and keep your gear wishlist close.
+                        {t('Save instruments, track orders, and keep your gear wishlist close.')}
                     </Typography>
 
                     {error && (
@@ -89,7 +90,7 @@ export default function Register({ error, googleAuthAvailable = false }) {
                         <Stack spacing={2}>
                             <TextField
                                 fullWidth
-                                label="Full Name"
+                                label={t('Full Name')}
                                 value={data.name}
                                 onChange={(e) => setData('name', e.target.value)}
                                 error={!!errors.name}
@@ -106,7 +107,7 @@ export default function Register({ error, googleAuthAvailable = false }) {
 
                             <TextField
                                 fullWidth
-                                label="Email or phone"
+                                label={t('Email or phone')}
                                 value={data.contact}
                                 onChange={(e) => setData('contact', e.target.value)}
                                 error={!!errors.contact}
@@ -123,7 +124,7 @@ export default function Register({ error, googleAuthAvailable = false }) {
 
                             <TextField
                                 fullWidth
-                                label="Password"
+                                label={t('Password')}
                                 type={showPassword ? 'text' : 'password'}
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
@@ -148,7 +149,7 @@ export default function Register({ error, googleAuthAvailable = false }) {
 
                             <TextField
                                 fullWidth
-                                label="Confirm Password"
+                                label={t('Confirm Password')}
                                 type="password"
                                 value={data.password_confirmation}
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
@@ -172,7 +173,7 @@ export default function Register({ error, googleAuthAvailable = false }) {
                                 disabled={processing}
                                 sx={{ py: 1.5, mt: 1 }}
                             >
-                                {processing ? 'Creating account...' : 'Create Account'}
+                                {t(processing ? 'Creating account...' : 'Create Account')}
                             </Button>
                         </Stack>
                     </form>
@@ -180,7 +181,7 @@ export default function Register({ error, googleAuthAvailable = false }) {
                     <Box sx={{ my: 3 }}>
                         <Divider>
                             <Typography variant="caption" color="text.secondary">
-                                OR SIGN UP WITH
+                                {t('OR SIGN UP WITH')}
                             </Typography>
                         </Divider>
                     </Box>
@@ -204,15 +205,15 @@ export default function Register({ error, googleAuthAvailable = false }) {
 
                     {!googleAuthAvailable && (
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25 }}>
-                            Add Google OAuth credentials in .env to enable this button.
+                            {t('Add Google OAuth credentials in .env to enable this button.')}
                         </Typography>
                     )}
 
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-                        Already have an account?{' '}
+                        {t('Already have an account?')}{' '}
                         <Link href={routeWithBase('/login', app_base)} style={{ textDecoration: 'none' }}>
                             <Typography component="span" variant="body2" color="primary" sx={{ fontWeight: 700 }}>
-                                Sign In
+                                {t('Sign In')}
                             </Typography>
                         </Link>
                     </Typography>

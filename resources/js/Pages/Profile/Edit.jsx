@@ -3,20 +3,22 @@ import DeleteUserForm from './Partials/DeleteUserForm';
 import LogoutForm from './Partials/LogoutForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@/spa/router';
 import { Box, Button, Container, Paper, Stack, Typography } from '@mui/material';
 import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MOBILE_BOTTOM_NAV_HEIGHT } from '@/Components/User/MobileBottomNav';
 import { routeWithBase } from '@/Utils/url';
+import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function Edit({ auth, mustVerifyEmail, status }) {
     const { url, props } = usePage();
     const { app_base } = props;
+    const t = usePhraseTranslation();
     const isAdminContext = typeof url === 'string' && url.includes('/admin');
 
     const inner = (
         <>
-            <Head title="Profile" />
+            <Head title={t('Profile')} />
             {isAdminContext ? (
                 <div className="stack-sm">
                     <section className="panel glass">
@@ -50,7 +52,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
 
     if (isAdminContext) {
         return (
-            <AdminLayout title="Profile settings" eyebrow="Account">
+            <AdminLayout title={t('Profile settings')} eyebrow={t('Account')}>
                 {inner}
             </AdminLayout>
         );
@@ -71,7 +73,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
             <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
                 <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2, width: '100%' }} flexWrap="wrap">
                     <Typography variant="h5" sx={{ fontWeight: 800, flexShrink: 0 }}>
-                        My account
+                        {t('My account')}
                     </Typography>
                     <Button
                         component={Link}
@@ -80,7 +82,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                         size="small"
                         sx={{ fontWeight: 700, ml: 'auto' }}
                     >
-                        My orders
+                        {t('My orders')}
                     </Button>
                 </Stack>
                 {inner}

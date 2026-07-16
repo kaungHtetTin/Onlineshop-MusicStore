@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class CartController extends Controller
 {
     public function index()
     {
-        return Inertia::render('User/Cart/Index');
+        return Spa::render('User/Cart/Index');
     }
 }

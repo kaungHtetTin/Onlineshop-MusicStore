@@ -9,7 +9,7 @@ use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class FinanceController extends Controller
 {
@@ -100,7 +100,7 @@ class FinanceController extends Controller
 
         $trend = $this->makeTrend($from, $to, $dailyOrders, $dailyEntries);
 
-        return Inertia::render('Admin/Finance/Index', [
+        return Spa::render('Admin/Finance/Index', [
             'entries' => $entryQuery->paginate(15)
                 ->withQueryString()
                 ->through(fn (FinancialEntry $entry) => array_merge($entry->toArray(), [

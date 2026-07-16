@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@/spa/router';
 import {
     Box,
     Container,

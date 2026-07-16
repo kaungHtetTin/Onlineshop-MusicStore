@@ -5,7 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class OrderController extends Controller
 {
@@ -18,7 +18,7 @@ class OrderController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return Inertia::render('User/Orders/Index', [
+        return Spa::render('User/Orders/Index', [
             'orders' => $orders,
         ]);
     }
@@ -31,7 +31,7 @@ class OrderController extends Controller
 
         $order->load(['items.product', 'items.sku']);
 
-        return Inertia::render('User/Orders/Show', [
+        return Spa::render('User/Orders/Show', [
             'order' => $order,
             'paymentStatusLabels' => [
                 'pending_review' => 'Awaiting verification',

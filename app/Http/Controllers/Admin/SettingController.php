@@ -8,13 +8,13 @@ use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
+use App\Support\Spa;
 
 class SettingController extends Controller
 {
     public function edit(AppSettingsService $settings)
     {
-        return Inertia::render('Admin/Settings/Edit', [
+        return Spa::render('Admin/Settings/Edit', [
             'settings' => $settings->publicSettings(),
         ]);
     }
