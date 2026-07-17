@@ -74,6 +74,11 @@ function appendFormValue(formData, key, value) {
         return;
     }
 
+    if (typeof value === 'boolean') {
+        formData.append(key, value ? '1' : '0');
+        return;
+    }
+
     formData.append(key, value);
 }
 
@@ -180,6 +185,14 @@ async function parseSpaResponse(response, options = {}) {
 
     const page = await response.json();
     await applyPage(page, options);
+    const pageErrors = flattenErrors(page?.props?.errors || {});
+    const hasPageErrors = Object.keys(pageErrors).length > 0;
+
+    if (hasPageErrors && String(options.method || 'get').toLowerCase() !== 'get') {
+        options.onError?.(pageErrors);
+        return page;
+    }
+
     options.onSuccess?.(page);
     return page;
 }

@@ -6,6 +6,7 @@ import { routeWithBase } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
 import { useTheme } from '@mui/material/styles';
 import { getMusicStoreColors } from '@/Components/User/musicStoreDesign';
+import { useUserChrome } from '@/Layouts/UserChromeContext';
 import { useTranslation } from '@/Utils/i18n';
 
 /** BottomNavigation height — use for chat layout padding above fixed nav */
@@ -56,15 +57,20 @@ function bottomNavIndex(path) {
     return 0;
 }
 
-const MobileBottomNav = () => {
+const MobileBottomNav = ({ persistentRoot = false }) => {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
     const page = usePage();
     const { app_base, auth } = page.props;
     const cartCount = useCartStore((s) => s.itemCount());
+    const userChrome = useUserChrome();
     const t = useTranslation();
 
     const value = useMemo(() => bottomNavIndex(normalizedPath(page.url, app_base)), [page.url, app_base]);
+
+    if (userChrome?.persistent && !persistentRoot) {
+        return null;
+    }
 
     return (
         <Box sx={{ display: { xs: 'block', md: 'none' }, position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1200 }}>

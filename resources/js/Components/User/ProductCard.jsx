@@ -21,7 +21,7 @@ const formatSkuLabel = (sku) => {
 };
 
 const getSkuImageUrl = (sku, fallbackUrl, appUrl) => {
-    const path = sku?.image?.image_path;
+    const path = sku?.image?.image_url || sku?.image?.image_path;
     if (!path) return fallbackUrl;
     return storageUrl(path, appUrl);
 };
@@ -54,7 +54,7 @@ const ProductCard = ({ product }) => {
 
     const imageUrl = useMemo(() => {
         return product.primary_image
-            ? storageUrl(product.primary_image.image_path, app_url)
+            ? storageUrl(product.primary_image.image_url || product.primary_image.image_path, app_url)
             : 'https://via.placeholder.com/300?text=No+Image';
     }, [product.primary_image, app_url]);
 

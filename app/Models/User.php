@@ -15,21 +15,9 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    public const ADMIN_ROLES = ['super_admin', 'manager', 'inventory_staff', 'sales', 'support', 'cashier'];
+    public const ADMIN_ROLES = ['super_admin', 'manager', 'staff'];
 
     public const CUSTOMER_ROLE = 'customer';
-
-    public const ADMIN_PERMISSIONS = [
-        'manage_coupons' => 'Manage coupons',
-        'manage_flash_sales' => 'Manage flash sales',
-        'manage_blogs' => 'Manage blogs',
-        'manage_payment_methods' => 'Manage payment methods',
-        'manage_finance' => 'Manage finance',
-        'moderate_reviews' => 'Moderate reviews',
-        'view_customers' => 'View customers',
-        'view_reports' => 'View reports',
-        'view_audit_logs' => 'View audit logs',
-    ];
 
     /**
      * The attributes that are mass assignable.
@@ -112,7 +100,6 @@ class User extends Authenticatable
 
         return $this->roles
             ->flatMap(fn (Role $role) => $role->permissions->pluck('name'))
-            ->merge($this->permissions ?? [])
             ->filter()
             ->unique()
             ->sort()
@@ -157,20 +144,6 @@ class User extends Authenticatable
             ->orderBy('display_name')
             ->get(['name', 'display_name'])
             ->map(fn (Role $role) => ['value' => $role->name, 'label' => $role->display_name])
-            ->all();
-    }
-
-    public static function adminPermissionOptions(): array
-    {
-        return Permission::query()
-            ->orderBy('group')
-            ->orderBy('display_name')
-            ->get(['name', 'display_name', 'group'])
-            ->map(fn (Permission $permission) => [
-                'value' => $permission->name,
-                'label' => $permission->display_name,
-                'group' => $permission->group,
-            ])
             ->all();
     }
 

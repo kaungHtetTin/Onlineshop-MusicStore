@@ -5,6 +5,7 @@ import Icon from '@/Components/Admin/icons';
 import CropImageModal from '@/Components/Admin/CropImageModal';
 import ProductFormUI from '@/Components/Admin/ProductFormUI';
 import { normalizeOptionKey, refreshAutoSkuCodes } from '@/Components/Admin/productFormUtils';
+import { imageExtensionFromType } from '@/Utils/imageCompression';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
@@ -92,7 +93,11 @@ export default function Edit({ product, categories, app_base }) {
     };
 
     const handleCropComplete = (croppedBlob) => {
-        const croppedFile = new File([croppedBlob], `product-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        const croppedFile = new File(
+            [croppedBlob],
+            `product-${Date.now()}.${imageExtensionFromType(croppedBlob.type)}`,
+            { type: croppedBlob.type || 'image/jpeg' },
+        );
         setData('images', [...data.images, croppedFile]);
 
         const newUrl = URL.createObjectURL(croppedBlob);

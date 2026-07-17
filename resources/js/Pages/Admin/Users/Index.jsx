@@ -13,12 +13,11 @@ const emptyForm = {
     phone: '',
     password: '',
     password_confirmation: '',
-    role: 'manager',
+    role: 'staff',
     status: 'active',
-    permissions: [],
 };
 
-export default function UsersIndex({ users, filters, roles, permissions }) {
+export default function UsersIndex({ users, filters, roles }) {
     const { app_base, auth, flash } = usePage().props;
     const t = usePhraseTranslation();
     const currentUserId = auth?.user?.id;
@@ -60,7 +59,6 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
             password_confirmation: '',
             role: user.role,
             status: user.status,
-            permissions: user.permissions || [],
         });
         setOpen(true);
     };
@@ -340,30 +338,6 @@ export default function UsersIndex({ users, filters, roles, permissions }) {
                                     autoComplete="new-password"
                                 />
                             </label>
-                            <div className="form-field span-2">
-                                <span>{t('Additional user permissions')}</span>
-                                <div className="stack-sm" style={{ marginTop: 6 }}>
-                                    {permissions.map((permission) => (
-                                        <label key={permission.value} className="checkbox-row">
-                                            <input
-                                                type="checkbox"
-                                                checked={(form.data.permissions || []).includes(permission.value)}
-                                                onChange={(e) => {
-                                                    const current = form.data.permissions || [];
-                                                    form.setData(
-                                                        'permissions',
-                                                        e.target.checked
-                                                            ? [...current, permission.value]
-                                                            : current.filter((item) => item !== permission.value),
-                                                    );
-                                                }}
-                                            />
-                                            <span>{permission.label}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                                {form.errors.permissions && <small style={{ color: '#ce4444' }}>{form.errors.permissions}</small>}
-                            </div>
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={closeModal}>

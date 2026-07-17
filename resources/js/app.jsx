@@ -6,6 +6,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { createUserTheme } from './Theme/UserTheme';
 import { SpaApp, router } from './spa/router';
 import { AdminPersistentShell } from './Layouts/AdminLayout';
+import UserPersistentShell from './Layouts/UserPersistentShell';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -119,9 +120,28 @@ const resolvePage = async (name) => {
     return loader();
 };
 
-const usesPersistentAdminShell = (component) => {
+const pagePathInApp = (page) => {
+    const base = page?.props?.app_base || '';
+    const rawUrl = page?.url || window.location.pathname;
+    let pathname = String(rawUrl).split('?')[0] || '/';
+
+    try {
+        pathname = new URL(rawUrl, window.location.origin).pathname;
+    } catch {
+        // Keep the simple split fallback for relative SPA URLs.
+    }
+
+    const cleanBase = base && base !== '/' ? `/${String(base).replace(/^\/+|\/+$/g, '')}` : '';
+    return stripBasePath(pathname, cleanBase);
+};
+
+const usesPersistentAdminShell = (page) => {
+    const component = page?.component;
+    const pathInApp = pagePathInApp(page);
+    const isAdminPath = pathInApp === '/admin' || pathInApp.startsWith('/admin/');
+
     if (component === 'Profile/Edit') {
-        return true;
+        return isAdminPath;
     }
 
     if (!String(component || '').startsWith('Admin/')) {
@@ -129,6 +149,18 @@ const usesPersistentAdminShell = (component) => {
     }
 
     return component !== 'Admin/POS/Index';
+};
+
+const usesPersistentUserShell = (page) => {
+    const component = page?.component;
+    const pathInApp = pagePathInApp(page);
+    const isAdminPath = pathInApp === '/admin' || pathInApp.startsWith('/admin/');
+
+    if (isAdminPath) {
+        return false;
+    }
+
+    return String(component || '').startsWith('User/') || component === 'Profile/Edit';
 };
 
 if (el && window.__SPA_PAGE__) {
@@ -153,8 +185,10 @@ if (el && window.__SPA_PAGE__) {
                 resolve={resolvePage}
                 render={({ Component, page }) => (
                     <ThemeProvider theme={createUserTheme(page.props.app_settings || {})}>
-                        <AdminPersistentShell active={usesPersistentAdminShell(page.component)}>
-                            {Component ? <Component {...page.props} /> : null}
+                        <AdminPersistentShell active={usesPersistentAdminShell(page)}>
+                            <UserPersistentShell active={usesPersistentUserShell(page)}>
+                                {Component ? <Component {...page.props} /> : null}
+                            </UserPersistentShell>
                         </AdminPersistentShell>
                     </ThemeProvider>
                 )}

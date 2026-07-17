@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Services\SupportChatService;
+use App\Support\UploadedFileUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -148,7 +149,7 @@ class CustomerChatController extends Controller
 
         return response()->json([
             'path' => $path,
-            'url' => Storage::disk('public')->url($path),
+            'url' => UploadedFileUrl::make($path),
         ]);
     }
 }

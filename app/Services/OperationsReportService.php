@@ -136,7 +136,7 @@ class OperationsReportService
     {
         [$from, $to] = $this->dateRange($filters);
         $locationIds = $this->locationIds($user, $filters['location_id'] ?? null);
-        $ownOnly = $user->adminRoleName() === 'sales';
+        $ownOnly = $user->adminRoleName() === 'staff';
         $orders = DB::table('orders')
             ->where('orders.sales_channel', 'pos')
             ->where('orders.payment_status', 'paid')

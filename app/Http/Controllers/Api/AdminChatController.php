@@ -7,6 +7,7 @@ use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\User;
 use App\Services\SupportChatService;
+use App\Support\UploadedFileUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -232,7 +233,7 @@ class AdminChatController extends Controller
 
         return response()->json([
             'path' => $path,
-            'url' => Storage::disk('public')->url($path),
+            'url' => UploadedFileUrl::make($path),
         ]);
     }
 

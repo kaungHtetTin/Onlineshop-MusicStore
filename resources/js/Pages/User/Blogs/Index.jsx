@@ -16,6 +16,7 @@ import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
+import { blogThumbnailSource } from '@/Utils/blogMedia';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
 const formatDate = (value) => {
@@ -24,8 +25,9 @@ const formatDate = (value) => {
 };
 
 function BlogCard({ post }) {
-    const { app_base } = usePage().props;
+    const { app_base, app_settings } = usePage().props;
     const t = usePhraseTranslation();
+    const thumbnail = blogThumbnailSource(post, app_settings);
 
     return (
         <Box
@@ -45,8 +47,19 @@ function BlogCard({ post }) {
             }}
         >
             <Box sx={{ aspectRatio: '16 / 9', bgcolor: 'primary.light', display: 'grid', placeItems: 'center', overflow: 'hidden', position: 'relative' }}>
-                {post.cover_image_url ? (
-                    <Box component="img" src={post.cover_image_url} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {thumbnail.url ? (
+                    <Box
+                        component="img"
+                        src={thumbnail.url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        sx={{
+                            width: thumbnail.type === 'app-icon' ? '46%' : '100%',
+                            height: thumbnail.type === 'app-icon' ? '46%' : '100%',
+                            objectFit: thumbnail.type === 'app-icon' ? 'contain' : 'cover',
+                        }}
+                    />
                 ) : (
                     <ArticleOutlined sx={{ fontSize: 48, color: 'primary.main', opacity: 0.55 }} />
                 )}

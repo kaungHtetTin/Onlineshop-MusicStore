@@ -14,6 +14,7 @@ import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
 import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
+import { blogThumbnailSource } from '@/Utils/blogMedia';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
 const formatDate = (value) => {
@@ -22,7 +23,8 @@ const formatDate = (value) => {
 };
 
 function RelatedCard({ post }) {
-    const { app_base } = usePage().props;
+    const { app_base, app_settings } = usePage().props;
+    const thumbnail = blogThumbnailSource(post, app_settings);
 
     return (
         <Box
@@ -38,8 +40,19 @@ function RelatedCard({ post }) {
             }}
         >
             <Box sx={{ aspectRatio: '16 / 9', borderRadius: 1, bgcolor: 'primary.light', overflow: 'hidden', display: 'grid', placeItems: 'center' }}>
-                {post.cover_image_url ? (
-                    <Box component="img" src={post.cover_image_url} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {thumbnail.url ? (
+                    <Box
+                        component="img"
+                        src={thumbnail.url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        sx={{
+                            width: thumbnail.type === 'app-icon' ? '52%' : '100%',
+                            height: thumbnail.type === 'app-icon' ? '52%' : '100%',
+                            objectFit: thumbnail.type === 'app-icon' ? 'contain' : 'cover',
+                        }}
+                    />
                 ) : (
                     <ArticleOutlined sx={{ color: 'primary.main' }} />
                 )}
@@ -88,13 +101,11 @@ export default function BlogShow({ post, related = [] }) {
                     {post.excerpt && <Typography variant="body1" color="text.secondary">{post.excerpt}</Typography>}
                 </Stack>
 
-                <Box sx={{ aspectRatio: '16 / 9', borderRadius: 1, bgcolor: 'primary.light', overflow: 'hidden', mb: 3, display: 'grid', placeItems: 'center' }}>
-                    {post.cover_image_url ? (
+                {post.cover_image_url && (
+                    <Box sx={{ aspectRatio: '16 / 9', borderRadius: 1, overflow: 'hidden', mb: 3 }}>
                         <Box component="img" src={post.cover_image_url} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                        <ArticleOutlined sx={{ fontSize: 72, color: 'primary.main', opacity: 0.5 }} />
-                    )}
-                </Box>
+                    </Box>
+                )}
 
                 {post.youtube_embed_url && (
                     <Box sx={{ aspectRatio: '16 / 9', borderRadius: 1, overflow: 'hidden', bgcolor: '#111827', mb: 3 }}>

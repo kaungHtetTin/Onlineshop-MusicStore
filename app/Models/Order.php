@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\UploadedFileUrl;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -139,7 +140,7 @@ class Order extends Model
             return null;
         }
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->payment_proof_path);
+        return UploadedFileUrl::make($this->payment_proof_path);
     }
 
     public function canReviewPayment(): bool

@@ -9,6 +9,7 @@ import { useWishlistStore } from '@/stores/wishlistStore';
 import ProfileMenu from '@/Components/User/ProfileMenu';
 import { getMusicStoreColors } from '@/Components/User/musicStoreDesign';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
+import { useUserChrome } from '@/Layouts/UserChromeContext';
 import { useTranslation } from '@/Utils/i18n';
 
 const SearchContainer = styled('form')(({ theme }) => ({
@@ -69,7 +70,7 @@ const StyledInputBase = styled(InputBase)((({ theme }) => ({
     },
 })));
 
-const Navbar = () => {
+const Navbar = ({ persistentRoot = false }) => {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
     const { app_base, auth, chat_unread_count, app_settings } = usePage().props;
@@ -78,6 +79,7 @@ const Navbar = () => {
     const cartCount = useCartStore((s) => s.itemCount());
     const wishCount = useWishlistStore((s) => s.count());
     const appName = app_settings?.app_name || 'Harmony House';
+    const userChrome = useUserChrome();
     const t = useTranslation();
 
     useEffect(() => {
@@ -85,6 +87,10 @@ const Navbar = () => {
         const params = new URLSearchParams(queryString || '');
         setSearch(params.get('search') || '');
     }, [url]);
+
+    if (userChrome?.persistent && !persistentRoot) {
+        return null;
+    }
 
     const submitSearch = (event) => {
         event.preventDefault();

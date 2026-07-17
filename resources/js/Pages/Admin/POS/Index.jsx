@@ -55,11 +55,16 @@ import { alpha, useTheme } from '@mui/material/styles';
 
 const makeId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const money = (value) => Number(value || 0).toFixed(2);
+const POS_RESULT_PAGE_SIZE = 24;
+const POS_TABLE_ROW_HEIGHT = 54;
+const POS_GRID_ROW_HEIGHT = 126;
+const POS_RESULT_OVERSCAN_ROWS = 6;
 
 export default function PosIndex({ locations = [], categories = [], can = {}, taxRate = 0 }) {
     const { app_base, app_url, flash = {}, errors: pageErrors = {} } = usePage().props;
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
     const t = useTranslation();
     const tp = usePhraseTranslation();
     const firstLocation = locations[0];
@@ -67,8 +72,11 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
     const [categoryId, setCategoryId] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
-    const [resultMeta, setResultMeta] = useState({ page: 1, per_page: 30, has_more: false, next_page: null, mode: 'popular' });
+    const [resultMeta, setResultMeta] = useState({ page: 1, per_page: POS_RESULT_PAGE_SIZE, has_more: false, next_page: null, mode: 'popular' });
     const [searchLoading, setSearchLoading] = useState(false);
+    const [productResultsElement, setProductResultsElement] = useState(null);
+    const [productScrollTop, setProductScrollTop] = useState(0);
+    const [productViewportHeight, setProductViewportHeight] = useState(520);
     const [scanError, setScanError] = useState('');
     const [resultsView, setResultsView] = useState('table');
     const [cart, setCart] = useState([]);
@@ -90,6 +98,7 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
     const searchInputRef = useRef(null);
     const categoryScrollRef = useRef(null);
     const checkoutIntentRef = useRef('complete');
+    const productScrollFrameRef = useRef(null);
 
     const location = locations.find((item) => Number(item.id) === Number(locationId));
     const currencySymbol = '$';
@@ -182,6 +191,45 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
     useEffect(() => {
         window.setTimeout(() => searchInputRef.current?.focus(), 150);
     }, []);
+
+    useEffect(() => {
+        if (!productResultsElement) return undefined;
+
+        const updateMetrics = () => {
+            setProductScrollTop(productResultsElement.scrollTop);
+            setProductViewportHeight(productResultsElement.clientHeight || 520);
+        };
+        const onScroll = () => {
+            if (productScrollFrameRef.current) return;
+            productScrollFrameRef.current = window.requestAnimationFrame(() => {
+                productScrollFrameRef.current = null;
+                updateMetrics();
+            });
+        };
+
+        updateMetrics();
+        productResultsElement.addEventListener('scroll', onScroll, { passive: true });
+
+        let resizeObserver = null;
+        if (typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(updateMetrics);
+            resizeObserver.observe(productResultsElement);
+        }
+
+        return () => {
+            productResultsElement.removeEventListener('scroll', onScroll);
+            resizeObserver?.disconnect();
+            if (productScrollFrameRef.current) {
+                window.cancelAnimationFrame(productScrollFrameRef.current);
+                productScrollFrameRef.current = null;
+            }
+        };
+    }, [productResultsElement]);
+
+    useEffect(() => {
+        productResultsElement?.scrollTo({ top: 0 });
+        setProductScrollTop(0);
+    }, [categoryId, locationId, resultsView, searchQuery, productResultsElement]);
 
     useEffect(() => {
         if (isMobile && cart.length === 0 && mobileStep !== 'products') {
@@ -293,6 +341,20 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
     const hasStockIssue = useMemo(() => cart.some((line) => Number(line.quantity || 0) > Number(line.available_qty || 0)), [cart]);
     const hasWholesaleCartItems = useMemo(() => cart.some((line) => line.price_type === 'wholesale'), [cart]);
     const resultHeading = resultMeta.mode === 'popular' && !searchQuery.trim() ? tp('POPULAR PRODUCTS') : tp('RESULTS');
+    const gridColumnCount = resultsView === 'grid' && !isSmallScreen ? 2 : 1;
+    const virtualRowHeight = resultsView === 'grid' ? POS_GRID_ROW_HEIGHT : POS_TABLE_ROW_HEIGHT;
+    const virtualRowCount = resultsView === 'grid'
+        ? Math.ceil(searchResults.length / gridColumnCount)
+        : searchResults.length;
+    const virtualStartRow = Math.max(0, Math.floor(productScrollTop / virtualRowHeight) - POS_RESULT_OVERSCAN_ROWS);
+    const virtualEndRow = Math.min(
+        virtualRowCount,
+        Math.ceil((productScrollTop + productViewportHeight) / virtualRowHeight) + POS_RESULT_OVERSCAN_ROWS,
+    );
+    const virtualTopSpacer = virtualStartRow * virtualRowHeight;
+    const virtualBottomSpacer = Math.max(0, (virtualRowCount - virtualEndRow) * virtualRowHeight);
+    const visibleTableProducts = searchResults.slice(virtualStartRow, virtualEndRow);
+    const visibleGridProducts = searchResults.slice(virtualStartRow * gridColumnCount, virtualEndRow * gridColumnCount);
 
     const scrollCategories = (direction) => {
         categoryScrollRef.current?.scrollBy({
@@ -854,7 +916,7 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
                                                     }}
                                                 >
                                                     {line.image_path ? (
-                                                        <Box component="img" src={storageUrl(line.image_path, app_url)} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        <Box component="img" src={storageUrl(line.image_path, app_url)} alt="" loading="lazy" decoding="async" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                     ) : (
                                                         <Typography variant="caption" color="text.secondary" sx={{ fontSize: 9, fontWeight: 800, textAlign: 'center', px: 0.25 }}>
                                                             {line.sku_code || tp('No image')}
@@ -897,7 +959,7 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
                         </Stack>
 
                         {resultsView === 'table' ? (
-                            <TableContainer sx={{ mt: 1, flex: 1, minHeight: 0, overflow: 'auto' }}>
+                            <TableContainer ref={setProductResultsElement} sx={{ mt: 1, flex: 1, minHeight: 0, overflow: 'auto' }}>
                                 <Table
                                     size="small"
                                     stickyHeader
@@ -916,7 +978,12 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {searchResults.map((product) => {
+                                        {virtualTopSpacer > 0 && (
+                                            <TableRow aria-hidden="true">
+                                                <TableCell colSpan={4} sx={{ p: 0, height: virtualTopSpacer, border: 0 }} />
+                                            </TableRow>
+                                        )}
+                                        {visibleTableProducts.map((product) => {
                                             const outOfStock = Number(product.available_qty || 0) <= 0;
                                             return (
                                                 <TableRow key={product.id} hover sx={outOfStock ? { bgcolor: 'rgba(211, 47, 47, 0.08)' } : undefined}>
@@ -937,7 +1004,7 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
                                                                 }}
                                                             >
                                                                 {product.image_path ? (
-                                                                    <Box component="img" src={storageUrl(product.image_path, app_url)} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                    <Box component="img" src={storageUrl(product.image_path, app_url)} alt="" loading="lazy" decoding="async" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                                 ) : (
                                                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: 9, fontWeight: 700 }}>{tp('No image')}</Typography>
                                                                 )}
@@ -963,6 +1030,11 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
                                                 </TableRow>
                                             );
                                         })}
+                                        {virtualBottomSpacer > 0 && (
+                                            <TableRow aria-hidden="true">
+                                                <TableCell colSpan={4} sx={{ p: 0, height: virtualBottomSpacer, border: 0 }} />
+                                            </TableRow>
+                                        )}
                                         {searchResults.length === 0 && (
                                             <TableRow>
                                                 <TableCell colSpan={4} align="center" sx={{ py: 2 }}>
@@ -974,28 +1046,85 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
                                 </Table>
                             </TableContainer>
                         ) : (
-                            <Box sx={{ mt: 1, flex: 1, minHeight: 0, overflow: 'auto', display: 'grid', alignContent: 'start', gridTemplateColumns: { xs: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 1, pr: 0.5 }}>
-                                {searchResults.map((product) => {
+                            <Box ref={setProductResultsElement} sx={{ mt: 1, flex: 1, minHeight: 0, overflow: 'auto', display: 'grid', alignContent: 'start', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1, pr: 0.5 }}>
+                                {virtualTopSpacer > 0 && (
+                                    <Box aria-hidden="true" sx={{ height: virtualTopSpacer, gridColumn: '1 / -1' }} />
+                                )}
+                                {visibleGridProducts.map((product) => {
                                     const outOfStock = Number(product.available_qty || 0) <= 0;
                                     return (
-                                        <Card key={product.id} variant="outlined" sx={{ overflow: 'hidden', borderColor: outOfStock ? 'error.main' : undefined, bgcolor: outOfStock ? 'rgba(211, 47, 47, 0.08)' : undefined }}>
-                                            <CardActionArea onClick={() => addProductToCart(product)} disabled={outOfStock}>
-                                                <Box sx={{ height: 82, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', px: product.image_path ? 0 : 1, overflow: 'hidden' }}>
+                                        <Card
+                                            key={product.id}
+                                            variant="outlined"
+                                            sx={{
+                                                overflow: 'hidden',
+                                                borderColor: outOfStock ? 'error.main' : undefined,
+                                                bgcolor: outOfStock ? 'rgba(211, 47, 47, 0.08)' : 'background.paper',
+                                            }}
+                                        >
+                                            <CardActionArea
+                                                onClick={() => addProductToCart(product)}
+                                                disabled={outOfStock}
+                                                sx={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: { xs: '76px minmax(0, 1fr)', sm: '86px minmax(0, 1fr)', xl: '96px minmax(0, 1fr)' },
+                                                    minHeight: { xs: 108, sm: 116, xl: 126 },
+                                                    alignItems: 'stretch',
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        bgcolor: 'action.hover',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        p: 0.5,
+                                                        overflow: 'hidden',
+                                                        borderRight: '1px solid',
+                                                        borderColor: 'divider',
+                                                    }}
+                                                >
                                                     {product.image_path ? (
-                                                        <Box component="img" src={storageUrl(product.image_path, app_url)} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        <Box
+                                                            component="img"
+                                                            src={storageUrl(product.image_path, app_url)}
+                                                            alt=""
+                                                            loading="lazy"
+                                                            decoding="async"
+                                                            sx={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                aspectRatio: '3 / 4',
+                                                                objectFit: 'contain',
+                                                            }}
+                                                        />
                                                     ) : (
-                                                        <Typography variant="caption" color="text.secondary" align="center">{product.sku_code || tp('No image')}</Typography>
+                                                        <Typography variant="caption" color="text.secondary" align="center" sx={{ px: 0.5, fontWeight: 700, wordBreak: 'break-word' }}>
+                                                            {product.sku_code || tp('No image')}
+                                                        </Typography>
                                                     )}
                                                 </Box>
-                                                <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.15 }} noWrap title={getProductDisplayName(product)}>
+                                                <CardContent
+                                                    sx={{
+                                                        minWidth: 0,
+                                                        p: 1,
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        justifyContent: 'center',
+                                                        '&:last-child': { pb: 1 },
+                                                    }}
+                                                >
+                                                    <Typography variant="body2" sx={{ fontWeight: 800, lineHeight: 1.18 }} noWrap title={getProductDisplayName(product)}>
                                                         {getProductDisplayName(product)}
                                                     </Typography>
-                                                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.4, alignItems: 'center' }}>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.15, mt: 0.35 }} noWrap>
+                                                        {product.sku_code || product.barcode || '-'}
+                                                    </Typography>
+                                                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.8, alignItems: 'center', gap: 1 }}>
                                                         <Typography variant="caption" color="text.secondary">{tp('Each')}</Typography>
-                                                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{currencySymbol}{money(resolveProductPrice(product))}</Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 900 }} noWrap>{currencySymbol}{money(resolveProductPrice(product))}</Typography>
                                                     </Stack>
-                                                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.35, alignItems: 'center' }}>
+                                                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.35, alignItems: 'center', gap: 1 }}>
                                                         <Typography variant="caption" color="text.secondary">{tp('Stock')}</Typography>
                                                         {outOfStock ? (
                                                             <Chip size="small" color="error" label={tp('Out of stock')} sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: '0.68rem', fontWeight: 600 } }} />
@@ -1008,6 +1137,9 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
                                         </Card>
                                     );
                                 })}
+                                {virtualBottomSpacer > 0 && (
+                                    <Box aria-hidden="true" sx={{ height: virtualBottomSpacer, gridColumn: '1 / -1' }} />
+                                )}
                                 {searchResults.length === 0 && (
                                     <Paper variant="outlined" sx={{ p: 2, gridColumn: '1 / -1' }}>
                                         <Typography variant="body2" color="text.secondary" align="center">{tp('Search products or scan a barcode to add items.')}</Typography>

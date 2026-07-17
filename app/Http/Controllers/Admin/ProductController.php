@@ -54,6 +54,8 @@ class ProductController extends Controller
             'metadata' => 'nullable|array',
             'mainImageAttachmentId' => 'nullable|integer',
             'imageAttachmentIds' => 'nullable|array',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:1024',
             'skus' => 'required|array|min:1',
             'skus.*.sku_code' => 'required|string|unique:skus,sku_code',
             'skus.*.barcode' => 'nullable|string|max:255',
@@ -142,6 +144,8 @@ class ProductController extends Controller
             'metadata' => 'nullable|array',
             'mainImageAttachmentId' => 'nullable|integer',
             'imageAttachmentIds' => 'nullable|array',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:1024',
             'skus' => 'required|array|min:1',
             'skus.*.id' => 'nullable|exists:skus,id',
             'skus.*.sku_code' => 'required|string|unique:skus,sku_code,' . $product->id . ',product_id',
@@ -197,7 +201,14 @@ class ProductController extends Controller
             // Update primary image
             if (isset($validated['mainImageAttachmentId'])) {
                 ProductImage::where('product_id', $product->id)->update(['is_primary' => false]);
-                ProductImage::where('id', $validated['mainImageAttachmentId'])->update(['is_primary' => true]);
+                ProductImage::where('product_id', $product->id)
+                    ->where('id', $validated['mainImageAttachmentId'])
+                    ->update(['is_primary' => true]);
+            } elseif (! $product->images()->where('is_primary', true)->exists()) {
+                $primaryImage = $product->images()->oldest('id')->first();
+                if ($primaryImage) {
+                    $primaryImage->update(['is_primary' => true]);
+                }
             }
 
             // Sync SKUs

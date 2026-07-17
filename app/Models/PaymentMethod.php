@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
+use App\Support\UploadedFileUrl;
 
 class PaymentMethod extends Model
 {
@@ -46,11 +46,7 @@ class PaymentMethod extends Model
             return null;
         }
 
-        if (str_starts_with($this->icon_path, 'http://') || str_starts_with($this->icon_path, 'https://')) {
-            return $this->icon_path;
-        }
-
-        return Storage::disk('public')->url($this->icon_path);
+        return UploadedFileUrl::make($this->icon_path);
     }
 
     public function orders(): HasMany

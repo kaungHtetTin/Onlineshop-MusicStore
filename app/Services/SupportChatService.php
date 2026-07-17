@@ -5,13 +5,13 @@ namespace App\Services;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
+use App\Support\UploadedFileUrl;
 
 class SupportChatService
 {
     public function pickSupportAgent(): ?User
     {
-        $priority = ['support' => 1, 'manager' => 2, 'super_admin' => 3, 'sales' => 4];
+        $priority = ['staff' => 1, 'manager' => 2, 'super_admin' => 3];
 
         return User::adminStaff()
             ->where('status', 'active')
@@ -99,7 +99,7 @@ class SupportChatService
             'id' => $message->id,
             'conversation_id' => $message->conversation_id,
             'body' => $message->body,
-            'image_url' => $message->image_path ? Storage::disk('public')->url($message->image_path) : null,
+            'image_url' => UploadedFileUrl::make($message->image_path),
             'sender' => [
                 'id' => $message->sender->id,
                 'name' => $message->sender->name,

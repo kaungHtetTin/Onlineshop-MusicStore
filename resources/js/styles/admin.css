@@ -876,11 +876,15 @@
 
 .app-root .metric-card > strong {
   display: block;
-  font-size: 23px;
+  font-size: clamp(17px, 1.35vw, 20px);
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   color: var(--color-text);
-  line-height: 1.1;
+  line-height: 1.15;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
 }
 
 .app-root .metric-card > p {
@@ -2787,7 +2791,7 @@
   }
 
   .app-root .metric-card > strong {
-    font-size: 19px;
+    font-size: 17px;
   }
 
   .app-root .report-metrics {
@@ -4037,6 +4041,15 @@
   font-size: 12px;
 }
 
+.permission-option.static {
+  cursor: default;
+}
+
+.permission-option.static svg {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+}
+
 .permission-option span {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -4061,6 +4074,10 @@
   overflow: auto;
 }
 
+.role-create-permissions {
+  padding: 0 28px 8px;
+}
+
 @media (max-width: 820px) {
   .role-permission-layout {
     grid-template-columns: 1fr;
@@ -4075,6 +4092,10 @@
 
   .permission-group-grid {
     grid-template-columns: 1fr;
+  }
+
+  .role-create-permissions {
+    padding-inline: 18px;
   }
 }
 

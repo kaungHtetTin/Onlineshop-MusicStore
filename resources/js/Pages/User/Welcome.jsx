@@ -30,6 +30,7 @@ import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/Mobile
 import Footer from '@/Components/User/Footer';
 import ProductCard from '@/Components/User/ProductCard';
 import UserBrandHead from '@/Components/User/UserBrandHead';
+import { blogThumbnailSource } from '@/Utils/blogMedia';
 import { productListGridSx } from '@/Utils/productListGrid';
 import {
     eyebrowSx,
@@ -151,9 +152,10 @@ function HeroInstrumentArt() {
 }
 
 function BlogPreviewCard({ post }) {
-    const { app_base } = usePage().props;
+    const { app_base, app_settings } = usePage().props;
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
+    const thumbnail = blogThumbnailSource(post, app_settings);
 
     return (
         <Box
@@ -174,8 +176,19 @@ function BlogPreviewCard({ post }) {
             }}
         >
             <Box sx={{ aspectRatio: '16 / 9', bgcolor: 'rgba(244,194,103,0.2)', display: 'grid', placeItems: 'center', overflow: 'hidden', position: 'relative' }}>
-                {post.cover_image_url ? (
-                    <Box component="img" src={post.cover_image_url} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {thumbnail.url ? (
+                    <Box
+                        component="img"
+                        src={thumbnail.url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        sx={{
+                            width: thumbnail.type === 'app-icon' ? '46%' : '100%',
+                            height: thumbnail.type === 'app-icon' ? '46%' : '100%',
+                            objectFit: thumbnail.type === 'app-icon' ? 'contain' : 'cover',
+                        }}
+                    />
                 ) : (
                     <ArticleOutlined sx={{ fontSize: 42, color: musicColors.rosin, opacity: 0.65 }} />
                 )}

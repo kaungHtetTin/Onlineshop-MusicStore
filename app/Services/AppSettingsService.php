@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Setting;
+use App\Support\UploadedFileUrl;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
 
 class AppSettingsService
 {
@@ -106,7 +106,7 @@ class AppSettingsService
             return $path;
         }
 
-        return Storage::disk('public')->url($path);
+        return UploadedFileUrl::make($path);
     }
 
     private function groupFor(string $key): string

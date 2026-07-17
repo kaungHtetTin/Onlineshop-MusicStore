@@ -44,7 +44,7 @@ class AdminUserController extends Controller
 
         return Spa::render('Admin/Users/Index', [
             'users' => $query
-                ->get(['id', 'name', 'email', 'phone', 'role', 'status', 'permissions', 'created_at', 'updated_at'])
+                ->get(['id', 'name', 'email', 'phone', 'role', 'status', 'created_at', 'updated_at'])
                 ->map(function (User $user) {
                     $user->setAttribute('role', $user->adminRoleName());
                     $user->setAttribute('role_label', $user->adminRoleLabel());
@@ -57,7 +57,6 @@ class AdminUserController extends Controller
                 'status' => $request->string('status')->toString(),
             ],
             'roles' => $roles,
-            'permissions' => User::adminPermissionOptions(),
         ]);
     }
 
@@ -70,8 +69,6 @@ class AdminUserController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)],
             'role' => ['required', Rule::exists('roles', 'name')->where(fn ($query) => $query->where('is_admin', true))],
             'status' => ['required', Rule::in(['active', 'suspended'])],
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', Rule::exists('permissions', 'name')],
         ]);
 
         $plainPassword = $validated['password'];
@@ -84,7 +81,7 @@ class AdminUserController extends Controller
             'password' => Hash::make($plainPassword),
             'role' => $validated['role'],
             'status' => $validated['status'],
-            'permissions' => $validated['permissions'] ?? [],
+            'permissions' => [],
             'email_verified_at' => now(),
         ]);
         $user->syncAdminRole($validated['role']);
@@ -96,7 +93,6 @@ class AdminUserController extends Controller
         }
         $auditLogService->record('staff.created', $user, [
             'role' => $user->role,
-            'permissions' => $user->permissions,
         ], $request);
 
         return redirect()->back()->with('success', 'Staff account created successfully.');
@@ -114,8 +110,6 @@ class AdminUserController extends Controller
             'password' => ['nullable', 'confirmed', Password::min(8)],
             'role' => ['required', Rule::exists('roles', 'name')->where(fn ($query) => $query->where('is_admin', true))],
             'status' => ['required', Rule::in(['active', 'suspended'])],
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', Rule::exists('permissions', 'name')],
         ]);
 
         $this->ensureRoleAssignmentAllowed($actor, $validated['role'], $user);
@@ -145,7 +139,7 @@ class AdminUserController extends Controller
             'phone' => $validated['phone'] ?? null,
             'role' => $validated['role'],
             'status' => $validated['status'],
-            'permissions' => $validated['permissions'] ?? [],
+            'permissions' => [],
         ];
 
         if (! empty($validated['password'])) {
@@ -157,7 +151,6 @@ class AdminUserController extends Controller
         $auditLogService->record('staff.updated', $user, [
             'role' => $user->role,
             'status' => $user->status,
-            'permissions' => $user->permissions,
         ], $request);
 
         return redirect()->back()->with('success', 'Staff account updated successfully.');

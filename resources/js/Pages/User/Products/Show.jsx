@@ -37,6 +37,11 @@ import {
 } from '@/Components/User/musicStoreDesign';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
+const productImageUrl = (image, appUrl) => {
+    const path = image?.image_url || image?.image_path;
+    return path ? storageUrl(path, appUrl) : 'https://via.placeholder.com/600?text=No+Image';
+};
+
 const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBoughtTogether = [], reviews = { data: [] } }) => {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
@@ -151,7 +156,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                         }}>
                             <Box 
                                 component="img" 
-                                src={storageUrl(images[activeImageIndex].image_path, app_url)}
+                                src={productImageUrl(images[activeImageIndex], app_url)}
                                 sx={{ 
                                     position: 'absolute',
                                     top: 0,
@@ -217,7 +222,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                         }
                                     }}
                                     component="img"
-                                    src={storageUrl(img.image_path, app_url)}
+                                    src={productImageUrl(img, app_url)}
                                     sx={{ 
                                         width: 72, 
                                         height: 96, 

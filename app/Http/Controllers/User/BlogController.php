@@ -60,7 +60,9 @@ class BlogController extends Controller
         $post = BlogPost::query()
             ->published()
             ->with(['category', 'tags', 'author:id,name'])
-            ->where('slug', $slug)
+            ->where(fn ($query) => $query
+                ->where('slug', $slug)
+                ->when(ctype_digit($slug), fn ($query) => $query->orWhere('id', (int) $slug)))
             ->firstOrFail();
 
         $related = BlogPost::query()

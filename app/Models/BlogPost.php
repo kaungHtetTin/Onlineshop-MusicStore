@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
+use App\Support\UploadedFileUrl;
 
 class BlogPost extends Model
 {
@@ -64,10 +64,7 @@ class BlogPost extends Model
 
     public function scopePublished(Builder $query): Builder
     {
-        return $query
-            ->where('status', self::STATUS_PUBLISHED)
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now());
+        return $query->where('status', self::STATUS_PUBLISHED);
     }
 
     public function getCoverImageUrlAttribute(): ?string
@@ -76,11 +73,7 @@ class BlogPost extends Model
             return null;
         }
 
-        if (str_starts_with($this->cover_image_path, 'http://') || str_starts_with($this->cover_image_path, 'https://')) {
-            return $this->cover_image_path;
-        }
-
-        return Storage::disk('public')->url($this->cover_image_path);
+        return UploadedFileUrl::make($this->cover_image_path);
     }
 
     public function getYoutubeEmbedUrlAttribute(): ?string

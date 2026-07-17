@@ -29,36 +29,53 @@ function PermissionGroups({ groups, selected, disabled, onChange }) {
                 const selectedCount = group.items.filter((item) => selected.includes(item.value)).length;
                 const allSelected = selectedCount === group.items.length;
 
+                if (disabled && selectedCount === 0) return null;
+
                 return (
                     <fieldset key={group.group} className="permission-group" disabled={disabled}>
                         <legend>
                             <span>{group.group}</span>
-                            <label className="permission-group-toggle">
-                                <input
-                                    type="checkbox"
-                                    checked={allSelected}
-                                    onChange={(event) => toggleGroup(group.items, event.target.checked)}
-                                />
-                                <small>{selectedCount}/{group.items.length}</small>
-                            </label>
-                        </legend>
-                        <div className="permission-options">
-                            {group.items.map((permission) => (
-                                <label key={permission.value} className="permission-option">
+                            {disabled ? (
+                                <small>{selectedCount}</small>
+                            ) : (
+                                <label className="permission-group-toggle">
                                     <input
                                         type="checkbox"
-                                        checked={selected.includes(permission.value)}
-                                        onChange={(event) => {
-                                            onChange(
-                                                event.target.checked
-                                                    ? [...selected, permission.value]
-                                                    : selected.filter((name) => name !== permission.value),
-                                            );
-                                        }}
+                                        checked={allSelected}
+                                        onChange={(event) => toggleGroup(group.items, event.target.checked)}
                                     />
-                                    <span>{permission.label}</span>
+                                    <small>{selectedCount}/{group.items.length}</small>
                                 </label>
-                            ))}
+                            )}
+                        </legend>
+                        <div className="permission-options">
+                            {group.items.map((permission) => {
+                                const checked = selected.includes(permission.value);
+
+                                if (disabled && !checked) return null;
+
+                                return disabled ? (
+                                    <span key={permission.value} className="permission-option static">
+                                        <Icon name="check" size={13} />
+                                        <span>{permission.label}</span>
+                                    </span>
+                                ) : (
+                                    <label key={permission.value} className="permission-option">
+                                        <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={(event) => {
+                                                onChange(
+                                                    event.target.checked
+                                                        ? [...selected, permission.value]
+                                                        : selected.filter((name) => name !== permission.value),
+                                                );
+                                            }}
+                                        />
+                                        <span>{permission.label}</span>
+                                    </label>
+                                );
+                            })}
                         </div>
                     </fieldset>
                 );
@@ -81,6 +98,7 @@ export default function RolesIndex({ roles, permissionGroups }) {
 
     useEffect(() => {
         if (!selectedRole) return;
+
         form.setData({
             display_name: selectedRole.display_name,
             description: selectedRole.description || '',
@@ -89,6 +107,12 @@ export default function RolesIndex({ roles, permissionGroups }) {
         form.clearErrors();
     }, [selectedRole?.id, selectedRole?.display_name, selectedRole?.description, selectedRole?.permissions]);
 
+    const openCreate = () => {
+        createForm.setData({ ...createDefaults });
+        createForm.clearErrors();
+        setCreateOpen(true);
+    };
+
     const saveRole = (event) => {
         event.preventDefault();
         if (!selectedRole || selectedRole.is_locked) return;
@@ -96,12 +120,6 @@ export default function RolesIndex({ roles, permissionGroups }) {
         form.patch(routeWithBase(`/admin/roles/${selectedRole.id}`, app_base), {
             preserveScroll: true,
         });
-    };
-
-    const openCreate = () => {
-        createForm.setData({ ...createDefaults });
-        createForm.clearErrors();
-        setCreateOpen(true);
     };
 
     const submitCreate = (event) => {
@@ -163,7 +181,10 @@ export default function RolesIndex({ roles, permissionGroups }) {
                                 <div>
                                     <div className="inline-actions">
                                         <h2>{selectedRole.display_name}</h2>
-                                        {selectedRole.is_system && <StatusBadge status="info" label={t('System role')} />}
+                                        <StatusBadge
+                                            status="info"
+                                            label={selectedRole.is_system ? 'System role' : 'Custom role'}
+                                        />
                                     </div>
                                     <code>{selectedRole.name}</code>
                                 </div>
@@ -249,7 +270,7 @@ export default function RolesIndex({ roles, permissionGroups }) {
                                 <input
                                     value={createForm.data.name}
                                     onChange={(event) => createForm.setData('name', event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
-                                    placeholder="regional_manager"
+                                    placeholder="warehouse_clerk"
                                     required
                                 />
                             </label>
@@ -261,12 +282,14 @@ export default function RolesIndex({ roles, permissionGroups }) {
                                 />
                             </label>
                         </div>
-                        <PermissionGroups
-                            groups={permissionGroups}
-                            selected={createForm.data.permissions || []}
-                            disabled={false}
-                            onChange={(permissions) => createForm.setData('permissions', permissions)}
-                        />
+                        <div className="role-create-permissions">
+                            <PermissionGroups
+                                groups={permissionGroups}
+                                selected={createForm.data.permissions || []}
+                                disabled={false}
+                                onChange={(permissions) => createForm.setData('permissions', permissions)}
+                            />
+                        </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={() => setCreateOpen(false)}>
                                 {t('Cancel')}

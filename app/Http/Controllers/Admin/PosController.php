@@ -65,7 +65,7 @@ class PosController extends Controller
 
         $term = trim($validated['q'] ?? '');
         $page = (int) ($validated['page'] ?? 1);
-        $perPage = (int) ($validated['per_page'] ?? 40);
+        $perPage = (int) ($validated['per_page'] ?? 24);
 
         $products = Sku::query()
             ->where('is_active', true)

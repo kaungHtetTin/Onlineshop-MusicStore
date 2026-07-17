@@ -59,7 +59,7 @@ class AuthenticatedSessionController extends Controller
                 ]);
             }
 
-            return redirect()->intended('/admin/dashboard');
+            return $this->redirectAfterLogin($request, true);
         }
 
         if ($user->isAdminStaff()) {
@@ -71,7 +71,16 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        return redirect()->intended('/');
+        if ($user->status !== 'active') {
+            Auth::guard('web')->logout();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => 'Your account has been suspended.',
+            ]);
+        }
+
+        return $this->redirectAfterLogin($request, false);
     }
 
     /**
@@ -88,5 +97,49 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect($isAdminLogout ? '/admin/login' : '/');
+    }
+
+    private function redirectAfterLogin(Request $request, bool $isAdminLogin): RedirectResponse
+    {
+        $fallback = $isAdminLogin ? '/admin/dashboard' : '/';
+        $intended = (string) $request->session()->pull('url.intended', $fallback);
+        $target = $this->safeIntendedUrl($request, $intended, $fallback, $isAdminLogin);
+
+        return redirect()->to($target);
+    }
+
+    private function safeIntendedUrl(Request $request, string $url, string $fallback, bool $isAdminLogin): string
+    {
+        $url = trim($url);
+
+        if ($url === '') {
+            return $fallback;
+        }
+
+        $parts = parse_url($url);
+
+        if ($parts === false) {
+            return $fallback;
+        }
+
+        $host = $parts['host'] ?? null;
+
+        if ($host !== null && strcasecmp($host, $request->getHost()) !== 0) {
+            return $fallback;
+        }
+
+        $path = $parts['path'] ?? '/';
+        $normalizedPath = '/'.trim($path, '/');
+        $isAdminPath = $normalizedPath === '/admin' || str_contains($normalizedPath.'/', '/admin/');
+        $isLoginPath = in_array($normalizedPath, ['/login', '/admin/login'], true);
+
+        if ($isLoginPath || $isAdminLogin !== $isAdminPath) {
+            return $fallback;
+        }
+
+        $query = isset($parts['query']) ? '?'.$parts['query'] : '';
+        $fragment = isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
+
+        return $path.$query.$fragment;
     }
 }

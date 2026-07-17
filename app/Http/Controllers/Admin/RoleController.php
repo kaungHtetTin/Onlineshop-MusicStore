@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Services\AuditLogService;
+use App\Support\Spa;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use App\Support\Spa;
 
 class RoleController extends Controller
 {
@@ -27,7 +27,7 @@ class RoleController extends Controller
                 'display_name' => $role->display_name,
                 'description' => $role->description,
                 'is_system' => $role->is_system,
-                'is_locked' => $role->name === 'super_admin',
+                'is_locked' => $role->is_system,
                 'users_count' => $role->users_count,
                 'permissions' => $role->permissions->pluck('name')->sort()->values()->all(),
             ]);
@@ -62,7 +62,7 @@ class RoleController extends Controller
             'description' => $validated['description'] ?? null,
             'is_admin' => true,
             'is_system' => false,
-            'sort_order' => (Role::query()->max('sort_order') ?? 0) + 10,
+            'sort_order' => (Role::query()->admin()->max('sort_order') ?? 30) + 10,
         ]);
 
         $role->permissions()->sync($this->permissionIds($validated['permissions'] ?? []));
@@ -79,8 +79,8 @@ class RoleController extends Controller
     {
         abort_unless($role->is_admin, 404);
 
-        if ($role->name === 'super_admin') {
-            return back()->with('error', 'The Admin role always has every permission and cannot be changed.');
+        if ($role->is_system) {
+            return back()->with('error', 'System roles are fixed. Create a custom role when you need different permissions.');
         }
 
         $validated = $this->validateRole($request, false);
@@ -133,7 +133,7 @@ class RoleController extends Controller
                 'string',
                 'max:80',
                 'regex:/^[a-z][a-z0-9_]*$/',
-                Rule::notIn(['customer']),
+                Rule::notIn(['customer', 'super_admin', 'manager', 'staff']),
                 Rule::unique('roles', 'name'),
             ];
         }
