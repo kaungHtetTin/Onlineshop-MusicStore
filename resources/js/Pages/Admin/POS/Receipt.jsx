@@ -42,7 +42,6 @@ export default function PosReceipt({ order }) {
                 <div className="receipt-totals">
                     <span>{t('Subtotal')}</span><strong>{Number(order.total_amount).toFixed(2)}</strong>
                     <span>{t('Discount')}</span><strong>-{Number(order.discount_amount || 0).toFixed(2)}</strong>
-                    <span>{t('Tax')}</span><strong>{Number(order.tax_amount || 0).toFixed(2)}</strong>
                     <span>{t('Total')}</span><strong>{Number(order.final_amount).toFixed(2)}</strong>
                     <span>{t('Tender')}</span><strong>{t(order.pos_tender_summary?.tender_type || order.payment_method)}</strong>
                 </div>

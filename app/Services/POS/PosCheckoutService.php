@@ -11,6 +11,7 @@ use App\Models\Sku;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\Inventory\InventoryService;
+use App\Services\LoyaltyService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +20,8 @@ class PosCheckoutService
 {
     public function __construct(
         private InventoryService $inventoryService,
-        private AuditLogService $auditLogService
+        private AuditLogService $auditLogService,
+        private LoyaltyService $loyaltyService
     ) {
     }
 
@@ -78,8 +80,7 @@ class PosCheckoutService
             }
 
             $discount = $this->discountAmount($payload, $subtotal, $cashier);
-            $tax = round(max(0, $subtotal - $discount) * (float) config('shop.tax_rate', 0), 2);
-            $final = round(max(0, $subtotal - $discount) + $tax, 2);
+            $final = round(max(0, $subtotal - $discount), 2);
             $tenderType = $payload['tender_type'] ?? 'cash';
 
             $order = Order::create([
@@ -96,7 +97,7 @@ class PosCheckoutService
                 'admin_discount_type' => $payload['discount_type'] ?? null,
                 'admin_discount_value' => round((float) ($payload['discount_value'] ?? 0), 2),
                 'admin_discount_amount' => $discount,
-                'tax_amount' => $tax,
+                'tax_amount' => 0,
                 'shipping_fee' => 0,
                 'final_amount' => $final,
                 'status' => 'delivered',
@@ -168,6 +169,8 @@ class PosCheckoutService
                 'location_id' => $location->id,
                 'total' => $final,
             ]);
+
+            $this->loyaltyService->awardForPaidOrder($order->fresh('user'));
 
             return $order->fresh(['items.product', 'items.sku', 'payments', 'location', 'server', 'user']);
         }, 3);

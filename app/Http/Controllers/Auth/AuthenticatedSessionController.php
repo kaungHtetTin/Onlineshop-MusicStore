@@ -128,7 +128,7 @@ class AuthenticatedSessionController extends Controller
             return $fallback;
         }
 
-        $path = $parts['path'] ?? '/';
+        $path = $this->appRelativePath($parts['path'] ?? '/');
         $normalizedPath = '/'.trim($path, '/');
         $isAdminPath = $normalizedPath === '/admin' || str_contains($normalizedPath.'/', '/admin/');
         $isLoginPath = in_array($normalizedPath, ['/login', '/admin/login'], true);
@@ -141,5 +141,26 @@ class AuthenticatedSessionController extends Controller
         $fragment = isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
 
         return $path.$query.$fragment;
+    }
+
+    private function appRelativePath(string $path): string
+    {
+        $normalizedPath = '/'.trim($path, '/');
+        $basePath = parse_url(config('app.url'), PHP_URL_PATH) ?: '';
+        $normalizedBase = '/'.trim($basePath, '/');
+
+        if ($normalizedBase !== '/' && $normalizedBase !== '') {
+            if ($normalizedPath === $normalizedBase) {
+                return '/';
+            }
+
+            if (str_starts_with($normalizedPath.'/', rtrim($normalizedBase, '/').'/')) {
+                $withoutBase = substr($normalizedPath, strlen(rtrim($normalizedBase, '/')));
+
+                return $withoutBase === '' ? '/' : $withoutBase;
+            }
+        }
+
+        return $normalizedPath;
     }
 }

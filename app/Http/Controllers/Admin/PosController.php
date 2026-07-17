@@ -45,7 +45,6 @@ class PosController extends Controller
             'can' => [
                 'discount' => $request->user()->hasAdminPermission('pos.discount'),
             ],
-            'taxRate' => (float) config('shop.tax_rate', 0),
         ]);
     }
 
@@ -181,7 +180,7 @@ class PosController extends Controller
         abort_unless($request->user()->hasAdminPermission('pos.access'), 403);
         $validated = $request->validate([
             'location_id' => ['required', 'integer', 'exists:locations,id'],
-            'customer_id' => ['nullable', 'integer', 'exists:users,id'],
+            'customer_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('role', User::CUSTOMER_ROLE)],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
             'items' => ['required', 'array', 'min:1'],
@@ -213,7 +212,7 @@ class PosController extends Controller
         $validated = $request->validate([
             'location_id' => ['required', 'integer', 'exists:locations,id'],
             'register_id' => ['required', 'integer', 'exists:pos_registers,id'],
-            'customer_id' => ['nullable', 'integer', 'exists:users,id'],
+            'customer_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('role', User::CUSTOMER_ROLE)],
             'label' => ['nullable', 'string', 'max:80'],
             'cart_payload' => ['required', 'array'],
         ]);

@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\OrderItem;
 use App\Models\User;
+use App\Services\AuditLogService;
+use App\Services\LoyaltyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use App\Support\Spa;
 
 class CustomerController extends Controller
@@ -84,6 +87,12 @@ class CustomerController extends Controller
             ->take(8)
             ->get();
 
+        $rewardHistories = $customer->rewardHistories()
+            ->with('order:id,order_number')
+            ->latest()
+            ->take(20)
+            ->get();
+
         return Spa::render('Admin/Customers/Show', [
             'customer' => $customer,
             'stats' => [
@@ -99,6 +108,32 @@ class CustomerController extends Controller
             'recentOrders' => $recentOrders,
             'topCategories' => $topCategories,
             'reviews' => $reviews,
+            'rewardHistories' => $rewardHistories,
+            'canAdjustLoyalty' => request()->user()->isSuperAdmin(),
         ]);
+    }
+
+    public function adjustLoyalty(Request $request, User $customer, LoyaltyService $loyaltyService, AuditLogService $auditLogService)
+    {
+        abort_unless($customer->role === User::CUSTOMER_ROLE, 404);
+        abort_unless($request->user()->isSuperAdmin(), 403);
+
+        $validated = $request->validate([
+            'action' => ['required', Rule::in(['add', 'subtract'])],
+            'points' => ['required', 'integer', 'min:1', 'max:100000000'],
+            'description' => ['required', 'string', 'max:500'],
+        ]);
+
+        $points = (int) $validated['points'];
+        $delta = $validated['action'] === 'subtract' ? -$points : $points;
+
+        $loyaltyService->adjustPoints($customer, $delta, $validated['description'], $request->user());
+
+        $auditLogService->record('customer.loyalty_adjusted', $customer, [
+            'points' => $delta,
+            'description' => $validated['description'],
+        ], $request);
+
+        return back()->with('success', 'Customer loyalty points updated.');
     }
 }

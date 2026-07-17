@@ -60,7 +60,7 @@ const POS_TABLE_ROW_HEIGHT = 54;
 const POS_GRID_ROW_HEIGHT = 126;
 const POS_RESULT_OVERSCAN_ROWS = 6;
 
-export default function PosIndex({ locations = [], categories = [], can = {}, taxRate = 0 }) {
+export default function PosIndex({ locations = [], categories = [], can = {} }) {
     const { app_base, app_url, flash = {}, errors: pageErrors = {} } = usePage().props;
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -332,11 +332,10 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
             ? subtotal * (Number(discountValue || 0) / 100)
             : Number(discountValue || 0);
         const discount = Math.min(Math.max(discountRaw, 0), subtotal);
-        const tax = Math.max(0, subtotal - discount) * Number(taxRate || 0);
-        const grandTotal = Math.max(0, subtotal - discount + tax);
+        const grandTotal = Math.max(0, subtotal - discount);
 
-        return { subtotal, discount, tax, grandTotal };
-    }, [cart, discountType, discountValue, taxRate]);
+        return { subtotal, discount, grandTotal };
+    }, [cart, discountType, discountValue]);
 
     const hasStockIssue = useMemo(() => cart.some((line) => Number(line.quantity || 0) > Number(line.available_qty || 0)), [cart]);
     const hasWholesaleCartItems = useMemo(() => cart.some((line) => line.price_type === 'wholesale'), [cart]);
@@ -490,10 +489,6 @@ export default function PosIndex({ locations = [], categories = [], can = {}, ta
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body2" color="text.secondary">{tp('Discount')}</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: totals.discount > 0 ? 'success.main' : 'inherit', textAlign: 'right' }}>-{currencySymbol}{money(totals.discount)}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body2" color="text.secondary">{tp('Tax')}</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'right' }}>{currencySymbol}{money(totals.tax)}</Typography>
                     </Box>
                     <Divider />
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'baseline', gap: 1 }}>

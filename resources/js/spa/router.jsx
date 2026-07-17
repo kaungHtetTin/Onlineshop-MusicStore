@@ -17,6 +17,53 @@ function csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
 
+function syncCsrfToken(token) {
+    if (!token) return;
+
+    let meta = document.querySelector('meta[name="csrf-token"]');
+    if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'csrf-token');
+        document.head.appendChild(meta);
+    }
+
+    meta.setAttribute('content', token);
+
+    if (window.axios) {
+        window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+    }
+}
+
+async function refreshCsrfToken() {
+    const response = await fetch(window.__csrfRefreshUrl || '/csrf-token', {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    });
+
+    if (!response.ok) {
+        return null;
+    }
+
+    const headerToken = response.headers.get('x-csrf-token');
+    let payloadToken = null;
+
+    try {
+        const payload = await response.json();
+        payloadToken = payload?.csrf_token || null;
+    } catch {
+        // The endpoint should return JSON, but the header is enough if present.
+    }
+
+    const token = payloadToken || headerToken;
+    syncCsrfToken(token);
+
+    return token;
+}
+
 function isModifiedClick(event) {
     return event.metaKey || event.altKey || event.ctrlKey || event.shiftKey || event.button !== 0;
 }
@@ -210,23 +257,37 @@ export const router = {
     async visit(url, options = {}) {
         const method = String(options.method || 'get').toLowerCase();
         const target = method === 'get' ? appendQuery(url, options.data || {}) : normalizeUrl(url);
-        const { body, headers } = requestBody(options.data, method, options);
 
         options.onStart?.();
 
         try {
-            const response = await fetch(target, {
-                method: method.toUpperCase(),
-                body,
-                credentials: 'same-origin',
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-SPA': 'true',
-                    'X-CSRF-TOKEN': csrfToken(),
-                    ...headers,
-                },
-            });
+            const send = () => {
+                const { body, headers } = requestBody(options.data, method, options);
+
+                return fetch(target, {
+                    method: method.toUpperCase(),
+                    body,
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-SPA': 'true',
+                        'X-CSRF-TOKEN': csrfToken(),
+                        ...headers,
+                    },
+                });
+            };
+
+            let response = await send();
+            syncCsrfToken(response.headers.get('x-csrf-token'));
+
+            if (response.status === 419 && !options.__csrfRetry) {
+                const token = await refreshCsrfToken();
+                if (token) {
+                    response = await send();
+                    syncCsrfToken(response.headers.get('x-csrf-token'));
+                }
+            }
 
             const page = await parseSpaResponse(response, options);
 

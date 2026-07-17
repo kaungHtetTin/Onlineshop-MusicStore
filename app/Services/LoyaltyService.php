@@ -5,17 +5,28 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\RewardHistory;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class LoyaltyService
 {
+    public function __construct(private LoyaltySettingsService $settings)
+    {
+    }
+
     public function redemptionValue(User $user, int $points): float
     {
         if ($points <= 0) {
             return 0.0;
         }
 
-        $minimum = (int) config('loyalty.minimum_redeem_points', 100);
+        if (! $this->settings->isEnabled()) {
+            throw ValidationException::withMessages([
+                'redeem_points' => 'Loyalty points are currently disabled.',
+            ]);
+        }
+
+        $minimum = $this->settings->minimumRedeemPoints();
         if ($points < $minimum) {
             throw ValidationException::withMessages([
                 'redeem_points' => "Redeem at least {$minimum} points.",
@@ -28,13 +39,19 @@ class LoyaltyService
             ]);
         }
 
-        return round($points * (float) config('loyalty.redeem_currency_per_point', 0.01), 2);
+        return round($points * $this->settings->redeemCurrencyPerPoint(), 2);
     }
 
     public function redeemForOrder(User $user, Order $order, int $points): void
     {
         if ($points <= 0) {
             return;
+        }
+
+        if (! $this->settings->isEnabled()) {
+            throw ValidationException::withMessages([
+                'redeem_points' => 'Loyalty points are currently disabled.',
+            ]);
         }
 
         $user->decrement('loyalty_points', $points);
@@ -77,13 +94,13 @@ class LoyaltyService
 
     public function awardForPaidOrder(Order $order): void
     {
-        if ($order->loyalty_awarded_at || ! $order->user) {
+        if (! $this->settings->isEnabled() || $order->loyalty_awarded_at || ! $order->user) {
             return;
         }
 
         $user = $order->user;
         $tier = config('loyalty.tiers.'.$user->tier, config('loyalty.tiers.Bronze'));
-        $baseRate = (float) config('loyalty.earn_points_per_currency', 1);
+        $baseRate = $this->settings->earnPointsPerCurrency();
         $multiplier = (float) ($tier['multiplier'] ?? 1);
         $points = (int) floor((float) $order->final_amount * $baseRate * $multiplier);
 
@@ -107,6 +124,34 @@ class LoyaltyService
         ])->save();
 
         $this->refreshTier($user->fresh());
+    }
+
+    public function adjustPoints(User $user, int $points, string $description, ?User $actor = null): void
+    {
+        if ($points === 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($user, $points, $description, $actor) {
+            $locked = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $current = (int) $locked->loyalty_points;
+            if ($points < 0 && abs($points) > $current) {
+                throw ValidationException::withMessages([
+                    'points' => 'Cannot subtract more points than the customer has.',
+                ]);
+            }
+
+            $locked->increment('loyalty_points', $points);
+
+            RewardHistory::create([
+                'user_id' => $locked->id,
+                'points' => $points,
+                'type' => 'manual_adjustment',
+                'description' => trim(($actor ? "Adjusted by {$actor->name}: " : '').$description),
+            ]);
+
+            $this->refreshTier($locked->fresh());
+        });
     }
 
     public function refreshTier(User $user): void

@@ -13,6 +13,7 @@ use App\Services\CouponService;
 use App\Services\FlashSalePricingService;
 use App\Services\Inventory\StockReservationService;
 use App\Services\Inventory\StorefrontInventoryService;
+use App\Services\LoyaltySettingsService;
 use App\Services\LoyaltyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,16 +23,17 @@ use App\Support\Spa;
 
 class CheckoutController extends Controller
 {
-    public function create()
+    public function create(LoyaltySettingsService $loyaltySettings)
     {
         return Spa::render('User/Checkout/Index', [
             'shop' => config('shop'),
             'paymentMethods' => PaymentMethod::active()->ordered()->get(),
             'loyalty' => [
+                'isEnabled' => $loyaltySettings->isEnabled(),
                 'points' => (int) auth()->user()->loyalty_points,
                 'tier' => auth()->user()->tier,
-                'redeemCurrencyPerPoint' => (float) config('loyalty.redeem_currency_per_point', 0.01),
-                'minimumRedeemPoints' => (int) config('loyalty.minimum_redeem_points', 100),
+                'redeemCurrencyPerPoint' => $loyaltySettings->redeemCurrencyPerPoint(),
+                'minimumRedeemPoints' => $loyaltySettings->minimumRedeemPoints(),
             ],
         ]);
     }
@@ -174,7 +176,6 @@ class CheckoutController extends Controller
                     $coupon = $couponService->findValid($coupon->code, $subtotal);
                 }
                 $redeemedPoints = $totals['redeemed_points'];
-                $tax = $totals['tax'];
                 $shipping = $totals['shipping'];
                 $discount = $totals['discount'];
                 $final = $totals['final'];
@@ -189,7 +190,7 @@ class CheckoutController extends Controller
                     'total_amount' => $subtotal,
                     'discount_amount' => $discount,
                     'redeemed_points' => $redeemedPoints,
-                    'tax_amount' => $tax,
+                    'tax_amount' => 0,
                     'shipping_fee' => $shipping,
                     'final_amount' => $final,
                     'status' => 'pending',
@@ -310,10 +311,9 @@ class CheckoutController extends Controller
         $couponDiscount = $couponService->discountFor($coupon, $subtotal);
         $redeemedPoints = (int) ($validated['redeem_points'] ?? 0);
         $pointsValue = $loyaltyService->redemptionValue($user, $redeemedPoints);
-        $taxableSubtotal = max(0, round($subtotal - $couponDiscount, 2));
-        $tax = round($taxableSubtotal * (float) $shop['tax_rate'], 2);
+        $couponAdjustedSubtotal = max(0, round($subtotal - $couponDiscount, 2));
         $shipping = $subtotal >= (float) $shop['free_shipping_minimum'] ? 0.0 : (float) $shop['shipping_flat'];
-        $maxPointsValue = max(0, round($taxableSubtotal + $tax + $shipping, 2));
+        $maxPointsValue = max(0, round($couponAdjustedSubtotal + $shipping, 2));
 
         if ($pointsValue > $maxPointsValue) {
             throw ValidationException::withMessages([
@@ -330,9 +330,8 @@ class CheckoutController extends Controller
             'redeemed_points' => $redeemedPoints,
             'points_value' => $pointsValue,
             'discount' => $discount,
-            'tax' => $tax,
             'shipping' => $shipping,
-            'final' => round($subtotal + $tax + $shipping - $discount, 2),
+            'final' => round($subtotal + $shipping - $discount, 2),
         ];
     }
 }

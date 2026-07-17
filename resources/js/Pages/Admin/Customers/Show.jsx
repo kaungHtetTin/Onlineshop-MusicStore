@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@/spa/router';
+import { Head, Link, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
@@ -6,6 +6,10 @@ import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
 const money = (value) => `$${Number(value || 0).toFixed(2)}`;
+const formatPoints = (value) => {
+    const points = Number(value || 0);
+    return `${points > 0 ? '+' : ''}${points}`;
+};
 
 function StatCard({ label, value, hint }) {
     return (
@@ -17,9 +21,22 @@ function StatCard({ label, value, hint }) {
     );
 }
 
-export default function CustomerShow({ customer, stats, recentOrders, topCategories, reviews }) {
+export default function CustomerShow({ customer, stats, recentOrders, topCategories, reviews, rewardHistories = [], canAdjustLoyalty = false }) {
     const { app_base } = usePage().props;
     const t = usePhraseTranslation();
+    const loyaltyForm = useForm({
+        action: 'add',
+        points: '',
+        description: '',
+    });
+
+    const submitLoyaltyAdjustment = (event) => {
+        event.preventDefault();
+        loyaltyForm.post(routeWithBase(`/admin/customers/${customer.id}/loyalty-adjustments`, app_base), {
+            preserveScroll: true,
+            onSuccess: () => loyaltyForm.reset(),
+        });
+    };
 
     return (
         <AdminLayout title={customer.name} eyebrow={t('Customer profile')}>
@@ -52,6 +69,81 @@ export default function CustomerShow({ customer, stats, recentOrders, topCategor
                     <StatCard label={t('Reviews')} value={stats.reviews} hint={t('Product feedback')} />
                 </div>
             </section>
+
+            <div className="report-analysis-grid">
+                {canAdjustLoyalty && (
+                    <section className="panel glass">
+                        <PanelHeading eyebrow={t('Super admin')} title={t('Adjust loyalty points')} />
+                        <form className="crud-grid" onSubmit={submitLoyaltyAdjustment}>
+                            <label className="form-field">
+                                <span>{t('Action')}</span>
+                                <select value={loyaltyForm.data.action} onChange={(e) => loyaltyForm.setData('action', e.target.value)}>
+                                    <option value="add">{t('Add points')}</option>
+                                    <option value="subtract">{t('Subtract points')}</option>
+                                </select>
+                                {loyaltyForm.errors.action && <small className="field-error">{loyaltyForm.errors.action}</small>}
+                            </label>
+                            <label className="form-field">
+                                <span>{t('Points')}</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={loyaltyForm.data.points}
+                                    onChange={(e) => loyaltyForm.setData('points', e.target.value)}
+                                />
+                                {loyaltyForm.errors.points && <small className="field-error">{loyaltyForm.errors.points}</small>}
+                            </label>
+                            <label className="form-field span-2">
+                                <span>{t('Reason')}</span>
+                                <textarea
+                                    value={loyaltyForm.data.description}
+                                    onChange={(e) => loyaltyForm.setData('description', e.target.value)}
+                                    rows={3}
+                                    placeholder={t('Required for audit history')}
+                                />
+                                {loyaltyForm.errors.description && <small className="field-error">{loyaltyForm.errors.description}</small>}
+                            </label>
+                            <div className="span-2" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <button type="submit" className="btn primary" disabled={loyaltyForm.processing}>
+                                    <Icon name="check" size={14} />
+                                    {loyaltyForm.processing ? t('Saving...') : t('Save adjustment')}
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                )}
+
+                <section className="panel glass">
+                    <PanelHeading eyebrow={t('Rewards')} title={t('Loyalty history')} />
+                    <div className="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>{t('Date')}</th>
+                                    <th>{t('Type')}</th>
+                                    <th>{t('Points')}</th>
+                                    <th>{t('Order')}</th>
+                                    <th>{t('Description')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rewardHistories.length === 0 ? (
+                                    <tr><td colSpan={5}><span className="muted">{t('No loyalty history yet.')}</span></td></tr>
+                                ) : rewardHistories.map((history) => (
+                                    <tr key={history.id}>
+                                        <td><small>{history.created_at}</small></td>
+                                        <td><StatusBadge status={history.points >= 0 ? 'success' : 'warning'} label={t(history.type)} /></td>
+                                        <td><strong>{formatPoints(history.points)}</strong></td>
+                                        <td>{history.order ? <small>{history.order.order_number}</small> : '-'}</td>
+                                        <td><small>{history.description || '-'}</small></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
 
             <div className="report-analysis-grid">
                 <section className="panel glass">

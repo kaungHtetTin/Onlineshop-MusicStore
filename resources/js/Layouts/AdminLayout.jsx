@@ -208,6 +208,15 @@ function AdminChrome({ children, mainClassName = '' }) {
                                         },
                                     ]
                                   : []),
+                              ...(is_super_admin
+                                  ? [
+                                        {
+                                            label: t('admin.items.point_configuration', 'Point configuration'),
+                                            href: routeWithBase('/admin/marketing/point-configuration', app_base),
+                                            icon: 'wallet',
+                                        },
+                                    ]
+                                  : []),
                           ],
                       },
                   ]

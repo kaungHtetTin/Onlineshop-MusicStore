@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\OrderVoucherController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PosController;
 use App\Http\Controllers\Admin\PosRegisterController;
+use App\Http\Controllers\Admin\PointConfigurationController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StorefrontController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -126,6 +127,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::delete('/blogs/{blog}', [BlogController::class, 'destroy'])->name('blogs.destroy');
     });
 
+    Route::middleware('super_admin')->group(function () {
+        Route::get('/marketing/point-configuration', [PointConfigurationController::class, 'edit'])->name('marketing.point-configuration.edit');
+        Route::post('/marketing/point-configuration', [PointConfigurationController::class, 'update'])->name('marketing.point-configuration.update');
+    });
+
     Route::get('/storefront', [StorefrontController::class, 'edit'])->middleware('admin.permission:storefront.manage')->name('storefront.edit');
     Route::post('/storefront', [StorefrontController::class, 'update'])->middleware('admin.permission:storefront.manage')->name('storefront.update');
 
@@ -138,6 +144,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::middleware('admin.permission:view_customers')->group(function () {
         Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
         Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+        Route::post('/customers/{customer}/loyalty-adjustments', [CustomerController::class, 'adjustLoyalty'])
+            ->middleware('super_admin')
+            ->name('customers.loyalty-adjustments.store');
     });
 
     Route::middleware('admin.any_permission:view_reports,reports.sales,reports.inventory')->group(function () {

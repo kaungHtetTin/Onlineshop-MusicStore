@@ -38,7 +38,6 @@ class FinanceController extends Controller
             'paid_orders' => (clone $paidOrders)->count(),
             'gross_sales' => (float) (clone $paidOrders)->sum('total_amount'),
             'discounts' => (float) (clone $paidOrders)->sum('discount_amount'),
-            'tax_collected' => (float) (clone $paidOrders)->sum('tax_amount'),
             'shipping_collected' => (float) (clone $paidOrders)->sum('shipping_fee'),
             'order_revenue' => (float) $paidRevenue,
             'manual_income' => (float) $approvedManualIncome,

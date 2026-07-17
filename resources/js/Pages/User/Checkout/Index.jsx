@@ -62,17 +62,17 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
     });
 
     const subtotal = useMemo(() => items.reduce((sum, i) => sum + i.price * i.qty, 0), [items]);
-    const tax = useMemo(() => Math.round(subtotal * (shop?.tax_rate ?? 0) * 100) / 100, [subtotal, shop]);
     const shipping = useMemo(() => {
         const min = shop?.free_shipping_minimum ?? 0;
         if (subtotal >= min) return 0;
         return shop?.shipping_flat ?? 0;
     }, [subtotal, shop]);
+    const loyaltyEnabled = Boolean(loyalty?.isEnabled ?? true);
     const pointValue = useMemo(
-        () => Math.round((Number(data.redeem_points || 0) * (loyalty?.redeemCurrencyPerPoint ?? 0.01)) * 100) / 100,
-        [data.redeem_points, loyalty],
+        () => (loyaltyEnabled ? Math.round((Number(data.redeem_points || 0) * (loyalty?.redeemCurrencyPerPoint ?? 0.01)) * 100) / 100 : 0),
+        [data.redeem_points, loyalty, loyaltyEnabled],
     );
-    const total = quote?.final ?? Math.round((subtotal + tax + shipping - pointValue) * 100) / 100;
+    const total = quote?.final ?? Math.round((subtotal + shipping - pointValue) * 100) / 100;
     const selectedPaymentMethod = useMemo(
         () => paymentMethods.find((method) => String(method.id) === String(data.payment_method_id)) || null,
         [paymentMethods, data.payment_method_id],
@@ -98,7 +98,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                 .post(routeWithBase('/checkout/quote', app_base), {
                     lines: items.map((i) => ({ sku_id: i.skuId, quantity: i.qty })),
                     coupon_code: data.coupon_code || null,
-                    redeem_points: Number(data.redeem_points || 0),
+                    redeem_points: loyaltyEnabled ? Number(data.redeem_points || 0) : 0,
                 })
                 .then(({ data: quoted }) => {
                     setQuote(quoted);
@@ -140,6 +140,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
         transform((formData) => ({
             ...formData,
             lines: items.map((i) => ({ sku_id: i.skuId, quantity: i.qty, is_preorder: Boolean(i.isPreorder) })),
+            redeem_points: loyaltyEnabled ? formData.redeem_points : 0,
         }));
         post(routeWithBase('/checkout', app_base), {
             preserveScroll: true,
@@ -252,21 +253,24 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                     helperText={errors.coupon_code}
                                     fullWidth
                                 />
-                                <TextField
-                                    label={`${t('Redeem points')} (${loyalty?.points ?? 0} ${t('available')})`}
-                                    type="number"
-                                    value={data.redeem_points}
-                                    onChange={(e) => setData('redeem_points', Math.max(0, Number(e.target.value || 0)))}
-                                    error={!!errors.redeem_points}
-                                    helperText={errors.redeem_points || `${loyalty?.tier ?? 'Bronze'} ${t('tier')}`}
-                                    inputProps={{
-                                        min: 0,
-                                        max: loyalty?.points ?? 0,
-                                        step: 1,
-                                    }}
-                                    fullWidth
-                                />
+                                {loyaltyEnabled && (
+                                    <TextField
+                                        label={`${t('Redeem points')} (${loyalty?.points ?? 0} ${t('available')})`}
+                                        type="number"
+                                        value={data.redeem_points}
+                                        onChange={(e) => setData('redeem_points', Math.max(0, Number(e.target.value || 0)))}
+                                        error={!!errors.redeem_points}
+                                        helperText={errors.redeem_points || `${loyalty?.tier ?? 'Bronze'} ${t('tier')}`}
+                                        inputProps={{
+                                            min: 0,
+                                            max: loyalty?.points ?? 0,
+                                            step: 1,
+                                        }}
+                                        fullWidth
+                                    />
+                                )}
                             </Stack>
+                            {!loyaltyEnabled && <Alert severity="info">{t('Point rewards are currently disabled.')}</Alert>}
                             {quoteError && <Alert severity="warning">{t(quoteError)}</Alert>}
                         </Stack>
                     )}
@@ -436,10 +440,6 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             <Stack direction="row" justifyContent="space-between">
                                 <Typography variant="body2">{t('Subtotal')}</Typography>
                                 <Typography variant="body2">${Number(quote?.subtotal ?? subtotal).toFixed(2)}</Typography>
-                            </Stack>
-                            <Stack direction="row" justifyContent="space-between">
-                                <Typography variant="body2">{t('Tax')} ({((shop?.tax_rate ?? 0) * 100).toFixed(1)}%)</Typography>
-                                <Typography variant="body2">${Number(quote?.tax ?? tax).toFixed(2)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between">
                                 <Typography variant="body2">{t('Shipping')}</Typography>

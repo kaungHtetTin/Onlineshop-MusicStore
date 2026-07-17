@@ -165,10 +165,6 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                             <Typography variant="body2">${Number(order.total_amount).toFixed(2)}</Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between">
-                            <Typography variant="body2">{t('Tax')}</Typography>
-                            <Typography variant="body2">${Number(order.tax_amount ?? 0).toFixed(2)}</Typography>
-                        </Stack>
-                        <Stack direction="row" justifyContent="space-between">
                             <Typography variant="body2">{t('Shipping')}</Typography>
                             <Typography variant="body2">${Number(order.shipping_fee).toFixed(2)}</Typography>
                         </Stack>

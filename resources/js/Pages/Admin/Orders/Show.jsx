@@ -282,10 +282,6 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                 <strong>${Number(order.total_amount).toFixed(2)}</strong>
                             </div>
                             <div className="detail-row">
-                                <span>{t('Tax')}</span>
-                                <strong>${Number(order.tax_amount ?? 0).toFixed(2)}</strong>
-                            </div>
-                            <div className="detail-row">
                                 <span>{t('Shipping')}</span>
                                 <strong>${Number(order.shipping_fee).toFixed(2)}</strong>
                             </div>
