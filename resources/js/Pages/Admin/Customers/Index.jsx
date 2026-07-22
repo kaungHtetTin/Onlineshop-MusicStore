@@ -6,6 +6,7 @@ import AdminPagination from '@/Components/Admin/AdminPagination';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 export default function CustomersIndex({ customers, filters, tiers }) {
     const { app_base } = usePage().props;
@@ -13,6 +14,7 @@ export default function CustomersIndex({ customers, filters, tiers }) {
     const [search, setSearch] = useState(filters.q ?? '');
     const applyFilters = (patch) => router.get(routeWithBase('/admin/customers', app_base), { ...filters, ...patch }, { preserveState: true, replace: true });
     const hasActiveFilters = Boolean(filters.q || filters.tier);
+    const dateOnly = (value) => value ? String(value).split('T')[0] : '';
     const handleSearch = (e) => {
         e.preventDefault();
         applyFilters({ q: search.trim() || undefined });
@@ -79,8 +81,8 @@ export default function CustomersIndex({ customers, filters, tiers }) {
                                     <td><StatusBadge status="info" label={customer.tier || t('Bronze')} /></td>
                                     <td>{customer.loyalty_points}</td>
                                     <td>{customer.orders_count}</td>
-                                    <td>${Number(customer.paid_revenue || 0).toFixed(2)}</td>
-                                    <td><small>{customer.created_at}</small></td>
+                                    <td>{formatMoney(customer.paid_revenue)}</td>
+                                    <td><small>{dateOnly(customer.created_at)}</small></td>
                                     <td>
                                         <Link href={routeWithBase(`/admin/customers/${customer.id}`, app_base)} className="icon-btn small">
                                             <Icon name="external" size={13} />

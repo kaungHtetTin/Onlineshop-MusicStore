@@ -5,6 +5,7 @@ import AdminPagination from '@/Components/Admin/AdminPagination';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 export default function Index({ products, app_base }) {
     const { app_url } = usePage().props;
@@ -23,7 +24,7 @@ export default function Index({ products, app_base }) {
         const prices = skus.map((s) => parseFloat(s.price));
         const min = Math.min(...prices);
         const max = Math.max(...prices);
-        return min === max ? `$${min}` : `$${min} - $${max}`;
+        return min === max ? formatMoney(min) : `${formatMoney(min)} - ${formatMoney(max)}`;
     };
 
     const getTotalStock = (product) => product.total_on_hand ?? 0;
@@ -33,10 +34,16 @@ export default function Index({ products, app_base }) {
             title={t('Products')}
             eyebrow={t('Catalog management')}
             action={
-                <Link href={routeWithBase('/admin/products/create', app_base)} className="btn primary">
-                    <Icon name="plus" size={14} />
-                    {t('Add product')}
-                </Link>
+                <div className="inline-actions">
+                    <Link href={routeWithBase('/admin/products/barcodes', app_base)} className="btn secondary">
+                        <Icon name="barcode" size={14} />
+                        {t('Print barcodes')}
+                    </Link>
+                    <Link href={routeWithBase('/admin/products/create', app_base)} className="btn primary">
+                        <Icon name="plus" size={14} />
+                        {t('Add product')}
+                    </Link>
+                </div>
             }
         >
             <Head title={t('Manage Products')} />

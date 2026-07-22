@@ -36,7 +36,17 @@ class CustomerController extends Controller
         }
 
         return Spa::render('Admin/Customers/Index', [
-            'customers' => $query->paginate(15)->withQueryString(),
+            'customers' => $query->paginate(15)->withQueryString()->through(fn (User $customer) => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'phone' => $customer->phone,
+                'tier' => $customer->tier,
+                'loyalty_points' => $customer->loyalty_points,
+                'orders_count' => $customer->orders_count,
+                'paid_revenue' => $customer->paid_revenue,
+                'created_at' => $customer->created_at?->toDateString(),
+            ]),
             'filters' => [
                 'q' => $request->string('q')->toString(),
                 'tier' => $request->string('tier')->toString(),

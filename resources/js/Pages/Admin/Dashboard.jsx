@@ -8,7 +8,7 @@ import { paymentLabels } from '@/constants/orderLabels';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
 const money = (value) =>
-    `$${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 const compactNumber = (value) => Number(value || 0).toLocaleString();
 
@@ -450,7 +450,7 @@ export default function Dashboard({ stats = {}, recentOrders = [], productCount 
                                                 <small>{order.items_count ?? order.items?.length ?? 0} {t('items')}</small>
                                             </td>
                                             <td>
-                                                <strong>${Number(order.final_amount).toFixed(2)}</strong>
+                                                <strong>{money(order.final_amount)}</strong>
                                             </td>
                                             <td>
                                                 <StatusBadge

@@ -7,6 +7,7 @@ import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { fulfillmentSteps, orderStatusLabels, paymentLabels } from '@/constants/orderLabels';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 const stepLabels = {
     pending: 'Order placed',
@@ -63,7 +64,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
     const handleConfirm = () => {
         const message = approvalDiscountAmount > 0
-            ? t('Confirm payment and apply :amount discount? Stock will be deducted and fulfillment begins.', { amount: `$${approvalDiscountAmount.toFixed(2)}` })
+            ? t('Confirm payment and apply :amount discount? Stock will be deducted and fulfillment begins.', { amount: formatMoney(approvalDiscountAmount) })
             : t('Confirm payment? Stock will be deducted and fulfillment begins.');
         if (!confirm(message)) return;
         confirmForm.post(routeWithBase(`/admin/orders/${order.id}/confirm-payment`, app_base), { preserveScroll: true });
@@ -266,10 +267,10 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                                 <strong>{item.quantity}</strong>
                                             </td>
                                             <td style={{ textAlign: 'right' }}>
-                                                ${Number(item.unit_price).toFixed(2)}
+                                                {formatMoney(item.unit_price)}
                                             </td>
                                             <td style={{ textAlign: 'right' }}>
-                                                <strong>${Number(item.total_price).toFixed(2)}</strong>
+                                                <strong>{formatMoney(item.total_price)}</strong>
                                             </td>
                                         </tr>
                                     ))}
@@ -279,11 +280,11 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                         <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--color-border)' }}>
                             <div className="detail-row">
                                 <span>{t('Subtotal')}</span>
-                                <strong>${Number(order.total_amount).toFixed(2)}</strong>
+                                <strong>{formatMoney(order.total_amount)}</strong>
                             </div>
                             <div className="detail-row">
                                 <span>{t('Shipping')}</span>
-                                <strong>${Number(order.shipping_fee).toFixed(2)}</strong>
+                                <strong>{formatMoney(order.shipping_fee)}</strong>
                             </div>
                             {checkoutDiscountAmount > 0 && (
                                 <div className="detail-row">
@@ -292,7 +293,7 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                         {order.coupon_code ? ` (${order.coupon_code})` : ''}
                                         {order.redeemed_points > 0 ? ` - ${order.redeemed_points} ${t('pts')}` : ''}
                                     </span>
-                                    <strong>-${checkoutDiscountAmount.toFixed(2)}</strong>
+                                    <strong>-{formatMoney(checkoutDiscountAmount)}</strong>
                                 </div>
                             )}
                             {adminDiscountAmount > 0 && (
@@ -303,12 +304,12 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                             ? ` (${Number(order.admin_discount_value || 0).toFixed(2)}%)`
                                             : ''}
                                     </span>
-                                    <strong>-${adminDiscountAmount.toFixed(2)}</strong>
+                                    <strong>-{formatMoney(adminDiscountAmount)}</strong>
                                 </div>
                             )}
                             <div className="detail-row">
                                 <span>{t('Total')}</span>
-                                <strong style={{ fontSize: 15 }}>${Number(order.final_amount).toFixed(2)}</strong>
+                                <strong style={{ fontSize: 15 }}>{formatMoney(order.final_amount)}</strong>
                             </div>
                         </div>
                     </section>
@@ -423,15 +424,15 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
                                         <div className="approval-discount-summary">
                                             <div>
                                                 <span>{t('Current total')}</span>
-                                                <strong>${orderPayableAmount.toFixed(2)}</strong>
+                                                <strong>{formatMoney(orderPayableAmount)}</strong>
                                             </div>
                                             <div>
                                                 <span>{t('Approval discount')}</span>
-                                                <strong>-${approvalDiscountAmount.toFixed(2)}</strong>
+                                                <strong>-{formatMoney(approvalDiscountAmount)}</strong>
                                             </div>
                                             <div>
                                                 <span>{t('Customer pays')}</span>
-                                                <strong>${approvalFinalAmount.toFixed(2)}</strong>
+                                                <strong>{formatMoney(approvalFinalAmount)}</strong>
                                             </div>
                                         </div>
                                         {discountTooHigh && (

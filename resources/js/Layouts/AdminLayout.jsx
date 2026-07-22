@@ -230,7 +230,17 @@ function AdminChrome({ children, mainClassName = '' }) {
                                   label: t('admin.items.products', 'Products'),
                                   href: routeWithBase('/admin/products', app_base),
                                   icon: 'shop',
+                                  excludeActivePaths: [routeWithBase('/admin/products/barcodes', app_base)],
                               },
+                              ...(can('catalog.manage')
+                                  ? [
+                                        {
+                                            label: t('admin.items.barcode_printing', 'Barcode printing'),
+                                            href: routeWithBase('/admin/products/barcodes', app_base),
+                                            icon: 'barcode',
+                                        },
+                                    ]
+                                  : []),
                               {
                                   label: t('admin.items.categories', 'Categories'),
                                   href: routeWithBase('/admin/categories', app_base),
@@ -270,9 +280,6 @@ function AdminChrome({ children, mainClassName = '' }) {
                                   : []),
                               ...(can('locations.view')
                                   ? [{ label: t('admin.items.warehouses', 'Warehouses'), href: routeWithBase('/admin/locations', app_base), icon: 'box' }]
-                                  : []),
-                              ...(can('registers.manage')
-                                  ? [{ label: t('admin.items.registers', 'Registers'), href: routeWithBase('/admin/registers', app_base), icon: 'card' }]
                                   : []),
                           ],
                       },

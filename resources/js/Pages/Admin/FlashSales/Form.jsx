@@ -6,6 +6,7 @@ import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 const emptyForm = {
     name: '',
@@ -375,7 +376,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                         <small className="muted" style={{ display: 'block' }}>{skuLabel(sku)} - {t('available')} {sku.available_qty}</small>
                                                     </td>
                                                     <td>
-                                                        <span className="price-pill">${Number(sku.price).toFixed(2)}</span>
+                                                        <span className="price-pill">{formatMoney(sku.price)}</span>
                                                     </td>
                                                     <td>
                                                         <div className="sale-control select-control">
@@ -391,7 +392,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                     </td>
                                                     <td>
                                                         <div className="sale-control input-control">
-                                                            <span>{item.discount_type === 'percentage' ? '%' : '$'}</span>
+                                                            <span>{item.discount_type === 'percentage' ? '%' : ''}</span>
                                                             <input
                                                                 type="number"
                                                                 min="0.01"
@@ -419,7 +420,7 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                     </td>
                                                     <td>
                                                         {salePrice ? (
-                                                            <span className="sale-price-preview">${salePrice.toFixed(2)}</span>
+                                                            <span className="sale-price-preview">{formatMoney(salePrice)}</span>
                                                         ) : (
                                                             <span className="muted">-</span>
                                                         )}
@@ -475,10 +476,10 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                     <td>
                                                         {item.discount_type === 'percentage'
                                                             ? `${Number(item.discount_value || 0)}% ${t('off')}`
-                                                            : `$${Number(item.discount_value || 0).toFixed(2)} ${t('fixed')}`}
+                                                            : `${formatMoney(item.discount_value || 0)} ${t('fixed')}`}
                                                     </td>
                                                     <td>{item.quantity_limit || t('No limit')}</td>
-                                                    <td>{salePrice ? `$${salePrice.toFixed(2)}` : '-'}</td>
+                                                    <td>{salePrice ? formatMoney(salePrice) : '-'}</td>
                                                     <td>
                                                         <button type="button" className="icon-btn small danger" onClick={() => removeSku(sku.id)} aria-label={t('Remove overlapping SKU')}>
                                                             <Icon name="trash" size={13} />

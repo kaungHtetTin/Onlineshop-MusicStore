@@ -3,6 +3,7 @@ import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { normalizeOptionKey, variantLabel } from '@/Components/Admin/productFormUtils';
 import { storageUrl } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatErrorMessage } from '@/Utils/formatErrorMessage';
 
 export default function ProductFormUI({
     mode,
@@ -31,6 +32,7 @@ export default function ProductFormUI({
     setImageKeyForSku,
     onProductNameChange,
     onRegenerateSku,
+    onGenerateBarcode,
     onSkuStructureChange,
 }) {
     const t = usePhraseTranslation();
@@ -124,12 +126,12 @@ export default function ProductFormUI({
                         <label className="form-field span-2">
                             <span>{t('Product name')}</span>
                             <input value={data.name} onChange={(e) => onProductNameChange(e.target.value)} required />
-                            {errors.name && <small style={{ color: '#ce4444' }}>{errors.name}</small>}
+                            {errors.name && <small style={{ color: '#ce4444' }}>{formatErrorMessage(errors.name)}</small>}
                         </label>
                         <label className="form-field span-2">
                             <span>{t('Description')}</span>
                             <textarea value={data.description} onChange={(e) => setData('description', e.target.value)} />
-                            {errors.description && <small style={{ color: '#ce4444' }}>{errors.description}</small>}
+                            {errors.description && <small style={{ color: '#ce4444' }}>{formatErrorMessage(errors.description)}</small>}
                         </label>
                     </div>
                 </section>
@@ -360,7 +362,20 @@ export default function ProductFormUI({
                                     </label>
                                     <label className="form-field">
                                         <span>{t('Barcode')}</span>
-                                        <input value={v.barcode} onChange={(e) => onUpdateSku(idx, { barcode: e.target.value })} />
+                                        <div className="field-with-action">
+                                            <input value={v.barcode} onChange={(e) => onUpdateSku(idx, { barcode: e.target.value })} />
+                                            <button
+                                                type="button"
+                                                className="icon-btn"
+                                                onClick={() => onGenerateBarcode(idx)}
+                                                aria-label={t('Generate barcode')}
+                                                title={t('Generate barcode')}
+                                                disabled={processing}
+                                            >
+                                                <Icon name="barcode" size={16} />
+                                            </button>
+                                        </div>
+                                        {errors[`skus.${idx}.barcode`] && <small style={{ color: '#ce4444' }}>{formatErrorMessage(errors[`skus.${idx}.barcode`])}</small>}
                                     </label>
                                     <label className="form-field">
                                         <span>{t('Original price')}</span>
@@ -399,7 +414,7 @@ export default function ProductFormUI({
                             <option value="inactive">{t('Inactive')}</option>
                             <option value="draft">{t('Draft')}</option>
                         </select>
-                        {errors.status && <small style={{ color: '#ce4444' }}>{errors.status}</small>}
+                        {errors.status && <small style={{ color: '#ce4444' }}>{formatErrorMessage(errors.status)}</small>}
                     </label>
                     <label className="form-field checkbox-row" style={{ marginTop: 10 }}>
                         <input type="checkbox" checked={data.is_featured} onChange={(e) => setData('is_featured', e.target.checked)} />
@@ -419,7 +434,7 @@ export default function ProductFormUI({
                                 </option>
                             ))}
                         </select>
-                        {errors.category_id && <small style={{ color: '#ce4444' }}>{errors.category_id}</small>}
+                        {errors.category_id && <small style={{ color: '#ce4444' }}>{formatErrorMessage(errors.category_id)}</small>}
                     </label>
                 </section>
             </div>

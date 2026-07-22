@@ -19,6 +19,7 @@ import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
+import { formatMoney } from '@/Utils/pricing';
 import {
     eyebrowSxForTheme,
     getMusicStoreColors,
@@ -127,11 +128,11 @@ export default function CartIndex() {
                                         </Typography>
                                     )}
                                     <Typography variant="body2" color="primary" sx={{ fontWeight: 800 }}>
-                                        ${Number(line.price).toFixed(2)} {t('each')}
+                                        {formatMoney(line.price)} {t('each')}
                                     </Typography>
                                     {line.flashSale && line.originalPrice && (
                                         <Typography variant="caption" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
-                                            ${Number(line.originalPrice).toFixed(2)}
+                                            {formatMoney(line.originalPrice)}
                                         </Typography>
                                     )}
                                 </Box>
@@ -147,7 +148,7 @@ export default function CartIndex() {
                                     }}
                                 >
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                        ${(line.price * line.qty).toFixed(2)}
+                                        {formatMoney(line.price * line.qty)}
                                     </Typography>
                                     <Stack
                                         direction="row"
@@ -193,7 +194,7 @@ export default function CartIndex() {
                                     {t('Subtotal')}
                                 </Typography>
                                 <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                                    ${subtotal.toFixed(2)}
+                                    {formatMoney(subtotal)}
                                 </Typography>
                             </Stack>
                             <Divider sx={{ my: 2 }} />

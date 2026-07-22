@@ -8,7 +8,7 @@ import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
 const money = (value) =>
-    `$${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 const emptyEntry = {
     type: 'expense',
@@ -40,6 +40,27 @@ function categoryLabel(options, type, value) {
     return (options.categories?.[type] || []).find((item) => item.value === value)?.label || value;
 }
 
+function smoothLinePath(points) {
+    if (points.length === 0) {
+        return '';
+    }
+
+    if (points.length === 1) {
+        return `M ${points[0].x} ${points[0].y}`;
+    }
+
+    return points.reduce((path, point, index) => {
+        if (index === 0) {
+            return `M ${point.x} ${point.y}`;
+        }
+
+        const previous = points[index - 1];
+        const controlX = (previous.x + point.x) / 2;
+
+        return `${path} C ${controlX} ${previous.y}, ${controlX} ${point.y}, ${point.x} ${point.y}`;
+    }, '');
+}
+
 function DailyFinanceChart({ trend }) {
     const t = usePhraseTranslation();
     const chart = useMemo(() => {
@@ -65,7 +86,7 @@ function DailyFinanceChart({ trend }) {
         const innerHeight = height - padding.top - padding.bottom;
         const xFor = (index) => padding.left + (rows.length === 1 ? innerWidth / 2 : (index / (rows.length - 1)) * innerWidth);
         const yFor = (value) => padding.top + ((max - value) / range) * innerHeight;
-        const lineFor = (key) => rows.map((row, index) => `${xFor(index)},${yFor(row[key])}`).join(' ');
+        const pathFor = (key) => smoothLinePath(rows.map((row, index) => ({ x: xFor(index), y: yFor(row[key]) })));
         const ticks = Array.from({ length: 5 }, (_, index) => min + (range / 4) * index).reverse();
         const labelStep = Math.max(1, Math.ceil(rows.length / 5));
 
@@ -77,7 +98,7 @@ function DailyFinanceChart({ trend }) {
             innerWidth,
             xFor,
             yFor,
-            lineFor,
+            pathFor,
             ticks,
             labelStep,
             zeroY: yFor(0),
@@ -133,10 +154,10 @@ function DailyFinanceChart({ trend }) {
                     y2={chart.zeroY}
                 />
                 {series.map((item) => (
-                    <polyline
+                    <path
                         key={item.key}
                         className={`chart-line ${item.className}`}
-                        points={chart.lineFor(item.key)}
+                        d={chart.pathFor(item.key)}
                     />
                 ))}
                 {series.map((item) => chart.rows.map((row, index) => (

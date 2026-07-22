@@ -992,6 +992,32 @@
   justify-content: center;
 }
 
+.app-root .filter-toolbar.barcode-filter {
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.app-root .barcode-filter-search,
+.app-root .barcode-filter-controls {
+  min-width: 0;
+}
+
+.app-root .barcode-filter-search .search-box {
+  width: 100%;
+}
+
+.app-root .barcode-filter-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.app-root .filter-toolbar.barcode-filter .btn {
+  min-height: 36px;
+  justify-content: center;
+}
+
 .app-root .filter-toolbar.payment-method-filter {
   grid-template-columns: minmax(260px, 1fr) 220px 180px;
   align-items: stretch;
@@ -1058,35 +1084,47 @@
 }
 
 .app-root .chart-dot.income,
-.app-root .chart-line.income,
 .app-root .chart-point.income {
   color: #168255;
-  stroke: #168255;
+  background: #168255;
   fill: #168255;
 }
 
+.app-root .chart-line.income {
+  stroke: #168255;
+}
+
 .app-root .chart-dot.expenses,
-.app-root .chart-line.expenses,
 .app-root .chart-point.expenses {
   color: #ce4444;
-  stroke: #ce4444;
+  background: #ce4444;
   fill: #ce4444;
 }
 
+.app-root .chart-line.expenses {
+  stroke: #ce4444;
+}
+
 .app-root .chart-dot.net,
-.app-root .chart-line.net,
 .app-root .chart-point.net {
   color: #2874bc;
-  stroke: #2874bc;
+  background: #2874bc;
   fill: #2874bc;
 }
 
+.app-root .chart-line.net {
+  stroke: #2874bc;
+}
+
 .app-root .chart-dot.orders,
-.app-root .chart-line.orders,
 .app-root .chart-point.orders {
   color: #2874bc;
-  stroke: #2874bc;
+  background: #2874bc;
   fill: #2874bc;
+}
+
+.app-root .chart-line.orders {
+  stroke: #2874bc;
 }
 
 .app-root .chart-bar.revenue {
@@ -1796,6 +1834,93 @@
   align-items: center;
   gap: 6px;
   justify-content: flex-end;
+}
+
+.app-root .barcode-sku-table th:first-child,
+.app-root .barcode-sku-table td:first-child {
+  width: 72px;
+  text-align: center;
+}
+
+.app-root .barcode-copy-input {
+  width: 64px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.app-root .barcode-print-sheet {
+  display: none;
+}
+
+.app-root .barcode-label {
+  width: 50mm;
+  height: 30mm;
+  padding: 2mm;
+  border: 1px dashed color-mix(in srgb, var(--color-border) 80%, transparent);
+  background: #fff;
+  color: #111827;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1mm;
+  box-sizing: border-box;
+  page-break-inside: avoid;
+}
+
+.app-root .barcode-label-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2mm;
+  align-items: start;
+}
+
+.app-root .barcode-label strong,
+.app-root .barcode-label span,
+.app-root .barcode-label small,
+.app-root .barcode-label b {
+  color: #111827;
+  line-height: 1.05;
+}
+
+.app-root .barcode-label strong {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 8.5pt;
+  font-weight: 800;
+}
+
+.app-root .barcode-label span {
+  font-size: 8pt;
+  font-weight: 800;
+}
+
+.app-root .barcode-label small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 6.8pt;
+  font-weight: 700;
+}
+
+.app-root .barcode-label b {
+  text-align: center;
+  font-size: 7pt;
+  letter-spacing: 0.5px;
+}
+
+.app-root .barcode-svg {
+  width: 100%;
+  height: 11mm;
+  display: block;
+  fill: #111827;
 }
 
 .app-root .ledger-pagination {
@@ -2810,6 +2935,10 @@
     grid-template-columns: minmax(260px, 1fr) 180px 150px;
   }
 
+  .app-root .filter-toolbar.barcode-filter {
+    grid-template-columns: 1fr;
+  }
+
   .app-root .finance-filter-row.controls-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2968,6 +3097,14 @@
 
   .app-root .filter-toolbar.payment-method-filter {
     grid-template-columns: 1fr;
+  }
+
+  .app-root .filter-toolbar.barcode-filter {
+    grid-template-columns: 1fr;
+  }
+
+  .app-root .barcode-filter-controls {
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
   }
 
   .app-root .finance-filter-row.search-row,
@@ -5949,6 +6086,11 @@
 }
 
 @media print {
+  @page {
+    size: A4;
+    margin: 5mm;
+  }
+
   .no-print,
   .admin-sidebar,
   .admin-topbar,
@@ -5958,6 +6100,37 @@
 
   .admin-main {
     margin: 0 !important;
+  }
+
+  body.barcode-print-mode {
+    background: #fff !important;
+  }
+
+  body.barcode-print-mode .admin-main,
+  body.barcode-print-mode .admin-content.barcode-print-page {
+    width: auto !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+  }
+
+  body.barcode-print-mode .admin-content.barcode-print-page > :not(.barcode-print-sheet) {
+    display: none !important;
+  }
+
+  body.barcode-print-mode .barcode-print-sheet {
+    display: grid !important;
+    width: 200mm;
+    grid-template-columns: repeat(4, 50mm);
+    grid-auto-rows: 30mm;
+    gap: 0;
+    margin: 0 auto;
+  }
+
+  body.barcode-print-mode .barcode-label {
+    border: 0;
+    break-inside: avoid;
   }
 
   .pos-receipt-paper {
@@ -5992,6 +6165,10 @@
 }
 
 @media (max-width: 640px) {
+  .app-root .barcode-filter-controls {
+    grid-template-columns: 1fr;
+  }
+
   .transfer-timeline {
     flex-direction: column;
   }

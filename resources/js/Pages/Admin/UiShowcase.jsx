@@ -8,7 +8,7 @@ const metrics = [
     { label: 'Active users', value: '2,431', hint: '+8.3% this week', icon: 'user' },
     { label: 'Total orders', value: '1,240', hint: '+2.1% this week', icon: 'receipt' },
     { label: 'Server status', value: 'Healthy', hint: '100% uptime', icon: 'check' },
-    { label: 'Revenue', value: '$12,480', hint: '+5.7% this week', icon: 'wallet' },
+    { label: 'Revenue', value: '12,480', hint: '+5.7% this week', icon: 'wallet' },
 ];
 
 export default function UiShowcase() {

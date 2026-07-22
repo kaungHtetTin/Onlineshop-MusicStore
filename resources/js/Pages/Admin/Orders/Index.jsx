@@ -7,6 +7,7 @@ import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import { orderStatusLabels, paymentLabels } from '@/constants/orderLabels';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 const tabs = [
     { key: '', label: 'All orders' },
@@ -56,7 +57,7 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                 <MetricCard label="Delivered" value={stats.delivered} icon="check" />
                 <MetricCard
                     label="Revenue (paid)"
-                    value={`$${Number(stats.revenue_paid).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    value={formatMoney(stats.revenue_paid)}
                     icon="card"
                 />
             </div>
@@ -163,7 +164,7 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                                         </td>
                                         <td>{order.items_count ?? order.items?.length ?? 0}</td>
                                         <td>
-                                            <strong>${Number(order.final_amount).toFixed(2)}</strong>
+                                            <strong>{formatMoney(order.final_amount)}</strong>
                                         </td>
                                         <td>
                                             <StatusBadge

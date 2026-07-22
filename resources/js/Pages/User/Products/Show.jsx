@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { usePage, Link, useForm, router } from '@/spa/router';
 import { 
     Box, Container, Typography, Stack, 
@@ -15,6 +15,8 @@ import {
     FavoriteBorder,
     Share,
     ShoppingBag,
+    ChevronLeft,
+    ChevronRight,
     Star,
     StarBorder
 } from '@mui/icons-material';
@@ -49,7 +51,10 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     const ORDER_QTY_MAX = 999;
     const { app_url, app_base, auth } = usePage().props;
     const t = usePhraseTranslation();
-    const [selectedSku, setSelectedSku] = useState(product.skus[0] || null);
+    const productSkus = product.skus || [];
+    const [selectedSku, setSelectedSku] = useState(() => (
+        productSkus.find((sku) => sku.is_active !== false && Number(sku.available_qty ?? 0) > 0) || null
+    ));
     const [quantity, setQuantity] = useState(1);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [cartToast, setCartToast] = useState(false);
@@ -64,15 +69,26 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     const images = useMemo(() => {
         return product.images.length > 0 ? product.images : [{ image_path: 'https://via.placeholder.com/600?text=No+Image' }];
     }, [product.images]);
+    const buyableSkus = useMemo(
+        () => productSkus.filter((sku) => sku.is_active !== false && Number(sku.available_qty ?? 0) > 0),
+        [productSkus]
+    );
+    const hasMultipleImages = images.length > 1;
 
-    useEffect(() => {
-        if (!selectedSku?.image?.image_path || images.length === 0) return;
-        const skuImagePath = selectedSku.image.image_path;
-        const idx = images.findIndex((img) => img?.image_path === skuImagePath || img?.id === selectedSku?.image?.id);
-        if (idx >= 0 && idx !== activeImageIndex) {
-            setActiveImageIndex(idx);
-        }
-    }, [selectedSku, images, activeImageIndex]);
+    const selectImage = useCallback((index) => {
+        if (images.length === 0) return;
+
+        const nextIndex = (index + images.length) % images.length;
+        setActiveImageIndex(nextIndex);
+    }, [images]);
+
+    const showPreviousImage = useCallback(() => {
+        selectImage(activeImageIndex - 1);
+    }, [activeImageIndex, selectImage]);
+
+    const showNextImage = useCallback(() => {
+        selectImage(activeImageIndex + 1);
+    }, [activeImageIndex, selectImage]);
 
     const handleQuantityChange = (delta) => {
         setQuantity(prev => Math.max(1, Math.min(selectedSkuQtyLimit, prev + delta)));
@@ -144,28 +160,127 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                 }}>
                     {/* Image Gallery */}
                     <Stack spacing={2} sx={{ width: '100%', maxWidth: { sm: 420 }, mx: 'auto' }}>
-                        <Box sx={{ 
-                            position: 'relative', 
-                            pt: '133.33%', 
-                            borderRadius: 2, 
-                            overflow: 'hidden',
-                            border: '1px solid',
-                            borderColor: 'rgba(36,27,24,0.1)',
-                            bgcolor: musicColors.sheet,
-                            boxShadow: '0 22px 58px rgba(36,27,24,0.14)',
-                        }}>
+                        <Box
+                            role={hasMultipleImages ? 'region' : undefined}
+                            aria-label={hasMultipleImages ? t('Product image carousel') : undefined}
+                            tabIndex={hasMultipleImages ? 0 : undefined}
+                            onKeyDown={(event) => {
+                                if (!hasMultipleImages) return;
+                                if (event.key === 'ArrowLeft') {
+                                    event.preventDefault();
+                                    showPreviousImage();
+                                }
+                                if (event.key === 'ArrowRight') {
+                                    event.preventDefault();
+                                    showNextImage();
+                                }
+                            }}
+                            sx={{
+                                position: 'relative',
+                                pt: '133.33%',
+                                borderRadius: 2,
+                                overflow: 'hidden',
+                                border: '1px solid',
+                                borderColor: 'rgba(36,27,24,0.1)',
+                                bgcolor: musicColors.sheet,
+                                boxShadow: '0 22px 58px rgba(36,27,24,0.14)',
+                                '&:focus-visible': {
+                                    outline: `3px solid ${musicColors.rosin}`,
+                                    outlineOffset: 3,
+                                },
+                            }}
+                        >
                             <Box 
                                 component="img" 
+                                key={images[activeImageIndex]?.id || images[activeImageIndex]?.image_path || activeImageIndex}
                                 src={productImageUrl(images[activeImageIndex], app_url)}
+                                alt={`${product.name} ${activeImageIndex + 1}`}
                                 sx={{ 
                                     position: 'absolute',
                                     top: 0,
                                     left: 0,
                                     width: '100%',
                                     height: '100%',
-                                    objectFit: 'cover'
+                                    objectFit: 'contain',
+                                    bgcolor: musicColors.sheet,
+                                    animation: 'productGalleryFade 180ms ease',
+                                    '@keyframes productGalleryFade': {
+                                        from: { opacity: 0.72, transform: 'scale(1.01)' },
+                                        to: { opacity: 1, transform: 'scale(1)' },
+                                    },
                                 }}
                             />
+                            {hasMultipleImages && (
+                                <>
+                                    <IconButton
+                                        onClick={showPreviousImage}
+                                        aria-label={t('Previous image')}
+                                        sx={{
+                                            position: 'absolute',
+                                            top: '50%',
+                                            left: 12,
+                                            transform: 'translateY(-50%)',
+                                            bgcolor: 'rgba(255,253,248,0.92)',
+                                            border: '1px solid rgba(36,27,24,0.12)',
+                                            boxShadow: '0 10px 24px rgba(36,27,24,0.16)',
+                                            '&:hover': { bgcolor: '#fff' },
+                                        }}
+                                    >
+                                        <ChevronLeft />
+                                    </IconButton>
+                                    <IconButton
+                                        onClick={showNextImage}
+                                        aria-label={t('Next image')}
+                                        sx={{
+                                            position: 'absolute',
+                                            top: '50%',
+                                            right: 12,
+                                            transform: 'translateY(-50%)',
+                                            bgcolor: 'rgba(255,253,248,0.92)',
+                                            border: '1px solid rgba(36,27,24,0.12)',
+                                            boxShadow: '0 10px 24px rgba(36,27,24,0.16)',
+                                            '&:hover': { bgcolor: '#fff' },
+                                        }}
+                                    >
+                                        <ChevronRight />
+                                    </IconButton>
+                                    <Stack
+                                        direction="row"
+                                        spacing={0.75}
+                                        sx={{
+                                            position: 'absolute',
+                                            left: '50%',
+                                            bottom: 14,
+                                            transform: 'translateX(-50%)',
+                                            px: 1,
+                                            py: 0.75,
+                                            borderRadius: 999,
+                                            bgcolor: 'rgba(255,253,248,0.9)',
+                                            border: '1px solid rgba(36,27,24,0.08)',
+                                        }}
+                                    >
+                                        {images.map((img, idx) => (
+                                            <Box
+                                                key={`dot-${img?.id || img?.image_path || idx}`}
+                                                component="button"
+                                                type="button"
+                                                aria-label={`${t('Show image')} ${idx + 1}`}
+                                                onClick={() => selectImage(idx)}
+                                                sx={{
+                                                    width: activeImageIndex === idx ? 18 : 7,
+                                                    height: 7,
+                                                    p: 0,
+                                                    border: 0,
+                                                    borderRadius: 999,
+                                                    cursor: 'pointer',
+                                                    bgcolor: activeImageIndex === idx ? musicColors.rosin : 'rgba(36,27,24,0.28)',
+                                                    transition: 'width 160ms ease, background-color 160ms ease',
+                                                }}
+                                            />
+                                        ))}
+                                    </Stack>
+                                </>
+                            )}
                         </Box>
                     </Stack>
 
@@ -211,16 +326,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             {images.map((img, idx) => (
                                 <Box 
                                     key={idx}
-                                    onClick={() => {
-                                        setActiveImageIndex(idx);
-                                        const relatedSku = product.skus.find(
-                                            (sku) => sku?.image?.id === img?.id || sku?.image?.image_path === img?.image_path
-                                        );
-                                        if (relatedSku) {
-                                            setSelectedSku(relatedSku);
-                                            setQuantity(1);
-                                        }
-                                    }}
+                                    onClick={() => selectImage(idx)}
                                     component="img"
                                     src={productImageUrl(img, app_url)}
                                     sx={{ 
@@ -239,24 +345,30 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                         <Divider />
 
                         {/* Variants Selection */}
-                        {product.skus.length > 1 && (
+                        {buyableSkus.length > 1 && (
                             <Box sx={{ py: 1 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 2 }}>{t('Choose finish / variant')}</Typography>
                                 <ToggleButtonGroup
                                     value={selectedSku?.id}
                                     exclusive
                                     onChange={(e, next) => {
-                                        const sku = product.skus.find(s => s.id === next);
+                                        const sku = buyableSkus.find(s => s.id === next);
                                         if (sku) {
                                             setSelectedSku(sku);
                                             setQuantity(1);
+                                            const skuImageIndex = images.findIndex(
+                                                (img) => sku?.image?.id === img?.id || sku?.image?.image_path === img?.image_path
+                                            );
+                                            if (skuImageIndex >= 0) {
+                                                setActiveImageIndex(skuImageIndex);
+                                            }
                                         }
                                     }}
                                     size="small"
                                     sx={{ flexWrap: 'wrap', gap: 1.5, '& .MuiToggleButton-root': { border: '1px solid !important', borderRadius: '8px !important', px: 2, py: 1 } }}
                                 >
-                                    {product.skus.map((sku) => (
-                                        <ToggleButton key={sku.id} value={sku.id} disabled={!sku.is_active}>
+                                    {buyableSkus.map((sku) => (
+                                        <ToggleButton key={sku.id} value={sku.id}>
                                             <Stack spacing={0.25} alignItems="flex-start">
                                                 <Typography variant="caption" sx={{ fontWeight: 600 }}>
                                                     {Object.values(sku.attributes || {}).join(' / ') || sku.sku_code}

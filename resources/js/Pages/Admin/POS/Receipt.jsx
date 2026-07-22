@@ -4,6 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 export default function PosReceipt({ order }) {
     const { app_base } = usePage().props;
@@ -34,15 +35,15 @@ export default function PosReceipt({ order }) {
                         {order.items.map((item) => (
                             <tr key={item.id}>
                                 <td><strong>{item.product.name}</strong><span>{item.sku?.sku_code} x {item.quantity}</span></td>
-                                <td>{Number(item.total_price).toFixed(2)}</td>
+                                <td>{formatMoney(item.total_price)}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
                 <div className="receipt-totals">
-                    <span>{t('Subtotal')}</span><strong>{Number(order.total_amount).toFixed(2)}</strong>
-                    <span>{t('Discount')}</span><strong>-{Number(order.discount_amount || 0).toFixed(2)}</strong>
-                    <span>{t('Total')}</span><strong>{Number(order.final_amount).toFixed(2)}</strong>
+                    <span>{t('Subtotal')}</span><strong>{formatMoney(order.total_amount)}</strong>
+                    <span>{t('Discount')}</span><strong>-{formatMoney(order.discount_amount || 0)}</strong>
+                    <span>{t('Total')}</span><strong>{formatMoney(order.final_amount)}</strong>
                     <span>{t('Tender')}</span><strong>{t(order.pos_tender_summary?.tender_type || order.payment_method)}</strong>
                 </div>
                 <footer>

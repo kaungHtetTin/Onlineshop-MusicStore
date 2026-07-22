@@ -4,4 +4,5 @@ export const skuOriginalPrice = (sku) => Number(sku?.flash_sale?.original_price 
 
 export const hasFlashSale = (sku) => Boolean(sku?.flash_sale);
 
-export const formatMoney = (value) => `$${Number(value || 0).toFixed(2)}`;
+export const formatMoney = (value) =>
+    Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });

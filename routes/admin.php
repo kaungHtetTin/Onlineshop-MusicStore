@@ -68,6 +68,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->middleware('admin.permission:catalog.manage')->name('categories.destroy');
 
     // Products
+    Route::get('/products/barcode/generate', [ProductController::class, 'generateBarcode'])->middleware('admin.permission:catalog.manage')->name('products.barcode.generate');
+    Route::get('/products/barcodes', [ProductController::class, 'barcodes'])->middleware('admin.permission:catalog.manage')->name('products.barcodes');
     Route::get('/products', [ProductController::class, 'index'])->middleware('admin.permission:catalog.view')->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->middleware('admin.permission:catalog.manage')->name('products.create');
     Route::post('/products', [ProductController::class, 'store'])->middleware('admin.permission:catalog.manage')->name('products.store');

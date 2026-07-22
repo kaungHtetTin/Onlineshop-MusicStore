@@ -7,6 +7,7 @@ import AdminPagination from '@/Components/Admin/AdminPagination';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 const emptyCoupon = {
     code: '',
@@ -136,8 +137,8 @@ export default function CouponsIndex({ coupons, filters }) {
                             ) : coupons.data.map((coupon) => (
                                 <tr key={coupon.id}>
                                     <td><strong>{coupon.code}</strong></td>
-                                    <td>{coupon.type === 'percentage' ? `${Number(coupon.value).toFixed(0)}%` : `$${Number(coupon.value).toFixed(2)}`}</td>
-                                    <td>${Number(coupon.min_order_amount).toFixed(2)}</td>
+                                    <td>{coupon.type === 'percentage' ? `${Number(coupon.value).toFixed(0)}%` : formatMoney(coupon.value)}</td>
+                                    <td>{formatMoney(coupon.min_order_amount)}</td>
                                     <td>{coupon.used_count}{coupon.usage_limit ? ` / ${coupon.usage_limit}` : ''}</td>
                                     <td><StatusBadge status={coupon.is_active ? 'success' : 'neutral'} label={coupon.is_active ? t('Active') : t('Inactive')} /></td>
                                     <td>

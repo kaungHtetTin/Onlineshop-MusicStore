@@ -22,6 +22,7 @@ import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 const statusColor = {
     pending: 'warning',
@@ -149,11 +150,11 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                                         {item.product?.name}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                        {t('Qty')} {item.quantity} - ${Number(item.unit_price).toFixed(2)} {t('each')}
+                                        {t('Qty')} {item.quantity} - {formatMoney(item.unit_price)} {t('each')}
                                     </Typography>
                                 </Box>
                                 <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                                    ${Number(item.total_price).toFixed(2)}
+                                    {formatMoney(item.total_price)}
                                 </Typography>
                             </Stack>
                         ))}
@@ -162,18 +163,18 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                     <Stack spacing={0.75}>
                         <Stack direction="row" justifyContent="space-between">
                             <Typography variant="body2">{t('Subtotal')}</Typography>
-                            <Typography variant="body2">${Number(order.total_amount).toFixed(2)}</Typography>
+                            <Typography variant="body2">{formatMoney(order.total_amount)}</Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between">
                             <Typography variant="body2">{t('Shipping')}</Typography>
-                            <Typography variant="body2">${Number(order.shipping_fee).toFixed(2)}</Typography>
+                            <Typography variant="body2">{formatMoney(order.shipping_fee)}</Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between" sx={{ pt: 1 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
                                 Total
                             </Typography>
                             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                ${Number(order.final_amount).toFixed(2)}
+                                {formatMoney(order.final_amount)}
                             </Typography>
                         </Stack>
                     </Stack>

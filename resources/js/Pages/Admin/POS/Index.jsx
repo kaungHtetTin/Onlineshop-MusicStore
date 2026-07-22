@@ -54,7 +54,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 
 const makeId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-const money = (value) => Number(value || 0).toFixed(2);
+const money = (value) => Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 const POS_RESULT_PAGE_SIZE = 24;
 const POS_TABLE_ROW_HEIGHT = 54;
 const POS_GRID_ROW_HEIGHT = 126;
@@ -101,7 +101,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     const productScrollFrameRef = useRef(null);
 
     const location = locations.find((item) => Number(item.id) === Number(locationId));
-    const currencySymbol = '$';
+    const currencySymbol = '';
     const paymentMethods = ['cash', 'card', 'mobile'];
 
     const api = async (url, options = {}) => {

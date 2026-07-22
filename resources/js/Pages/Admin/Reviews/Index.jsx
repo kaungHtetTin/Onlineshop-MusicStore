@@ -13,6 +13,7 @@ export default function ReviewsIndex({ reviews, filters }) {
     const t = usePhraseTranslation();
     const [search, setSearch] = useState(filters.q ?? '');
     const applyFilters = (patch) => router.get(routeWithBase('/admin/reviews', app_base), { ...filters, ...patch }, { preserveState: true, replace: true });
+    const hasActiveFilters = Boolean(filters.q || filters.status);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -34,7 +35,7 @@ export default function ReviewsIndex({ reviews, filters }) {
             <AdminFlash flash={flash} />
             <section className="panel glass">
                 <PanelHeading eyebrow={t('Product feedback')} title={t('Customer reviews')} />
-                <form className="filter-toolbar" onSubmit={handleSearch}>
+                <form className="filter-toolbar customer-filter" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input
@@ -51,12 +52,15 @@ export default function ReviewsIndex({ reviews, filters }) {
                     <button type="submit" className="btn primary">{t('Search')}</button>
                 </form>
 
-                {(filters.q || filters.status) && (
+                {hasActiveFilters && (
                     <button
                         type="button"
                         className="text-btn"
                         style={{ marginBottom: 10 }}
-                        onClick={() => router.get(routeWithBase('/admin/reviews', app_base))}
+                        onClick={() => {
+                            setSearch('');
+                            router.get(routeWithBase('/admin/reviews', app_base));
+                        }}
                     >
                         {t('Reset filters')}
                     </button>

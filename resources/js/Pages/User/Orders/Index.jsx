@@ -8,6 +8,7 @@ import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 const statusColor = {
     pending: 'warning',
@@ -96,7 +97,7 @@ export default function OrdersIndex({ orders }) {
                                             variant="outlined"
                                         />
                                         <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                            ${Number(order.final_amount).toFixed(2)}
+                                            {formatMoney(order.final_amount)}
                                         </Typography>
                                     </Stack>
                                 </Stack>

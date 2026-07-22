@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { Card, CardMedia, CardContent, Typography, Box, IconButton, Rating, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox } from '@mui/material';
-import { FavoriteBorder, Favorite, AddShoppingCart, Add, Remove } from '@mui/icons-material';
+import { Card, CardMedia, CardContent, Typography, Box, IconButton, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox } from '@mui/material';
+import { FavoriteBorder, Favorite, AddShoppingCart, Add, Remove, StarRounded } from '@mui/icons-material';
 import { usePage, Link } from '@/spa/router';
 import { storageUrl, routeWithBase } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
@@ -51,6 +51,11 @@ const ProductCard = ({ product }) => {
     }, [purchasableSkus]);
     const minPrice = displaySku ? skuPrice(displaySku) : 0;
     const showFlashPrice = displaySku && hasFlashSale(displaySku) && skuOriginalPrice(displaySku) > minPrice;
+    const ratingValue = Number(product.rating || 0);
+    const reviewCount = Number(product.review_count || 0);
+    const reviewText = reviewCount > 0
+        ? `${reviewCount.toLocaleString()} ${t(reviewCount === 1 ? 'review' : 'reviews')}`
+        : t('No reviews yet');
 
     const imageUrl = useMemo(() => {
         return product.primary_image
@@ -282,10 +287,21 @@ const ProductCard = ({ product }) => {
                     {product.name}
                 </Typography>
 
-                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1 }}>
-                    <Rating value={parseFloat(product.rating || 0)} readOnly size="small" precision={0.5} sx={{ fontSize: '0.75rem' }} />
-                    <Typography variant="caption" sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>
-                        ({product.review_count || 0})
+                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1, minHeight: 18 }}>
+                    <StarRounded sx={{ fontSize: '0.95rem', color: reviewCount > 0 ? '#f5a623' : 'text.disabled' }} />
+                    <Typography variant="caption" sx={{ fontSize: '0.72rem', color: 'text.primary', fontWeight: 800 }}>
+                        {ratingValue > 0 ? ratingValue.toFixed(1).replace(/\.0$/, '') : '0'}
+                    </Typography>
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            fontSize: '0.7rem',
+                            color: 'text.secondary',
+                            fontWeight: 700,
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        {reviewCount > 0 ? `- ${reviewText}` : reviewText}
                     </Typography>
                 </Stack>
 

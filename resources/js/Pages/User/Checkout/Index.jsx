@@ -25,6 +25,7 @@ import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
+import { formatMoney } from '@/Utils/pricing';
 import {
     eyebrowSxForTheme,
     getMusicStoreColors,
@@ -432,19 +433,19 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                         )}
                                     </Box>
                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                        ${(line.price * line.qty).toFixed(2)}
+                                        {formatMoney(line.price * line.qty)}
                                     </Typography>
                                 </Stack>
                             ))}
                             <Divider />
                             <Stack direction="row" justifyContent="space-between">
                                 <Typography variant="body2">{t('Subtotal')}</Typography>
-                                <Typography variant="body2">${Number(quote?.subtotal ?? subtotal).toFixed(2)}</Typography>
+                                <Typography variant="body2">{formatMoney(quote?.subtotal ?? subtotal)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between">
                                 <Typography variant="body2">{t('Shipping')}</Typography>
                                 <Typography variant="body2">
-                                    {Number(quote?.shipping ?? shipping) === 0 ? t('Free') : `$${Number(quote?.shipping ?? shipping).toFixed(2)}`}
+                                    {Number(quote?.shipping ?? shipping) === 0 ? t('Free') : formatMoney(quote?.shipping ?? shipping)}
                                 </Typography>
                             </Stack>
                             {(quote?.coupon_discount > 0 || quote?.points_value > 0) && (
@@ -453,7 +454,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                         <Stack direction="row" justifyContent="space-between">
                                             <Typography variant="body2">{t('Coupon')} {quote.coupon_code}</Typography>
                                             <Typography variant="body2" color="success.main">
-                                                -${Number(quote.coupon_discount).toFixed(2)}
+                                                -{formatMoney(quote.coupon_discount)}
                                             </Typography>
                                         </Stack>
                                     )}
@@ -461,7 +462,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                         <Stack direction="row" justifyContent="space-between">
                                             <Typography variant="body2">{t('Points')} ({quote.redeemed_points})</Typography>
                                             <Typography variant="body2" color="success.main">
-                                                -${Number(quote.points_value).toFixed(2)}
+                                                -{formatMoney(quote.points_value)}
                                             </Typography>
                                         </Stack>
                                     )}
@@ -487,7 +488,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                     {t('Total to pay')}
                                 </Typography>
                                 <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                                    ${total.toFixed(2)}
+                                    {formatMoney(total)}
                                 </Typography>
                             </Stack>
                             {proofPreview && (

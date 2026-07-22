@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import axios from 'axios';
 import { Head, Link, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
@@ -8,6 +9,7 @@ import { normalizeOptionKey, refreshAutoSkuCodes } from '@/Components/Admin/prod
 import { imageExtensionFromType } from '@/Utils/imageCompression';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatErrorMessage } from '@/Utils/formatErrorMessage';
 
 export default function Edit({ product, categories, app_base }) {
     const { app_url } = usePage().props;
@@ -82,6 +84,17 @@ export default function Edit({ product, categories, app_base }) {
     };
 
     const removeSku = (index) => setData('skus', refreshSkuCodes(data.skus.filter((_, i) => i !== index)));
+
+    const generateBarcode = async (index) => {
+        const reserved = data.skus
+            .map((sku, skuIndex) => (skuIndex === index ? null : sku.barcode))
+            .filter(Boolean);
+        const response = await axios.get(routeWithBase('/admin/products/barcode/generate', app_base), {
+            params: { reserved },
+        });
+
+        updateSku(index, { barcode: response.data.barcode });
+    };
 
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
@@ -178,7 +191,7 @@ export default function Edit({ product, categories, app_base }) {
                     {Object.entries(errors).map(([key, err]) => (
                         <div key={key}>
                             <small>
-                                {key}: {err}
+                                {key}: {formatErrorMessage(err)}
                             </small>
                         </div>
                     ))}
@@ -217,6 +230,7 @@ export default function Edit({ product, categories, app_base }) {
                         ));
                         setData('skus', refreshSkuCodes(nextSkus));
                     }}
+                    onGenerateBarcode={generateBarcode}
                     onSkuStructureChange={(skus, nextOptions) => setData('skus', refreshSkuCodes(skus, data.name, namesFromOptions(nextOptions)))}
                 />
             </form>

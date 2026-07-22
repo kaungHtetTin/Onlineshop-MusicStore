@@ -5,6 +5,7 @@ import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
 export default function ReceiptShow({ receipt, canEdit, canPost, canDelete }) {
     const { app_base, flash } = usePage().props;
@@ -74,7 +75,7 @@ export default function ReceiptShow({ receipt, canEdit, canPost, canDelete }) {
                                         <small className="table-subline">{item.sku.sku_code}</small>
                                     </td>
                                     <td className="quantity-positive">+{item.received_quantity}</td>
-                                    <td>{item.unit_cost === null ? '-' : Number(item.unit_cost).toFixed(2)}</td>
+                                    <td>{item.unit_cost === null ? '-' : formatMoney(item.unit_cost)}</td>
                                     <td>{item.movement_id || '-'}</td>
                                 </tr>
                             ))}

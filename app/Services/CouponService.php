@@ -34,7 +34,7 @@ class CouponService
 
         if ($subtotal < (float) $coupon->min_order_amount) {
             throw ValidationException::withMessages([
-                'coupon_code' => 'This coupon requires a minimum order of $'.number_format((float) $coupon->min_order_amount, 2).'.',
+                'coupon_code' => 'This coupon requires a minimum order of '.rtrim(rtrim(number_format((float) $coupon->min_order_amount, 2), '0'), '.').'.',
             ]);
         }
 

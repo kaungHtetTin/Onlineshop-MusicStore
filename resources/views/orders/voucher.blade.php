@@ -3,7 +3,7 @@
     $contacts = $settings['contacts'] ?? [];
     $checkoutDiscount = max(0, (float) ($order->discount_amount ?? 0) - (float) ($order->admin_discount_amount ?? 0));
     $adminDiscount = (float) ($order->admin_discount_amount ?? 0);
-    $formatMoney = fn ($value) => '$'.number_format((float) $value, 2);
+    $formatMoney = fn ($value) => rtrim(rtrim(number_format((float) $value, 2), '0'), '.');
 @endphp
 <!doctype html>
 <html lang="en">
