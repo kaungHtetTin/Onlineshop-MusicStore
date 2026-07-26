@@ -10,6 +10,7 @@ class AppSettingsService
 {
     public const DEFAULTS = [
         'app_name' => 'LaLaPick',
+        'currency_label' => 'MMK',
         'theme_color' => '#087f74',
         'logo_path' => null,
         'favicon_path' => null,
@@ -30,6 +31,7 @@ class AppSettingsService
 
             return [
                 'app_name' => $settings['app_name'] ?? self::DEFAULTS['app_name'],
+                'currency_label' => $settings['currency_label'] ?? self::DEFAULTS['currency_label'],
                 'theme_color' => $settings['theme_color'] ?? self::DEFAULTS['theme_color'],
                 'logo_path' => $settings['logo_path'] ?? null,
                 'favicon_path' => $settings['favicon_path'] ?? null,

@@ -19,6 +19,8 @@ use App\Support\Spa;
 
 class ProductController extends Controller
 {
+    private const MAX_VARIANT_OPTIONS = 5;
+
     public function index()
     {
         return Spa::render('Admin/Products/Index', [
@@ -146,6 +148,8 @@ class ProductController extends Controller
             'status' => 'required|string|in:active,inactive,draft',
             'is_featured' => 'boolean',
             'metadata' => 'nullable|array',
+            'metadata.options' => 'nullable|array|max:' . self::MAX_VARIANT_OPTIONS,
+            'metadata.options.*.name' => 'required_with:metadata.options|string|max:255',
             'mainImageAttachmentId' => 'nullable|integer',
             'imageAttachmentIds' => 'nullable|array',
             'images' => 'nullable|array',
@@ -239,6 +243,8 @@ class ProductController extends Controller
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
             'metadata' => 'nullable|array',
+            'metadata.options' => 'nullable|array|max:' . self::MAX_VARIANT_OPTIONS,
+            'metadata.options.*.name' => 'required_with:metadata.options|string|max:255',
             'mainImageAttachmentId' => 'nullable|integer',
             'imageAttachmentIds' => 'nullable|array',
             'images' => 'nullable|array',

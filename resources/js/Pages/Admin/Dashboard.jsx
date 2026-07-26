@@ -6,9 +6,9 @@ import { Head, Link, usePage } from '@/spa/router';
 import { routeWithBase } from '@/Utils/url';
 import { paymentLabels } from '@/constants/orderLabels';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
-const money = (value) =>
-    Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+const money = formatMoney;
 
 const compactNumber = (value) => Number(value || 0).toLocaleString();
 

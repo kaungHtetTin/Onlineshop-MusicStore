@@ -129,6 +129,7 @@ export default function SettingsEdit({ settings }) {
     const t = usePhraseTranslation();
     const form = useForm({
         app_name: settings.app_name || '',
+        currency_label: settings.currency_label || 'MMK',
         theme_color: settings.theme_color || '#087f74',
         logo: null,
         favicon: null,
@@ -236,6 +237,18 @@ export default function SettingsEdit({ settings }) {
                                         maxLength={80}
                                     />
                                     {form.errors.app_name && <small className="field-error">{form.errors.app_name}</small>}
+                                </label>
+
+                                <label className="form-field">
+                                    <span>{t('Currency label')}</span>
+                                    <input
+                                        value={form.data.currency_label}
+                                        onChange={(e) => form.setData('currency_label', e.target.value)}
+                                        placeholder="USD, MMK, CNY"
+                                        required
+                                        maxLength={12}
+                                    />
+                                    {form.errors.currency_label && <small className="field-error">{form.errors.currency_label}</small>}
                                 </label>
 
                                 <label className="form-field">

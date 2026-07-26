@@ -4,5 +4,14 @@ export const skuOriginalPrice = (sku) => Number(sku?.flash_sale?.original_price 
 
 export const hasFlashSale = (sku) => Boolean(sku?.flash_sale);
 
+let currencyLabel = 'MMK';
+
+export const configurePricing = (settings = {}) => {
+    currencyLabel = String(settings.currency_label || 'MMK').trim();
+};
+
 export const formatMoney = (value) =>
-    Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    [
+        Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }),
+        currencyLabel,
+    ].filter(Boolean).join(' ');

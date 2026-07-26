@@ -52,9 +52,10 @@ import {
     Search as SearchIcon,
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
+import { formatMoney } from '@/Utils/pricing';
 
 const makeId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-const money = (value) => Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+const money = formatMoney;
 const POS_RESULT_PAGE_SIZE = 24;
 const POS_TABLE_ROW_HEIGHT = 54;
 const POS_GRID_ROW_HEIGHT = 126;
@@ -101,7 +102,6 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     const productScrollFrameRef = useRef(null);
 
     const location = locations.find((item) => Number(item.id) === Number(locationId));
-    const currencySymbol = '';
     const paymentMethods = ['cash', 'card', 'mobile'];
 
     const api = async (url, options = {}) => {
@@ -484,16 +484,16 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                 <Stack spacing={0.85}>
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body2" color="text.secondary">{tp('Subtotal')}</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'right' }}>{currencySymbol}{money(totals.subtotal)}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, textAlign: 'right' }}>{money(totals.subtotal)}</Typography>
                     </Box>
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body2" color="text.secondary">{tp('Discount')}</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: totals.discount > 0 ? 'success.main' : 'inherit', textAlign: 'right' }}>-{currencySymbol}{money(totals.discount)}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: totals.discount > 0 ? 'success.main' : 'inherit', textAlign: 'right' }}>-{money(totals.discount)}</Typography>
                     </Box>
                     <Divider />
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'baseline', gap: 1 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{tp('Sale total')}</Typography>
-                        <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main', textAlign: 'right' }}>{currencySymbol}{money(totals.grandTotal)}</Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main', textAlign: 'right' }}>{money(totals.grandTotal)}</Typography>
                     </Box>
                     <Typography variant="caption" color="text.secondary">
                         {tp('Stock will be deducted from')} {location?.name || tp('selected warehouse')}.
@@ -923,7 +923,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                         {line.name}
                                                     </Typography>
                                                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>
-                                                        x{line.quantity} - {currencySymbol}{money(lineTotal)}
+                                                        x{line.quantity} - {money(lineTotal)}
                                                     </Typography>
                                                 </Box>
                                                 <IconButton
@@ -1006,7 +1006,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                             </Box>
                                                             <Box sx={{ minWidth: 0 }}>
                                                                 <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.15 }} noWrap title={getProductDisplayName(product)}>{getProductDisplayName(product)}</Typography>
-                                                                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>{currencySymbol}{money(resolveProductPrice(product))}</Typography>
+                                                                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>{money(resolveProductPrice(product))}</Typography>
                                                             </Box>
                                                         </Stack>
                                                     </TableCell>
@@ -1117,7 +1117,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                     </Typography>
                                                     <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.8, alignItems: 'center', gap: 1 }}>
                                                         <Typography variant="caption" color="text.secondary">{tp('Each')}</Typography>
-                                                        <Typography variant="body2" sx={{ fontWeight: 900 }} noWrap>{currencySymbol}{money(resolveProductPrice(product))}</Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 900 }} noWrap>{money(resolveProductPrice(product))}</Typography>
                                                     </Stack>
                                                     <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.35, alignItems: 'center', gap: 1 }}>
                                                         <Typography variant="caption" color="text.secondary">{tp('Stock')}</Typography>
@@ -1158,7 +1158,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
 
                         <Box sx={{ display: { xs: 'grid', md: 'none' }, gridTemplateColumns: '1fr auto', gap: 1, pt: 1.25, flexShrink: 0 }}>
                             <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
-                                {cart.length} {cart.length === 1 ? tp('item') : tp('items')} - {currencySymbol}{money(totals.grandTotal)}
+                                {cart.length} {cart.length === 1 ? tp('item') : tp('items')} - {money(totals.grandTotal)}
                             </Typography>
                             <Button variant="contained" size="small" disabled={cart.length === 0} onClick={() => setMobileStep('cart')}>
                                 {tp('Next: Cart')}
@@ -1186,7 +1186,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                     onClick={openPaymentDialog}
                                     sx={{ minWidth: 128, fontWeight: 800 }}
                                 >
-                                    {tp('Sell')} {currencySymbol}{money(totals.grandTotal)}
+                                    {tp('Sell')} {money(totals.grandTotal)}
                                 </Button>
                             </Stack>
                         </Box>
@@ -1241,7 +1241,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                         {line.sku_code || line.barcode || '-'} - {tp('Max')} {line.available_qty}
                                                     </Typography>
                                                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>
-                                                        {tp('Price')}: {currencySymbol}{money(line.unit_price)}
+                                                        {tp('Price')}: {money(line.unit_price)}
                                                     </Typography>
                                                 </Box>
                                                 <IconButton
@@ -1269,7 +1269,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                         {tp('Total')}
                                                     </Typography>
                                                     <Typography variant="subtitle2" sx={{ fontWeight: 900, lineHeight: 1.25 }}>
-                                                        {currencySymbol}{money(lineTotal)}
+                                                        {money(lineTotal)}
                                                     </Typography>
                                                 </Box>
                                                 <Box
@@ -1361,7 +1361,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                         </Typography>
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>
-                                                        {currencySymbol}{money(line.unit_price)}
+                                                        {money(line.unit_price)}
                                                     </TableCell>
                                                     <TableCell align="center">
                                                         <Box
@@ -1401,7 +1401,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                             </IconButton>
                                                         </Box>
                                                     </TableCell>
-                                                    <TableCell align="right" sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{currencySymbol}{money(lineTotal)}</TableCell>
+                                                    <TableCell align="right" sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{money(lineTotal)}</TableCell>
                                                     <TableCell align="right">
                                                         <IconButton size="small" color="error" onClick={() => removeCartLine(line.id)} sx={{ p: 0.25 }}>
                                                             <DeleteIcon fontSize="small" />
@@ -1433,7 +1433,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 disabled={busy || !isOnline || !locationId || cart.length === 0 || hasStockIssue}
                                 onClick={openPaymentDialog}
                             >
-                                {tp('Next: Sell')} {currencySymbol}{money(totals.grandTotal)}
+                                {tp('Next: Sell')} {money(totals.grandTotal)}
                             </Button>
                         </Stack>
                     </Paper>
@@ -1458,7 +1458,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                     {cart.length} {cart.length === 1 ? tp('item') : tp('items')} - {location?.name || tp('warehouse')}
                                 </Typography>
                             </Box>
-                            <Chip size="small" color="primary" label={`${currencySymbol}${money(totals.grandTotal)}`} />
+                            <Chip size="small" color="primary" label={money(totals.grandTotal)} />
                         </Stack>
 
                         {paymentFormContent}
@@ -1524,7 +1524,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                     <Stack spacing={1}>
                         <Typography variant="h6" sx={{ fontWeight: 800 }}>{receipt?.order?.receipt_number}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                            {tp('Total')} {currencySymbol}{money(receipt?.order?.final_amount)}
+                            {tp('Total')} {money(receipt?.order?.final_amount)}
                         </Typography>
                     </Stack>
                 </DialogContent>

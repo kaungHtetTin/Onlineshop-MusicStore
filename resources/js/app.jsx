@@ -7,6 +7,7 @@ import { createUserTheme } from './Theme/UserTheme';
 import { SpaApp, router } from './spa/router';
 import { AdminPersistentShell } from './Layouts/AdminLayout';
 import UserPersistentShell from './Layouts/UserPersistentShell';
+import { configurePricing } from './Utils/pricing';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -183,15 +184,19 @@ if (el && window.__SPA_PAGE__) {
             <SpaApp
                 initialPage={initialPage}
                 resolve={resolvePage}
-                render={({ Component, page }) => (
-                    <ThemeProvider theme={createUserTheme(page.props.app_settings || {})}>
-                        <AdminPersistentShell active={usesPersistentAdminShell(page)}>
-                            <UserPersistentShell active={usesPersistentUserShell(page)}>
-                                {Component ? <Component {...page.props} /> : null}
-                            </UserPersistentShell>
-                        </AdminPersistentShell>
-                    </ThemeProvider>
-                )}
+                render={({ Component, page }) => {
+                    configurePricing(page.props.app_settings || {});
+
+                    return (
+                        <ThemeProvider theme={createUserTheme(page.props.app_settings || {})}>
+                            <AdminPersistentShell active={usesPersistentAdminShell(page)}>
+                                <UserPersistentShell active={usesPersistentUserShell(page)}>
+                                    {Component ? <Component {...page.props} /> : null}
+                                </UserPersistentShell>
+                            </AdminPersistentShell>
+                        </ThemeProvider>
+                    );
+                }}
             />
         </QueryClientProvider>,
     );

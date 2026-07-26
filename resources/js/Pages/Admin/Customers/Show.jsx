@@ -4,8 +4,9 @@ import Icon from '@/Components/Admin/icons';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
-const money = (value) => Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+const money = formatMoney;
 const formatPoints = (value) => {
     const points = Number(value || 0);
     return `${points > 0 ? '+' : ''}${points}`;

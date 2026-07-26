@@ -5,6 +5,8 @@ import { storageUrl } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 import { formatErrorMessage } from '@/Utils/formatErrorMessage';
 
+const MAX_VARIANT_OPTIONS = 5;
+
 export default function ProductFormUI({
     mode,
     data,
@@ -40,7 +42,7 @@ export default function ProductFormUI({
     const existingImages = isEdit ? product.images.filter((img) => data.imageAttachmentIds.includes(img.id)) : [];
 
     const addOption = () => {
-        if (options.length >= 3) return;
+        if (options.length >= MAX_VARIANT_OPTIONS) return;
         setOptions([...options, { id: Date.now(), name: '' }]);
     };
 
@@ -246,7 +248,7 @@ export default function ProductFormUI({
                         eyebrow="Options"
                         title="Variant options"
                         action={
-                            <button type="button" className="btn secondary" onClick={addOption} disabled={options.length >= 3 || processing}>
+                            <button type="button" className="btn secondary" onClick={addOption} disabled={options.length >= MAX_VARIANT_OPTIONS || processing}>
                                 <Icon name="plus" size={14} />
                                 {t('Add option')}
                             </button>

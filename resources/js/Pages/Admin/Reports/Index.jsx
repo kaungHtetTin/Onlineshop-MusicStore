@@ -5,9 +5,9 @@ import Icon from '@/Components/Admin/icons';
 import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
-const money = (value) =>
-    Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+const money = formatMoney;
 const percent = (value) => `${Number(value || 0).toFixed(1)}%`;
 
 function MetricCard({ label, value, hint, icon, tone }) {

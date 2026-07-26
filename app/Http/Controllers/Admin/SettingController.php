@@ -23,6 +23,7 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'app_name' => ['required', 'string', 'max:80'],
+            'currency_label' => ['required', 'string', 'max:12'],
             'theme_color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'logo' => ['nullable', 'file', 'max:5120'],
             'favicon' => ['nullable', 'file', 'max:2048'],
@@ -45,6 +46,7 @@ class SettingController extends Controller
 
         $payload = [
             'app_name' => trim($validated['app_name']),
+            'currency_label' => trim($validated['currency_label']),
             'theme_color' => strtolower($validated['theme_color']),
             'contacts' => $settings->normalizeContacts($validated['contacts'] ?? []),
         ];
@@ -69,6 +71,7 @@ class SettingController extends Controller
 
         $auditLogService->record('settings.updated', null, [
             'app_name' => $payload['app_name'],
+            'currency_label' => $payload['currency_label'],
             'theme_color' => $payload['theme_color'],
             'contacts' => $payload['contacts'],
             'logo_changed' => ($current['logo_path'] ?? null) !== $payload['logo_path'],
