@@ -8,6 +8,7 @@ const reloadPage = (only) => {
         only,
         preserveScroll: true,
         preserveState: true,
+        showSkeleton: false,
     });
 };
 

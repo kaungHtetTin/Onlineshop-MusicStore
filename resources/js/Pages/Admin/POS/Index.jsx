@@ -375,7 +375,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
         }
         if (cart.length) {
             if (isMobile) {
-                setMobileStep('sell');
+                setMobileStep('checkout');
             } else {
                 setPaymentDialogOpen(true);
             }
@@ -666,8 +666,8 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                         <ToggleButton value="cart" sx={{ textTransform: 'none', fontWeight: 800 }}>
                             {tp('Cart')} ({cart.length})
                         </ToggleButton>
-                        <ToggleButton value="sell" disabled={cart.length === 0} sx={{ textTransform: 'none', fontWeight: 800 }}>
-                            {tp('Sell')}
+                        <ToggleButton value="checkout" disabled={cart.length === 0} sx={{ textTransform: 'none', fontWeight: 800 }}>
+                            {tp('Checkout')}
                         </ToggleButton>
                     </ToggleButtonGroup>
                 </Paper>
@@ -1433,7 +1433,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 disabled={busy || !isOnline || !locationId || cart.length === 0 || hasStockIssue}
                                 onClick={openPaymentDialog}
                             >
-                                {tp('Next: Sell')} {money(totals.grandTotal)}
+                                {tp('Next: Checkout')} {money(totals.grandTotal)}
                             </Button>
                         </Stack>
                     </Paper>
@@ -1444,7 +1444,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                         sx={{
                             p: 1.25,
                             width: '100%',
-                            display: { xs: mobileStep === 'sell' ? 'flex' : 'none', md: 'none' },
+                            display: { xs: mobileStep === 'checkout' ? 'flex' : 'none', md: 'none' },
                             flexDirection: 'column',
                             gap: 1.25,
                             borderTop: '2px solid',
@@ -1453,7 +1453,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                     >
                         <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ alignItems: 'center' }}>
                             <Box>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{tp('Final Sell')}</Typography>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{tp('Final Checkout')}</Typography>
                                 <Typography variant="caption" color="text.secondary">
                                     {cart.length} {cart.length === 1 ? tp('item') : tp('items')} - {location?.name || tp('warehouse')}
                                 </Typography>

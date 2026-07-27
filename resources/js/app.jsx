@@ -8,6 +8,7 @@ import { SpaApp, router } from './spa/router';
 import { AdminPersistentShell } from './Layouts/AdminLayout';
 import UserPersistentShell from './Layouts/UserPersistentShell';
 import { configurePricing } from './Utils/pricing';
+import PageSkeleton, { skeletonRouteInfo } from './Components/Spa/PageSkeleton';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -184,14 +185,23 @@ if (el && window.__SPA_PAGE__) {
             <SpaApp
                 initialPage={initialPage}
                 resolve={resolvePage}
-                render={({ Component, page }) => {
+                render={({ Component, page, loading, pendingUrl }) => {
                     configurePricing(page.props.app_settings || {});
+                    const routeInfo = skeletonRouteInfo(pendingUrl || page.url, page.props.app_base || '');
+                    const adminShellActive = pendingUrl
+                        ? routeInfo.mode === 'admin' && routeInfo.path !== '/admin/pos'
+                        : usesPersistentAdminShell(page);
+                    const userShellActive = pendingUrl
+                        ? routeInfo.mode === 'storefront'
+                        : usesPersistentUserShell(page);
 
                     return (
                         <ThemeProvider theme={createUserTheme(page.props.app_settings || {})}>
-                            <AdminPersistentShell active={usesPersistentAdminShell(page)}>
-                                <UserPersistentShell active={usesPersistentUserShell(page)}>
-                                    {Component ? <Component {...page.props} /> : null}
+                            <AdminPersistentShell active={adminShellActive}>
+                                <UserPersistentShell active={userShellActive}>
+                                    {loading
+                                        ? <PageSkeleton url={pendingUrl || page.url} appBase={page.props.app_base || ''} />
+                                        : <Component {...page.props} />}
                                 </UserPersistentShell>
                             </AdminPersistentShell>
                         </ThemeProvider>

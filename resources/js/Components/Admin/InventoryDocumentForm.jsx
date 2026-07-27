@@ -237,8 +237,19 @@ export default function InventoryDocumentForm({ type, locations, categories = []
                                     </label>
                                     <button className="btn secondary" type="button" onClick={() => search(1)} disabled={searching || !form.data.location_id}>{t(searching ? 'Searching...' : 'Search')}</button>
                                 </div>
-                                <div className="receipt-product-catalog">
-                                    {receiptCatalogSkus.length === 0 ? <div className="empty-document-lines">{t('No products match these filters.')}</div> : receiptCatalogSkus.map((sku) => {
+                                <div className="receipt-product-catalog" aria-busy={searching}>
+                                    {searching ? (
+                                        <div className="spa-inline-list-skeleton" role="status" aria-label={t('Loading products')}>
+                                            {Array.from({ length: 6 }, (_, index) => (
+                                                <div className="spa-inline-list-skeleton-row" key={index}>
+                                                    <span className="spa-skeleton-block media" />
+                                                    <span className="spa-skeleton-block line" />
+                                                    <span className="spa-skeleton-block line short" />
+                                                    <span className="spa-skeleton-block button" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : receiptCatalogSkus.length === 0 ? <div className="empty-document-lines">{t('No products match these filters.')}</div> : receiptCatalogSkus.map((sku) => {
                                         const selected = selectedSkuIds.includes(sku.id);
                                         return (
                                             <div key={sku.id} className={selected ? 'receipt-product-row selected' : 'receipt-product-row'}>
@@ -252,7 +263,7 @@ export default function InventoryDocumentForm({ type, locations, categories = []
                                         );
                                     })}
                                 </div>
-                                {skuPage.last_page > 1 && (
+                                {!searching && skuPage.last_page > 1 && (
                                     <div className="receipt-product-pagination">
                                         <small>{t('Showing')} {skuPage.from || 0}-{skuPage.to || 0} {t('of')} {skuPage.total || 0}</small>
                                         <div>

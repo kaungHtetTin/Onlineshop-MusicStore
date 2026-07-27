@@ -7,7 +7,12 @@ let spaState = {
     page: null,
     setPage: null,
     resolve: null,
+    beginNavigation: null,
+    finishNavigation: null,
 };
+let visitSequence = 0;
+let latestGetVisitId = 0;
+let activeGetController = null;
 
 function emit(event, payload) {
     (listeners.get(event) || new Set()).forEach((callback) => callback(payload));
@@ -257,8 +262,38 @@ export const router = {
     async visit(url, options = {}) {
         const method = String(options.method || 'get').toLowerCase();
         const target = method === 'get' ? appendQuery(url, options.data || {}) : normalizeUrl(url);
+        const isGet = method === 'get';
+        const visitId = ++visitSequence;
+        const previousUrl = window.location.pathname + window.location.search + window.location.hash;
+        const showSkeleton = isGet && options.showSkeleton !== false;
+        const controller = isGet ? new AbortController() : null;
 
         options.onStart?.();
+
+        if (isGet) {
+            activeGetController?.abort();
+            activeGetController = controller;
+            latestGetVisitId = visitId;
+
+            if (options.replace) {
+                window.history.replaceState({}, '', target);
+            } else if (target !== previousUrl) {
+                window.history.pushState({}, '', target);
+            }
+
+            if (showSkeleton) {
+                spaState.beginNavigation?.({
+                    id: visitId,
+                    method,
+                    url: target,
+                });
+                emit('start', { detail: { method, url: target } });
+            }
+
+            if (!options.preserveScroll) {
+                window.scrollTo({ top: 0, left: 0 });
+            }
+        }
 
         try {
             const send = () => {
@@ -275,6 +310,7 @@ export const router = {
                         'X-CSRF-TOKEN': csrfToken(),
                         ...headers,
                     },
+                    signal: controller?.signal,
                 });
             };
 
@@ -289,21 +325,37 @@ export const router = {
                 }
             }
 
+            if (isGet && visitId !== latestGetVisitId) {
+                return null;
+            }
+
             const page = await parseSpaResponse(response, options);
 
-            if (method === 'get' && page?.component) {
-                const nextUrl = appendQuery(url, options.data || {});
-                if (options.replace) {
-                    window.history.replaceState({}, '', nextUrl);
-                } else {
-                    window.history.pushState({}, '', nextUrl);
-                }
-            } else if (response.redirected && response.url) {
+            if (response.redirected && response.url) {
                 window.history.replaceState({}, '', new URL(response.url).pathname + new URL(response.url).search);
+            } else if (isGet && !page?.component && visitId === latestGetVisitId) {
+                window.history.replaceState({}, '', previousUrl);
             }
 
             return page;
+        } catch (error) {
+            if (error?.name === 'AbortError') {
+                return null;
+            }
+
+            if (isGet && visitId === latestGetVisitId) {
+                window.history.replaceState({}, '', previousUrl);
+            }
+
+            throw error;
         } finally {
+            if (isGet && activeGetController === controller) {
+                activeGetController = null;
+            }
+            if (showSkeleton) {
+                spaState.finishNavigation?.(visitId);
+                emit('finish', { detail: { method, url: target } });
+            }
             options.onFinish?.();
         }
     },
@@ -534,9 +586,18 @@ export function useForm(initialData = {}) {
 export function SpaApp({ initialPage, resolve, render }) {
     const [page, setPage] = useState(initialPage);
     const [componentEntry, setComponentEntry] = useState(null);
+    const [navigation, setNavigation] = useState(null);
 
     useEffect(() => {
-        spaState = { page, setPage, resolve };
+        spaState = {
+            page,
+            setPage,
+            resolve,
+            beginNavigation: setNavigation,
+            finishNavigation: (visitId) => {
+                setNavigation((current) => current?.id === visitId ? null : current);
+            },
+        };
     }, [page, resolve]);
 
     useEffect(() => {
@@ -570,10 +631,19 @@ export function SpaApp({ initialPage, resolve, render }) {
 
     const isCurrentComponentReady = componentEntry && componentEntry.name === page.component;
     const Component = isCurrentComponentReady ? componentEntry.Component : null;
+    const displayPage = navigation
+        ? { ...page, url: navigation.url }
+        : page;
+    const loading = Boolean(navigation) || !isCurrentComponentReady;
 
     return (
-        <PageContext.Provider value={page}>
-            {render({ Component, page, loading: !isCurrentComponentReady })}
+        <PageContext.Provider value={displayPage}>
+            {render({
+                Component: loading ? null : Component,
+                page: displayPage,
+                loading,
+                pendingUrl: navigation?.url || null,
+            })}
         </PageContext.Provider>
     );
 }

@@ -116,7 +116,7 @@ export default function AdminChatsIndex() {
                     />
                 </div>
 
-                {!csrfReady || conversationsQuery.isLoading ? (
+                {!csrfReady || conversationsQuery.isLoading || conversationsQuery.isFetching ? (
                     <div className="chat-skeleton">
                         <div className="bar" />
                         <div className="bar" />
@@ -163,12 +163,7 @@ export default function AdminChatsIndex() {
                     </div>
                 )}
 
-                {conversationsQuery.isFetching && (
-                    <p style={{ textAlign: 'center', marginTop: 10 }}>
-                        <small>{t('Refreshing...')}</small>
-                    </p>
-                )}
-                {meta && meta.last_page > 1 && (
+                {!conversationsQuery.isFetching && meta && meta.last_page > 1 && (
                     <div className="ledger-pagination">
                         <small>
                             {t('Page :current of :last - :total conversations', { current: meta.current_page, last: meta.last_page, total: meta.total })}
