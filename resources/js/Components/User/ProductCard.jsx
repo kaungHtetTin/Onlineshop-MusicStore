@@ -26,7 +26,7 @@ const getSkuImageUrl = (sku, fallbackUrl, appUrl) => {
     return storageUrl(path, appUrl);
 };
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, returnTo = null }) => {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
     const ORDER_QTY_MAX = 999;
@@ -62,6 +62,11 @@ const ProductCard = ({ product }) => {
             ? storageUrl(product.primary_image.image_url || product.primary_image.image_path, app_url)
             : 'https://via.placeholder.com/300?text=No+Image';
     }, [product.primary_image, app_url]);
+
+    const detailHref = useMemo(() => {
+        const href = routeWithBase(`/products/${product.slug}`, app_base);
+        return returnTo ? `${href}?return_to=${encodeURIComponent(returnTo)}` : href;
+    }, [app_base, product.slug, returnTo]);
 
     const defaultSku = useMemo(() => pickDefaultSkuForProduct(product), [product]);
     const canAddCart = Boolean(defaultSku);
@@ -195,7 +200,7 @@ const ProductCard = ({ product }) => {
         >
             <Box
                 component={Link}
-                href={routeWithBase(`/products/${product.slug}`, app_base)}
+                href={detailHref}
                 sx={{ position: 'relative', pt: '133.33%', display: 'block' }}
             >
                 <CardMedia
@@ -268,7 +273,7 @@ const ProductCard = ({ product }) => {
                 <Typography
                     variant="body2"
                     component={Link}
-                    href={routeWithBase(`/products/${product.slug}`, app_base)}
+                    href={detailHref}
                     sx={{
                         fontWeight: 850,
                         mt: 0.25,

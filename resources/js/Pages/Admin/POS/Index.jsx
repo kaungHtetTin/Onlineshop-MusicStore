@@ -1161,7 +1161,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 {cart.length} {cart.length === 1 ? tp('item') : tp('items')} - {money(totals.grandTotal)}
                             </Typography>
                             <Button variant="contained" size="small" disabled={cart.length === 0} onClick={() => setMobileStep('cart')}>
-                                {tp('Next: Cart')}
+                                {tp('View Cart')}
                             </Button>
                         </Box>
                     </Paper>
@@ -1424,7 +1424,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
 
                         <Stack direction="row" spacing={1} sx={{ display: { xs: 'flex', md: 'none' }, pt: 1.25, flexShrink: 0 }}>
                             <Button variant="outlined" size="small" fullWidth onClick={() => setMobileStep('products')}>
-                                {tp('Back')}
+                                {tp('Back to Products')}
                             </Button>
                             <Button
                                 variant="contained"
@@ -1472,7 +1472,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 disabled={busy}
                                 sx={{ minHeight: 46, fontWeight: 800 }}
                             >
-                                {tp('Back')}
+                                {tp('Back to Cart')}
                             </Button>
                             <Box
                                 sx={{

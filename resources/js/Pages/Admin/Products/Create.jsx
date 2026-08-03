@@ -233,6 +233,7 @@ export default function Create({ categories, app_base }) {
                     setPendingFiles([]);
                 }}
                 aspect={3 / 4}
+                allowRotation
             />
         </AdminLayout>
     );

@@ -225,16 +225,18 @@ class ProductController extends Controller
         });
     }
 
-    public function edit(Product $product)
+    public function edit(Request $request, Product $product)
     {
         return Spa::render('Admin/Products/Edit', [
             'product' => $product->load(['images', 'skus']),
-            'categories' => Category::where('is_active', true)->get()
+            'categories' => Category::where('is_active', true)->get(),
+            'returnPage' => max(1, $request->integer('return_page', 1)),
         ]);
     }
 
     public function update(Request $request, Product $product, InventoryService $inventoryService)
     {
+        $returnPage = max(1, $request->integer('return_page', 1));
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
             'name' => 'required|string|max:255',
@@ -270,7 +272,7 @@ class ProductController extends Controller
             return redirect()->back()->withErrors(['skus' => 'A SKU with inventory history cannot be removed. Deactivate it instead.']);
         }
 
-        return DB::transaction(function () use ($validated, $product, $request, $inventoryService) {
+        return DB::transaction(function () use ($validated, $product, $request, $inventoryService, $returnPage) {
             $validated['slug'] = Str::slug($validated['name']);
             $product->update([
                 'category_id' => $validated['category_id'],
@@ -346,7 +348,9 @@ class ProductController extends Controller
                 }
             }
 
-            return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
+            return redirect()
+                ->route('admin.products.index', $returnPage > 1 ? ['page' => $returnPage] : [])
+                ->with('success', 'Product updated successfully.');
         });
     }
 

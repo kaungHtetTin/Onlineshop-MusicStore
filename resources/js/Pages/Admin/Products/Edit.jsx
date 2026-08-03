@@ -11,7 +11,7 @@ import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 import { formatErrorMessage } from '@/Utils/formatErrorMessage';
 
-export default function Edit({ product, categories, app_base }) {
+export default function Edit({ product, categories, app_base, returnPage = 1 }) {
     const { app_url } = usePage().props;
     const t = usePhraseTranslation();
     const { data, setData, transform, post, processing, errors } = useForm({
@@ -58,6 +58,7 @@ export default function Edit({ product, categories, app_base }) {
     const refreshSkuCodes = (skus, title = data.name, names = optionNames) => (
         refreshAutoSkuCodes(skus, title, names)
     );
+    const productsIndexHref = `${routeWithBase('/admin/products', app_base)}${returnPage > 1 ? `?page=${returnPage}` : ''}`;
 
     const updateSku = (index, patch) => {
         const newSkus = [...data.skus];
@@ -162,7 +163,7 @@ export default function Edit({ product, categories, app_base }) {
                     .filter((option) => option.name),
             },
         }));
-        post(routeWithBase(`/admin/products/${product.id}`, app_base));
+        post(`${routeWithBase(`/admin/products/${product.id}`, app_base)}?return_page=${returnPage}`);
     };
 
     return (
@@ -179,7 +180,7 @@ export default function Edit({ product, categories, app_base }) {
             <Head title={t('Edit Product')} />
 
             <div className="sticky-toolbar">
-                <Link href={routeWithBase('/admin/products', app_base)} className="back-link" style={{ marginBottom: 0 }}>
+                <Link href={productsIndexHref} className="back-link" style={{ marginBottom: 0 }}>
                     <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} />
                     {t('Back to products')}
                 </Link>
@@ -244,6 +245,7 @@ export default function Edit({ product, categories, app_base }) {
                     setPendingFiles([]);
                 }}
                 aspect={3 / 4}
+                allowRotation
             />
         </AdminLayout>
     );

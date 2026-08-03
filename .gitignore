@@ -13,3 +13,6 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+/adsgenerator/node_modules/
+/adsgenerator/vendor/
+/adsgenerator/.cache/

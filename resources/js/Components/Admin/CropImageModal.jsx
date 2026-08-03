@@ -1,21 +1,42 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Cropper from 'react-easy-crop';
 import Icon from '@/Components/Admin/icons';
 import { compressCanvasImage } from '@/Utils/imageCompression';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
-async function getCroppedImg(imageSrc, pixelCrop, outputType = 'image/webp') {
+const rotatedSize = (width, height, rotation) => {
+    const radians = (rotation * Math.PI) / 180;
+
+    return {
+        width: Math.abs(Math.cos(radians) * width) + Math.abs(Math.sin(radians) * height),
+        height: Math.abs(Math.sin(radians) * width) + Math.abs(Math.cos(radians) * height),
+    };
+};
+
+async function getCroppedImg(imageSrc, pixelCrop, rotation = 0, outputType = 'image/webp') {
     const image = await createImage(imageSrc);
+    const rotatedCanvas = document.createElement('canvas');
+    const rotatedContext = rotatedCanvas.getContext('2d');
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
+    if (!rotatedContext || !ctx) {
         throw new Error('Unable to prepare image crop.');
     }
+
+    const rotationRadians = (rotation * Math.PI) / 180;
+    const bounds = rotatedSize(image.width, image.height, rotation);
+    rotatedCanvas.width = Math.round(bounds.width);
+    rotatedCanvas.height = Math.round(bounds.height);
+
+    rotatedContext.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+    rotatedContext.rotate(rotationRadians);
+    rotatedContext.translate(-image.width / 2, -image.height / 2);
+    rotatedContext.drawImage(image, 0, 0);
 
     canvas.width = pixelCrop.width;
     canvas.height = pixelCrop.height;
     ctx.drawImage(
-        image,
+        rotatedCanvas,
         pixelCrop.x,
         pixelCrop.y,
         pixelCrop.width,
@@ -55,10 +76,12 @@ export default function CropImageModal({
     title = 'Crop image',
     ratioLabel = null,
     outputType = 'image/webp',
+    allowRotation = false,
 }) {
     const t = usePhraseTranslation();
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
+    const [rotation, setRotation] = useState(0);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState(null);
@@ -67,11 +90,21 @@ export default function CropImageModal({
         setCroppedAreaPixels(pixels);
     }, []);
 
+    useEffect(() => {
+        if (!open) return;
+
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setRotation(0);
+        setCroppedAreaPixels(null);
+        setError(null);
+    }, [image, open]);
+
     const handleCrop = async () => {
         try {
             setProcessing(true);
             setError(null);
-            const croppedImage = await getCroppedImg(image, croppedAreaPixels, outputType);
+            const croppedImage = await getCroppedImg(image, croppedAreaPixels, rotation, outputType);
             onCropComplete(croppedImage);
         } catch (e) {
             console.error(e);
@@ -103,6 +136,7 @@ export default function CropImageModal({
                             image={image}
                             crop={crop}
                             zoom={zoom}
+                            rotation={rotation}
                             aspect={aspect}
                             onCropChange={setCrop}
                             onCropComplete={onCropAreaComplete}
@@ -122,6 +156,21 @@ export default function CropImageModal({
                             onChange={(e) => setZoom(Number(e.target.value))}
                         />
                     </label>
+                    {allowRotation && (
+                        <button
+                            type="button"
+                            className="btn secondary crop-rotate-btn"
+                            onClick={() => {
+                                setCrop({ x: 0, y: 0 });
+                                setCroppedAreaPixels(null);
+                                setRotation((current) => (current + 90) % 360);
+                            }}
+                            disabled={processing}
+                        >
+                            <Icon name="rotateClockwise" size={15} />
+                            {t('Rotate 90°')}
+                        </button>
+                    )}
                 </div>
                 {error && <div className="flash error">{t(error)}</div>}
                 <div className="modal-actions">

@@ -44,12 +44,33 @@ const productImageUrl = (image, appUrl) => {
     return path ? storageUrl(path, appUrl) : 'https://via.placeholder.com/600?text=No+Image';
 };
 
+const safeProductListHref = (currentUrl, appBase) => {
+    const fallback = routeWithBase('/products', appBase);
+
+    try {
+        const origin = 'http://spa.local';
+        const returnTo = new URL(currentUrl, origin).searchParams.get('return_to');
+        if (!returnTo) return fallback;
+
+        const candidate = new URL(returnTo, origin);
+        const expected = new URL(fallback, origin);
+        if (candidate.origin !== expected.origin || candidate.pathname !== expected.pathname) {
+            return fallback;
+        }
+
+        return `${candidate.pathname}${candidate.search}${candidate.hash}`;
+    } catch {
+        return fallback;
+    }
+};
+
 const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBoughtTogether = [], reviews = { data: [] } }) => {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
     const sectionShellSx = sectionShellSxForTheme(theme);
     const ORDER_QTY_MAX = 999;
-    const { app_url, app_base, auth } = usePage().props;
+    const page = usePage();
+    const { app_url, app_base, auth } = page.props;
     const t = usePhraseTranslation();
     const productSkus = product.skus || [];
     const [selectedSku, setSelectedSku] = useState(() => (
@@ -65,6 +86,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
         rating: 5,
         comment: '',
     });
+    const productListHref = useMemo(() => safeProductListHref(page.url, app_base), [app_base, page.url]);
 
     const images = useMemo(() => {
         return product.images.length > 0 ? product.images : [{ image_path: 'https://via.placeholder.com/600?text=No+Image' }];
@@ -121,13 +143,17 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
 
     const submitReview = (e) => {
         e.preventDefault();
-        post(routeWithBase(`/products/${product.slug}/reviews`, app_base), {
+        const reviewUrl = `${routeWithBase(`/products/${product.slug}/reviews`, app_base)}?return_to=${encodeURIComponent(productListHref)}`;
+        post(reviewUrl, {
             preserveScroll: true,
         });
     };
 
     const handleReviewPageChange = (_event, page) => {
-        router.get(routeWithBase(`/products/${product.slug}`, app_base), { reviews_page: page }, {
+        router.get(routeWithBase(`/products/${product.slug}`, app_base), {
+            reviews_page: page,
+            return_to: productListHref,
+        }, {
             preserveScroll: true,
             preserveState: true,
         });
@@ -148,7 +174,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
             <Navbar />
 
             <Container maxWidth="xl" sx={{ mt: { xs: 2, md: 4 }, px: { lg: 6 } }}>
-                <BackLink href={routeWithBase('/products', app_base)}>
+                <BackLink href={productListHref}>
                     {t('Back to Shop')}
                 </BackLink>
 
@@ -578,7 +604,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             ...productListGridSx,
                         }}>
                             {frequentlyBoughtTogether.map((p) => (
-                                <ProductCard key={p.id} product={p} />
+                                <ProductCard key={p.id} product={p} returnTo={productListHref} />
                             ))}
                         </Box>
                     </Box>
@@ -591,7 +617,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             ...productListGridSx,
                         }}>
                             {recommendedProducts.map((p) => (
-                                <ProductCard key={p.id} product={p} />
+                                <ProductCard key={p.id} product={p} returnTo={productListHref} />
                             ))}
                         </Box>
                     </Box>
@@ -605,7 +631,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             ...productListGridSx,
                         }}>
                             {relatedProducts.map((p) => (
-                                <ProductCard key={p.id} product={p} />
+                                <ProductCard key={p.id} product={p} returnTo={productListHref} />
                             ))}
                         </Box>
                     </Box>

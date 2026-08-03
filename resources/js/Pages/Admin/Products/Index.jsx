@@ -116,7 +116,7 @@ export default function Index({ products, app_base }) {
                                             <td>
                                                 <div className="inline-actions">
                                                     <Link
-                                                        href={routeWithBase(`/admin/products/${product.id}/edit`, app_base)}
+                                                        href={`${routeWithBase(`/admin/products/${product.id}/edit`, app_base)}?return_page=${products.current_page || 1}`}
                                                         className="icon-btn small"
                                                         aria-label={t('Edit product')}
                                                     >

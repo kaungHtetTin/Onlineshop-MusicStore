@@ -42,7 +42,8 @@ const Index = ({ products, categories, filters }) => {
     const musicColors = getMusicStoreColors(theme);
     const sectionShellSx = sectionShellSxForTheme(theme);
     const isMobileFilters = useMediaQuery(theme.breakpoints.down('md'));
-    const { app_base } = usePage().props;
+    const page = usePage();
+    const { app_base } = page.props;
     const t = usePhraseTranslation();
     const [search, setSearch] = useState(filters.search || '');
     const [minPrice, setMinPrice] = useState(filters.min_price || '');
@@ -603,7 +604,7 @@ const Index = ({ products, categories, filters }) => {
                         }}
                     >
                         {products.data.map((product) => (
-                            <ProductCard key={product.id} product={product} />
+                            <ProductCard key={product.id} product={product} returnTo={page.url} />
                         ))}
                     </Box>
                 ) : (
