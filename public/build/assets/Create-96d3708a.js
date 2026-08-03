@@ -1,0 +1,1 @@
+import{b as e}from"./app-fca69c8f.js";import o from"./Form-df4cb33c.js";import"./AdminFlash-6aafe028.js";import"./formatErrorMessage-ae84bff6.js";function l({productOptions:r}){return e(o,{productOptions:r,mode:"create"})}export{l as default};

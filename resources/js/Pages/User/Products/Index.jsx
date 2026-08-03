@@ -136,9 +136,10 @@ const Index = ({ products, categories, filters }) => {
     };
 
     const fieldSx = {
-        bgcolor: musicColors.sheet,
+        minWidth: 0,
         '& .MuiOutlinedInput-root': {
             borderRadius: 1.5,
+            bgcolor: musicColors.sheet,
         },
     };
 
@@ -255,8 +256,9 @@ const Index = ({ products, categories, filters }) => {
                 gridTemplateColumns: {
                     xs: '1fr',
                     sm: 'repeat(2, minmax(0, 1fr))',
-                    md: isMobileFilters ? '1fr' : 'repeat(3, minmax(0, 1fr))',
-                    lg: isMobileFilters ? '1fr' : 'minmax(150px, 1fr) minmax(150px, 1fr) minmax(180px, 1fr) auto auto',
+                    md: isMobileFilters
+                        ? '1fr'
+                        : 'minmax(150px, 1fr) minmax(150px, 1fr) minmax(180px, 1fr) auto auto',
                 },
                 gap: 1.25,
                 alignItems: 'stretch',

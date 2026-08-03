@@ -16,3 +16,4 @@ yarn-error.log
 /adsgenerator/node_modules/
 /adsgenerator/vendor/
 /adsgenerator/.cache/
+/deploy/
