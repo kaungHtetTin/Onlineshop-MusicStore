@@ -106,14 +106,14 @@ function SectionHeader({ eyebrow, title, subtitle, action }) {
     const t = usePhraseTranslation();
 
     return (
-        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1.25} sx={{ mb: 2 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing="10px" sx={{ mb: '16px' }}>
             <Box>
                 {eyebrow && <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>{t(eyebrow)}</Typography>}
-                <Typography variant="h5" sx={{ fontWeight: 950, color: musicColors.ink, lineHeight: 1.12 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, fontSize: { xs: '1.2rem', md: '1.4rem' }, color: musicColors.ink, lineHeight: 1.2 }}>
                     {t(title)}
                 </Typography>
                 {subtitle && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 560, fontWeight: 650 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 560, fontWeight: 600 }}>
                         {t(subtitle)}
                     </Typography>
                 )}
@@ -196,11 +196,11 @@ function BlogPreviewCard({ post }) {
                     <PlayCircle sx={{ position: 'absolute', right: 10, bottom: 10, color: 'white', filter: 'drop-shadow(0 1px 4px rgba(0,0,0,.45))' }} />
                 )}
             </Box>
-            <Stack spacing={0.75} sx={{ p: 1.5 }}>
+            <Stack spacing="8px" sx={{ p: { xs: '16px', md: '18px' } }}>
                 <Typography variant="caption" color="text.secondary">
                     {[post.category?.name, formatBlogDate(post.published_at)].filter(Boolean).join(' - ')}
                 </Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 900, lineHeight: 1.25 }}>{post.title}</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.25 }}>{post.title}</Typography>
                 {post.excerpt && (
                     <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {post.excerpt}
@@ -243,10 +243,10 @@ function ProductSectionEmpty({ title, subtitle }) {
                 <MusicNote sx={{ fontSize: 34 }} />
             </Box>
             <Box>
-                <Typography variant="h6" sx={{ fontWeight: 950, color: musicColors.ink, mb: 0.5 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: musicColors.ink, mb: 0.5 }}>
                     {t(title)}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 650, maxWidth: 620 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, maxWidth: 620 }}>
                     {t(subtitle)}
                 </Typography>
             </Box>
@@ -255,7 +255,7 @@ function ProductSectionEmpty({ title, subtitle }) {
                 href={routeWithBase('/products', app_base)}
                 variant="contained"
                 endIcon={<ArrowForward />}
-                sx={{ fontWeight: 900, justifySelf: { xs: 'stretch', md: 'end' } }}
+                sx={{ fontWeight: 700, justifySelf: { xs: 'stretch', md: 'end' } }}
             >
                 {t('Browse catalog')}
             </Button>
@@ -286,12 +286,12 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
         : fallbackPromos;
     const defaultAccent = alpha(theme.palette.primary.main, 0.12);
     const visibleFlashSaleEvents = Array.isArray(flashSaleEvents) && flashSaleEvents.length > 0
-        ? flashSaleEvents
+        ? flashSaleEvents.filter((sale) => !sale.ends_at || new Date(sale.ends_at).getTime() > Date.now())
         : activeFlashSale && flashSaleProducts.length > 0
             ? [{ ...activeFlashSale, products: flashSaleProducts }]
             : [];
 
-    const displayCategories = categories.map((cat, index) => ({
+    const displayCategories = categories.filter((cat) => Number(cat.products_count || 0) > 0).map((cat, index) => ({
         ...cat,
         Icon: categoryIconCycle[index % categoryIconCycle.length],
         icon: cat.metadata?.icon || cat.icon || null,
@@ -314,16 +314,20 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
             <Navbar />
 
             {hero.is_active !== false && (
-                <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 3 } }}>
+                <Container maxWidth="lg" sx={{ mt: { xs: '16px', md: '24px' } }}>
                     <Box
                         sx={{
                             display: 'grid',
-                            gridTemplateColumns: { xs: '1fr', md: hero.image_url ? '1.05fr 0.95fr' : '1fr' },
+                            gridTemplateColumns: {
+                                xs: '1fr',
+                                sm: hero.image_url ? '1.08fr 0.92fr' : '1fr',
+                                md: '1.08fr 0.92fr',
+                            },
                             gap: 0,
                             borderRadius: 2,
                             overflow: 'hidden',
                             background: hero.accent_color || musicGradientForTheme(theme),
-                            minHeight: { xs: 270, sm: 320, md: 390 },
+                            minHeight: { xs: 280, sm: 340, md: 390 },
                             position: 'relative',
                             boxShadow: '0 24px 70px rgba(36, 27, 24, 0.22)',
                             border: '1px solid rgba(244,194,103,0.24)',
@@ -339,7 +343,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                         />
                         <Box
                             sx={{
-                                p: { xs: 3, sm: 4, md: 7 },
+                                p: { xs: '20px', sm: '28px', md: '36px' },
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'center',
@@ -351,7 +355,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                             <Typography sx={{ ...eyebrowSx, color: musicColors.amber, mb: 1 }}>
                                 {t('Musical instrument store')}
                             </Typography>
-                            <Typography variant="h2" sx={{ fontWeight: 950, fontSize: { xs: '2rem', sm: '2.6rem', md: '4rem' }, mb: 1.25, lineHeight: 0.98, maxWidth: 620 }}>
+                            <Typography variant="h2" sx={{ fontWeight: 700, fontSize: { xs: '1.65rem', sm: '2rem', md: '2.5rem' }, mb: 1.25, lineHeight: 1.1, maxWidth: 620 }}>
                                 {t(hero.title || defaultHero.title)}
                             </Typography>
                             <Typography variant="body1" sx={{ opacity: 0.88, mb: 3, maxWidth: 500, fontWeight: 600 }}>
@@ -367,7 +371,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                         color: musicColors.ink,
                                         px: 3,
                                         py: 1.25,
-                                        fontWeight: 900,
+                                        fontWeight: 700,
                                         '&:hover': { bgcolor: musicColors.amber },
                                     }}
                                 >
@@ -382,7 +386,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                         color: 'white',
                                         px: 2.5,
                                         py: 1.25,
-                                        fontWeight: 850,
+                                        fontWeight: 700,
                                         '&:hover': { borderColor: musicColors.amber, bgcolor: alpha(musicColors.amber, 0.08) },
                                     }}
                                 >
@@ -399,7 +403,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                             color: 'white',
                                             border: '1px solid rgba(255,255,255,0.2)',
                                             bgcolor: 'rgba(255,255,255,0.08)',
-                                            fontWeight: 800,
+                                            fontWeight: 700,
                                         }}
                                     />
                                 ))}
@@ -407,13 +411,17 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                         </Box>
                         <Box
                             sx={{
-                                display: { xs: 'none', md: 'flex' },
+                                display: {
+                                    xs: 'none',
+                                    sm: hero.image_url ? 'flex' : 'none',
+                                    md: 'flex',
+                                },
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 bgcolor: hero.image_url ? 'transparent' : 'rgba(0,0,0,0.1)',
                                 position: 'relative',
                                 overflow: 'hidden',
-                                minHeight: 340,
+                                minHeight: { sm: 340, md: 390 },
                             }}
                         >
                             {hero.image_url ? (
@@ -426,8 +434,8 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                 </Container>
             )}
 
-            {sections.categories?.is_active !== false && (
-                <Container maxWidth="lg" sx={{ mt: 4 }}>
+            {sections.categories?.is_active !== false && displayCategories.length > 0 && (
+                <Container maxWidth="lg" sx={{ mt: { xs: '24px', md: '32px' } }}>
                     <SectionHeader
                         eyebrow="Departments"
                         title={sections.categories?.title || 'Shop by sound'}
@@ -438,7 +446,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                 href={routeWithBase('/categories', app_base)}
                                 size="small"
                                 endIcon={<ArrowForward />}
-                                sx={{ color: musicColors.rosin, fontWeight: 900 }}
+                                sx={{ color: musicColors.rosin, fontWeight: 700 }}
                             >
                                 {t('View all')}
                             </Button>
@@ -474,8 +482,8 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                 <Avatar
                                     src={cat.imageUrl || undefined}
                                     sx={{
-                                        width: { xs: 48, md: 64 },
-                                        height: { xs: 48, md: 64 },
+                                        width: { xs: 56, md: 64 },
+                                        height: { xs: 56, md: 64 },
                                         bgcolor: cat.color || 'rgba(244,194,103,0.2)',
                                         fontSize: '1.25rem',
                                         borderRadius: 2,
@@ -491,7 +499,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                     variant="caption"
                                     sx={{
                                         fontWeight: 700,
-                                        fontSize: '0.7rem',
+                                        fontSize: '0.78rem',
                                         textAlign: 'center',
                                         lineHeight: 1.2,
                                         width: '100%',
@@ -514,12 +522,12 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                 if (saleProducts.length === 0) return null;
 
                 return (
-                    <Container key={sale.id || sale.name} maxWidth="lg" sx={{ mt: 4 }}>
-                        <Box sx={{ ...sectionShellSx, p: { xs: 1.5, sm: 2.25 } }}>
+                    <Container key={sale.id || sale.name} maxWidth="lg" sx={{ mt: { xs: '24px', md: '32px' } }}>
+                        <Box sx={{ ...sectionShellSx, p: { xs: '16px', sm: '20px' } }}>
                             <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1.25} sx={{ mb: 2 }}>
                                 <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
                                     <LocalFireDepartment sx={{ fontSize: '1.35rem', color: musicColors.rosin }} />
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                         {sale.name || sections.flash_sale?.title || 'Limited-time gear deals'}
                                     </Typography>
                                     {sale.ends_at && (
@@ -527,11 +535,11 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                             label={`${t('Ends')} ${new Date(sale.ends_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
                                             color="primary"
                                             size="small"
-                                            sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800 }}
+                                            sx={{ minHeight: 28, fontSize: '0.72rem', fontWeight: 700 }}
                                         />
                                     )}
                                 </Stack>
-                                <Button component={Link} href={routeWithBase('/products?flash_sale=1', app_base)} size="small" endIcon={<ArrowForward />} sx={{ color: musicColors.rosin, fontWeight: 900 }}>
+                                <Button component={Link} href={routeWithBase('/products?flash_sale=1', app_base)} size="small" endIcon={<ArrowForward />} sx={{ color: musicColors.rosin, fontWeight: 700 }}>
                                     {t('More deals')}
                                 </Button>
                             </Stack>
@@ -546,7 +554,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
             })}
 
             {sections.promos?.is_active !== false && promos.length > 0 && (
-                <Container maxWidth="lg" sx={{ mt: 4 }}>
+                <Container maxWidth="lg" sx={{ mt: { xs: '24px', md: '32px' } }}>
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: `repeat(${Math.min(promos.length, 2)}, 1fr)` }, gap: 2 }}>
                         {promos.slice(0, 2).map((promo, index) => (
                             <Box
@@ -555,7 +563,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                 sx={{
                                     position: 'relative',
                                     minHeight: 132,
-                                    p: { xs: 2, md: 2.5 },
+                                    p: { xs: '16px', md: '20px' },
                                     borderRadius: 2,
                                     bgcolor: promo.accent_color || musicColors.sheet,
                                     border: '1px solid rgba(36,27,24,0.08)',
@@ -574,8 +582,8 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                 ) : null}
                                 <Box sx={{ position: 'relative', zIndex: 1 }}>
                                     <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>{t('Curated set')}</Typography>
-                                    <Typography variant="h6" sx={{ fontWeight: 950, color: musicColors.ink, lineHeight: 1.1 }}>{t(promo.title)}</Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 650, mt: 0.75, maxWidth: 350 }}>{t(promo.subtitle)}</Typography>
+                                    <Typography variant="h6" sx={{ fontWeight: 700, color: musicColors.ink, lineHeight: 1.1 }}>{t(promo.title)}</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.75, maxWidth: 350 }}>{t(promo.subtitle)}</Typography>
                                 </Box>
                                 <AutoAwesome sx={{ position: 'relative', zIndex: 1, fontSize: 34, color: musicColors.brass }} />
                             </Box>
@@ -585,7 +593,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
             )}
 
             {sections.best_sellers?.is_active !== false && (
-                <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+                <Container maxWidth="lg" sx={{ mt: { xs: '24px', md: '32px' }, mb: { xs: '24px', md: '32px' } }}>
                     <SectionHeader
                         eyebrow={productSectionMeta.source === 'best_sellers' ? 'Best sellers' : 'Shop highlights'}
                         title={sections.best_sellers?.title || productSectionMeta.title}
@@ -607,7 +615,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
             )}
 
             {sections.blogs?.is_active !== false && latestBlogs.length > 0 && (
-                <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+                <Container maxWidth="lg" sx={{ mt: { xs: '24px', md: '32px' }, mb: { xs: '24px', md: '32px' } }}>
                     <SectionHeader
                         eyebrow="Learn"
                         title={sections.blogs?.title || 'Player guides'}
@@ -618,7 +626,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                 href={routeWithBase('/blogs', app_base)}
                                 size="small"
                                 endIcon={<ArrowForward />}
-                                sx={{ color: musicColors.rosin, fontWeight: 900 }}
+                                sx={{ color: musicColors.rosin, fontWeight: 700 }}
                             >
                                 {t('View all')}
                             </Button>
@@ -631,7 +639,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
             )}
 
             {paymentMethods.length > 0 && (
-                <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+                <Container maxWidth="lg" sx={{ mt: { xs: '24px', md: '32px' }, mb: { xs: '24px', md: '32px' } }}>
                     <SectionHeader
                         eyebrow="Checkout"
                         title="Easy payment options"
@@ -642,7 +650,7 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                 href={routeWithBase('/checkout', app_base)}
                                 size="small"
                                 endIcon={<ArrowForward />}
-                                sx={{ color: musicColors.rosin, fontWeight: 900 }}
+                                sx={{ color: musicColors.rosin, fontWeight: 700 }}
                             >
                                 {t('Checkout')}
                             </Button>
@@ -659,14 +667,14 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                     bgcolor: musicColors.sheet,
                                     border: '1px solid rgba(36,27,24,0.08)',
                                     borderRadius: 2,
-                                    p: 1.25,
+                                    p: '16px',
                                     minWidth: 0,
                                 }}
                             >
                                 <Box
                                     sx={{
-                                        width: 40,
-                                        height: 40,
+                                        width: 48,
+                                        height: 48,
                                         borderRadius: 1,
                                         bgcolor: alpha(theme.palette.primary.main, 0.08),
                                         display: 'grid',
@@ -682,13 +690,13 @@ const Welcome = ({ products = [], productSection = null, categories, flashSalePr
                                     )}
                                 </Box>
                                 <Box sx={{ minWidth: 0 }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 900 }} noWrap>
+                                    <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
                                         {method.banking_service}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary" display="block" noWrap>
                                         {method.account_name}
                                     </Typography>
-                                    <Typography variant="caption" sx={{ fontWeight: 800 }} display="block" noWrap>
+                                    <Typography variant="caption" sx={{ fontWeight: 700 }} display="block" noWrap>
                                         {method.account_no}
                                     </Typography>
                                 </Box>

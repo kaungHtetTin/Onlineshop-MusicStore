@@ -16,6 +16,8 @@ import Footer from '@/Components/User/Footer';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { blogThumbnailSource } from '@/Utils/blogMedia';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { useTheme } from '@mui/material/styles';
+import { storefrontBackgroundSx } from '@/Components/User/musicStoreDesign';
 
 const formatDate = (value) => {
     if (!value) return '';
@@ -58,7 +60,7 @@ function RelatedCard({ post }) {
                 )}
             </Box>
             <Box>
-                <Typography variant="body2" sx={{ fontWeight: 900, lineHeight: 1.25 }}>{post.title}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.25 }}>{post.title}</Typography>
                 <Typography variant="caption" color="text.secondary">{post.category?.name || 'Blog'}</Typography>
             </Box>
         </Box>
@@ -66,21 +68,22 @@ function RelatedCard({ post }) {
 }
 
 export default function BlogShow({ post, related = [] }) {
+    const theme = useTheme();
     const { app_base } = usePage().props;
     const t = usePhraseTranslation();
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Box className="user-storefront" sx={{ ...storefrontBackgroundSx(theme), minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title={post.title} />
             <Head title={post.title} />
             <Navbar />
 
-            <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
+            <Container maxWidth="md" sx={{ py: { xs: '24px', md: '32px' } }}>
                 <Button component={Link} href={routeWithBase('/blogs', app_base)} startIcon={<ArrowBack />} sx={{ mb: 2 }}>
                     Blog
                 </Button>
 
-                <Stack spacing={1.5} sx={{ mb: 3 }}>
+                <Stack spacing="8px" sx={{ mb: '20px' }}>
                     <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
                         {post.category && (
                             <Chip
@@ -95,7 +98,7 @@ export default function BlogShow({ post, related = [] }) {
                         <Typography variant="caption" color="text.secondary">{formatDate(post.published_at)}</Typography>
                         {post.author?.name && <Typography variant="caption" color="text.secondary">By {post.author.name}</Typography>}
                     </Stack>
-                    <Typography variant="h3" sx={{ fontWeight: 950, fontSize: { xs: '2rem', md: '3rem' }, lineHeight: 1.05 }}>
+                    <Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '1.5rem', md: '2rem' }, lineHeight: 1.15 }}>
                         {post.title}
                     </Typography>
                     {post.excerpt && <Typography variant="body1" color="text.secondary">{post.excerpt}</Typography>}
@@ -124,12 +127,18 @@ export default function BlogShow({ post, related = [] }) {
                     className="blog-content"
                     sx={{
                         bgcolor: 'white',
-                        borderRadius: 1,
-                        p: { xs: 2.25, md: 4 },
+                        borderRadius: 2,
+                        p: { xs: '16px', md: '28px' },
                         border: '1px solid rgba(0,0,0,0.06)',
-                        '& p': { lineHeight: 1.8 },
+                        fontSize: { xs: '1rem', md: '1.0625rem' },
+                        lineHeight: 1.75,
+                        '& p': { lineHeight: 1.75, mb: '16px' },
                         '& h2, & h3, & h4': { mt: 3, mb: 1, lineHeight: 1.2 },
-                        '& blockquote': { borderLeft: '4px solid', borderColor: 'primary.main', m: 0, my: 2, p: 2, bgcolor: 'primary.light' },
+                        '& ul, & ol': { pl: '24px', mb: '16px' },
+                        '& li + li': { mt: '8px' },
+                        '& img': { maxWidth: '100%', height: 'auto', borderRadius: 2, my: '16px' },
+                        '& a': { color: 'primary.main', textUnderlineOffset: '3px' },
+                        '& blockquote': { borderLeft: '4px solid', borderColor: 'primary.main', m: 0, my: '20px', p: '16px', bgcolor: 'primary.light', borderRadius: '0 8px 8px 0' },
                     }}
                     dangerouslySetInnerHTML={{ __html: post.content || '' }}
                 />
@@ -150,9 +159,9 @@ export default function BlogShow({ post, related = [] }) {
                 )}
 
                 {related.length > 0 && (
-                    <Box sx={{ mt: 5, p: 2, bgcolor: 'white', borderRadius: 1, border: '1px solid rgba(0,0,0,0.06)' }}>
+                    <Box sx={{ mt: '32px', p: { xs: '16px', md: '20px' }, bgcolor: 'white', borderRadius: 2, border: '1px solid rgba(0,0,0,0.06)' }}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>{t('Related posts')}</Typography>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t('Related posts')}</Typography>
                             <Button component={Link} href={routeWithBase('/blogs', app_base)} size="small" endIcon={<ArrowForward />}>
                                 All posts
                             </Button>

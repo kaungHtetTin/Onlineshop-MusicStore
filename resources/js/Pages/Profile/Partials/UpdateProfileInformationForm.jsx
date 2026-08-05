@@ -5,6 +5,7 @@ import {
     Avatar,
     Box,
     Button,
+    ButtonBase,
     Stack,
     TextField,
     Typography,
@@ -94,7 +95,7 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
 
     return (
         <Box component="section" className={className}>
-            <Stack spacing={0.5}>
+            <Stack spacing="6px">
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
                     {t('Profile Information')}
                 </Typography>
@@ -103,47 +104,120 @@ export default function UpdateProfileInformation({ mustVerifyEmail, status, clas
                 </Typography>
             </Stack>
 
-            <Box component="form" onSubmit={submit} sx={{ mt: 3 }}>
-                <Stack spacing={2}>
+            <Box component="form" onSubmit={submit} sx={{ mt: '20px' }}>
+                <Stack spacing="16px">
                     {!isAdminContext && (
-                        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-                            <Avatar src={avatarPreview} sx={{ width: 88, height: 88, borderRadius: 2 }}>
-                                {user.name?.charAt(0)}
-                            </Avatar>
-                            <Box>
-                                <Button variant="outlined" component="label" size="small" startIcon={<PhotoCamera />}>
-                                    {t('Change photo')}
-                                    <input
-                                        type="file"
-                                        name="avatar"
-                                        accept="image/jpeg,image/png,image/webp,image/gif"
-                                        hidden
-                                        onChange={(e) => {
-                                            const f = e.target.files?.[0];
-                                            if (f) {
-                                                setData('avatar', f);
-                                                openCropper(f);
-                                            } else {
-                                                setData('avatar', null);
-                                            }
-                                            e.target.value = '';
+                        <Stack spacing="8px">
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                {t('Profile photo')}
+                            </Typography>
+                            <ButtonBase
+                                component="label"
+                                focusRipple
+                                sx={{
+                                    width: '100%',
+                                    maxWidth: 520,
+                                    justifyContent: 'flex-start',
+                                    alignItems: 'center',
+                                    gap: { xs: '12px', sm: '16px' },
+                                    p: '12px',
+                                    border: '1px solid',
+                                    borderColor: errors.avatar ? 'error.main' : 'divider',
+                                    borderRadius: 2,
+                                    bgcolor: 'background.paper',
+                                    textAlign: 'left',
+                                    transition: 'border-color .18s ease, background-color .18s ease, box-shadow .18s ease',
+                                    '&:hover': {
+                                        borderColor: 'primary.main',
+                                        bgcolor: 'action.hover',
+                                        boxShadow: '0 8px 24px rgba(15,23,42,.06)',
+                                    },
+                                    '&.Mui-focusVisible': {
+                                        outline: '3px solid',
+                                        outlineColor: 'primary.light',
+                                        outlineOffset: 2,
+                                    },
+                                }}
+                            >
+                                <Box sx={{ position: 'relative', flexShrink: 0 }}>
+                                    <Avatar
+                                        src={avatarPreview}
+                                        sx={{
+                                            width: { xs: 72, sm: 84 },
+                                            height: { xs: 72, sm: 84 },
+                                            borderRadius: 2.5,
+                                            bgcolor: 'primary.main',
+                                            color: 'primary.contrastText',
+                                            fontSize: '1.35rem',
+                                            fontWeight: 700,
+                                            border: '3px solid',
+                                            borderColor: 'background.paper',
+                                            boxShadow: '0 6px 18px rgba(15,23,42,.14)',
                                         }}
-                                    />
-                                </Button>
-                                <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                                    {t('JPG, PNG, WebP or GIF - max 4MB')}
+                                    >
+                                        {user.name?.charAt(0)?.toUpperCase()}
+                                    </Avatar>
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            right: -4,
+                                            bottom: -4,
+                                            width: 34,
+                                            height: 34,
+                                            display: 'grid',
+                                            placeItems: 'center',
+                                            borderRadius: '50%',
+                                            bgcolor: 'primary.main',
+                                            color: 'primary.contrastText',
+                                            border: '3px solid',
+                                            borderColor: 'background.paper',
+                                            boxShadow: '0 4px 12px rgba(15,23,42,.18)',
+                                        }}
+                                    >
+                                        <PhotoCamera sx={{ fontSize: 17 }} />
+                                    </Box>
+                                </Box>
+                                <Box sx={{ minWidth: 0, flex: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                        {t('Change profile photo')}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: '3px' }}>
+                                        {t('Choose a clear square image. JPG, PNG, WebP or GIF, up to 4MB.')}
+                                    </Typography>
+                                    {data.avatar instanceof File && (
+                                        <Typography
+                                            variant="caption"
+                                            color="primary"
+                                            display="block"
+                                            noWrap
+                                            sx={{ mt: '5px', fontWeight: 600 }}
+                                        >
+                                            {t('Selected')}: {data.avatar.name}
+                                        </Typography>
+                                    )}
+                                </Box>
+                                <input
+                                    type="file"
+                                    name="avatar"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    hidden
+                                    onChange={(e) => {
+                                        const f = e.target.files?.[0];
+                                        if (f) {
+                                            setData('avatar', f);
+                                            openCropper(f);
+                                        } else {
+                                            setData('avatar', null);
+                                        }
+                                        e.target.value = '';
+                                    }}
+                                />
+                            </ButtonBase>
+                            {errors.avatar && (
+                                <Typography variant="caption" color="error" display="block">
+                                    {errors.avatar}
                                 </Typography>
-                                {errors.avatar && (
-                                    <Typography variant="caption" color="error" display="block">
-                                        {errors.avatar}
-                                    </Typography>
-                                )}
-                                {data.avatar instanceof File && (
-                                    <Typography variant="caption" color="primary" display="block" sx={{ mt: 0.5 }}>
-                                        {t('Selected')}: {data.avatar.name}
-                                    </Typography>
-                                )}
-                            </Box>
+                            )}
                         </Stack>
                     )}
 

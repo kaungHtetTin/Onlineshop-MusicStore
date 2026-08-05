@@ -19,6 +19,10 @@ body {
   min-width: 0;
   overflow-x: hidden;
   background: #f6f8f8;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 img,
@@ -48,6 +52,15 @@ canvas {
 
 .MuiButton-root {
   min-width: 0;
+}
+
+.user-storefront {
+  color: #171312;
+  font-size: 15px;
+}
+
+.user-storefront :focus-visible {
+  outline-offset: 3px;
 }
 
 .language-switcher {
@@ -105,6 +118,8 @@ canvas {
 }
 
 .storefront-language-switcher {
+  min-height: 40px;
+  padding: 4px 7px;
   color: #f4c267;
   border-color: rgb(244 194 103 / 30%);
   background: rgb(255 255 255 / 10%);
@@ -117,6 +132,7 @@ canvas {
 }
 
 .storefront-language-switcher select {
+  min-height: 32px;
   color: #f4c267;
 }
 
@@ -149,7 +165,8 @@ canvas {
   }
 
   .storefront-language-switcher select {
-    max-width: 70px;
+    max-width: 58px;
+    padding-right: 18px;
   }
 }
 
@@ -311,12 +328,8 @@ canvas {
     min-width: 0;
   }
 
-  .MuiIconButton-root {
-    padding: 7px;
-  }
-
   .MuiButton-root {
-    min-height: 36px;
+    min-height: 44px;
   }
 
   .MuiPagination-ul {
@@ -379,7 +392,7 @@ canvas {
   }
 
   .MuiBottomNavigationAction-label {
-    font-size: 0.58rem !important;
+    font-size: 0.7rem !important;
   }
 }
 

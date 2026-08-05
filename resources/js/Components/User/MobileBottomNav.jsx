@@ -10,7 +10,7 @@ import { useUserChrome } from '@/Layouts/UserChromeContext';
 import { useTranslation } from '@/Utils/i18n';
 
 /** BottomNavigation height — use for chat layout padding above fixed nav */
-export const MOBILE_BOTTOM_NAV_HEIGHT = 56;
+export const MOBILE_BOTTOM_NAV_HEIGHT = 64;
 
 export function MobileBottomNavSpacer() {
     return (
@@ -73,7 +73,7 @@ const MobileBottomNav = ({ persistentRoot = false }) => {
     }
 
     return (
-        <Box sx={{ display: { xs: 'block', md: 'none' }, position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1200 }}>
+        <Box sx={{ display: { xs: 'block', md: 'none' }, position: 'fixed', bottom: 0, left: 0, right: 0, width: '100vw', overflow: 'hidden', zIndex: 1200 }}>
             <Paper
                 elevation={3}
                 sx={{
@@ -93,22 +93,49 @@ const MobileBottomNav = ({ persistentRoot = false }) => {
                     sx={{
                         height: MOBILE_BOTTOM_NAV_HEIGHT,
                         bgcolor: musicColors.sheet,
-                        '& .Mui-selected': { color: `${musicColors.rosin} !important` },
+                        '& .MuiBottomNavigationAction-root': {
+                            minHeight: MOBILE_BOTTOM_NAV_HEIGHT,
+                            minWidth: 0,
+                            maxWidth: 'none',
+                            flex: '1 1 0',
+                            px: 0,
+                            pt: 0.75,
+                            pb: 0.65,
+                            position: 'relative',
+                        },
+                        '& .MuiBottomNavigationAction-label': {
+                            mt: 0.25,
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            lineHeight: 1.15,
+                        },
+                        '& .Mui-selected': {
+                            color: `${musicColors.rosin} !important`,
+                            '&::before': {
+                                content: '""',
+                                position: 'absolute',
+                                top: 0,
+                                width: 24,
+                                height: 3,
+                                borderRadius: '0 0 4px 4px',
+                                bgcolor: musicColors.rosin,
+                            },
+                        },
                     }}
                 >
                     <BottomNavigationAction
                         label={t('storefront.home', 'Home')}
                         component={Link}
                         href={routeWithBase('/', app_base)}
-                        icon={<Home sx={{ fontSize: '1.2rem' }} />}
-                        sx={{ minWidth: 'auto', '& .MuiBottomNavigationAction-label': { fontSize: '0.65rem' } }}
+                        icon={<Home sx={{ fontSize: '1.4rem' }} />}
+                        sx={{ minWidth: 0 }}
                     />
                     <BottomNavigationAction
                         label={t('storefront.shop', 'Shop')}
                         component={Link}
                         href={routeWithBase('/products', app_base)}
-                        icon={<ShoppingBag sx={{ fontSize: '1.2rem' }} />}
-                        sx={{ minWidth: 'auto', '& .MuiBottomNavigationAction-label': { fontSize: '0.65rem' } }}
+                        icon={<ShoppingBag sx={{ fontSize: '1.4rem' }} />}
+                        sx={{ minWidth: 0 }}
                     />
                     <BottomNavigationAction
                         label={t('storefront.cart', 'Cart')}
@@ -121,24 +148,24 @@ const MobileBottomNav = ({ persistentRoot = false }) => {
                                 invisible={cartCount === 0}
                                 sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem', minWidth: 16, height: 16 } }}
                             >
-                                <ShoppingCart sx={{ fontSize: '1.2rem' }} />
+                                <ShoppingCart sx={{ fontSize: '1.4rem' }} />
                             </Badge>
                         }
-                        sx={{ minWidth: 'auto', '& .MuiBottomNavigationAction-label': { fontSize: '0.65rem' } }}
+                        sx={{ minWidth: 0 }}
                     />
                     <BottomNavigationAction
                         label={t('storefront.orders', 'Orders')}
                         component={Link}
                         href={routeWithBase(auth?.user ? '/orders' : '/login', app_base)}
-                        icon={<ReceiptLong sx={{ fontSize: '1.2rem' }} />}
-                        sx={{ minWidth: 'auto', '& .MuiBottomNavigationAction-label': { fontSize: '0.65rem' } }}
+                        icon={<ReceiptLong sx={{ fontSize: '1.4rem' }} />}
+                        sx={{ minWidth: 0 }}
                     />
                     <BottomNavigationAction
                         label={t('storefront.profile', 'Profile')}
                         component={Link}
                         href={routeWithBase(auth?.user ? '/profile' : '/login', app_base)}
-                        icon={<Person sx={{ fontSize: '1.2rem' }} />}
-                        sx={{ minWidth: 'auto', '& .MuiBottomNavigationAction-label': { fontSize: '0.65rem' } }}
+                        icon={<Person sx={{ fontSize: '1.4rem' }} />}
+                        sx={{ minWidth: 0 }}
                     />
                 </BottomNavigation>
             </Paper>

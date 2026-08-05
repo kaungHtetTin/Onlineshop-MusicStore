@@ -8,6 +8,7 @@ import {
     Container,
     Divider,
     FormHelperText,
+    IconButton,
     Paper,
     Stack,
     Step,
@@ -16,7 +17,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { AccountBalanceWallet, CloudUpload, Image as ImageIcon } from '@mui/icons-material';
+import { AccountBalanceWallet, CloudUpload, ContentCopyRounded, Image as ImageIcon } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
@@ -168,7 +169,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
             <UserBrandHead title="Checkout" />
             <Navbar />
 
-            <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
+            <Container maxWidth="lg" sx={{ mt: { xs: '16px', md: '24px' }, pb: { xs: '24px', md: '32px' } }}>
                 <BackLink href={routeWithBase('/cart', app_base)}>
                     {t('Back to cart')}
                 </BackLink>
@@ -176,14 +177,14 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                 <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
                     {t('Secure checkout')}
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: musicColors.ink }}>
                     {t('Finish your order')}
                 </Typography>
 
                 <Stepper
                     activeStep={activeStep}
                     alternativeLabel
-                    sx={{ mb: 3, '& .MuiStepLabel-label': { fontSize: { xs: '0.65rem', sm: '0.85rem' } } }}
+                    sx={{ mb: '20px', '& .MuiStepLabel-label': { fontSize: { xs: '0.72rem', sm: '0.85rem' } }, '& .MuiStepLabel-label:not(.Mui-active)': { display: { xs: 'none', sm: 'block' } } }}
                 >
                     {steps.map((label) => (
                         <Step key={label}>
@@ -205,9 +206,10 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                     </Alert>
                 )}
 
-                <Paper elevation={0} sx={{ ...sectionShellSx, p: { xs: 2, sm: 3 } }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 320px' }, gap: { xs: '16px', md: '20px' }, alignItems: 'start' }}>
+                <Paper elevation={0} sx={{ ...sectionShellSx, p: { xs: '16px', sm: '20px' } }}>
                     {activeStep === 0 && (
-                        <Stack spacing={2}>
+                        <Stack spacing="16px">
                             <TextField
                                 label={t('Full name')}
                                 value={data.receiver_name}
@@ -277,8 +279,8 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                     )}
 
                     {activeStep === 1 && (
-                        <Stack spacing={2}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        <Stack spacing="16px">
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                 {t('Choose payment account')}
                             </Typography>
                             {paymentMethods.length === 0 ? (
@@ -299,7 +301,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                                 onClick={() => setData('payment_method_id', method.id)}
                                                 sx={{
                                                     textAlign: 'left',
-                                                    p: 1.5,
+                                                    p: '16px',
                                                     borderRadius: 2,
                                                     border: '1px solid',
                                                     borderColor: selected ? 'primary.main' : 'divider',
@@ -312,8 +314,8 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                                 <Stack direction="row" spacing={1.25} alignItems="center">
                                                     <Box
                                                         sx={{
-                                                            width: 42,
-                                                            height: 42,
+                                                            width: 48,
+                                                            height: 48,
                                                             borderRadius: 1.5,
                                                             border: '1px solid',
                                                             borderColor: 'divider',
@@ -330,17 +332,22 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                                             <AccountBalanceWallet color="primary" fontSize="small" />
                                                         )}
                                                     </Box>
-                                                    <Box sx={{ minWidth: 0 }}>
-                                                        <Typography variant="body2" sx={{ fontWeight: 900 }} noWrap>
+                                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
                                                             {method.banking_service}
                                                         </Typography>
                                                         <Typography variant="caption" color="text.secondary" display="block" noWrap>
                                                             {method.account_name}
                                                         </Typography>
-                                                        <Typography variant="caption" sx={{ fontWeight: 800 }} display="block" noWrap>
+                                                        <Typography variant="caption" sx={{ fontWeight: 700 }} display="block" noWrap>
                                                             {method.account_no}
                                                         </Typography>
                                                     </Box>
+                                                    <IconButton
+                                                        aria-label={t('Copy account number')}
+                                                        onClick={(event) => { event.stopPropagation(); navigator.clipboard?.writeText(String(method.account_no || '')); }}
+                                                        sx={{ width: 40, height: 40, color: 'primary.main', flexShrink: 0 }}
+                                                    ><ContentCopyRounded sx={{ fontSize: 20 }} /></IconButton>
                                                 </Stack>
                                             </Paper>
                                         );
@@ -349,7 +356,11 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             )}
                             {errors.payment_method_id && <FormHelperText error>{errors.payment_method_id}</FormHelperText>}
                             <Alert severity="info" sx={{ borderRadius: 2 }}>
-                                {t('Pay the order total using your bank or wallet, then upload a clear screenshot of the successful transfer. The shop team will verify your payment before the order is prepared.')}
+                                <Typography component="ol" variant="body2" sx={{ m: 0, pl: '20px', '& li + li': { mt: '4px' } }}>
+                                    <li>{t('Send the order total to the selected account.')}</li>
+                                    <li>{t('Save a clear successful-transfer screenshot.')}</li>
+                                    <li>{t('Upload it below for verification.')}</li>
+                                </Typography>
                             </Alert>
                             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                 {t('Transaction screenshot (required)')}
@@ -366,7 +377,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 startIcon={<CloudUpload />}
                                 onClick={() => fileInputRef.current?.click()}
                                 fullWidth
-                                sx={{ py: 1.5, fontWeight: 700 }}
+                                sx={{ minHeight: 96, py: '16px', fontWeight: 700, borderStyle: 'dashed', borderWidth: 2 }}
                             >
                                 {t(data.payment_proof ? 'Change screenshot' : 'Upload screenshot')}
                             </Button>
@@ -404,6 +415,9 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                         <Typography variant="caption" color="text.secondary">
                                             {t('JPG, PNG or WebP - max 10 MB')}
                                         </Typography>
+                                        <Button color="error" size="small" sx={{ alignSelf: 'flex-start', mt: '4px', minHeight: 36, px: 0 }} onClick={() => { if (proofPreview) URL.revokeObjectURL(proofPreview); setProofPreview(null); setData('payment_proof', null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
+                                            {t('Remove')}
+                                        </Button>
                                     </Stack>
                                 </Paper>
                             )}
@@ -411,7 +425,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                     )}
 
                     {activeStep === 2 && (
-                        <Stack spacing={2}>
+                        <Stack spacing="16px">
                             {items.map((line) => (
                                 <Stack key={line.skuId} direction="row" justifyContent="space-between" alignItems="flex-start">
                                     <Box sx={{ minWidth: 0, pr: 1 }}>
@@ -427,7 +441,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                             </Typography>
                                         )}
                                         {line.flashSale && (
-                                            <Typography variant="caption" color="error.main" display="block" sx={{ fontWeight: 800 }}>
+                                            <Typography variant="caption" color="error.main" display="block" sx={{ fontWeight: 700 }}>
                                                 {t('Flash Sale')}
                                             </Typography>
                                         )}
@@ -473,7 +487,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 <Stack direction="row" justifyContent="space-between" spacing={2}>
                                     <Typography variant="body2">{t('Payment account')}</Typography>
                                     <Box sx={{ textAlign: 'right' }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                             {selectedPaymentMethod.banking_service}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
@@ -484,10 +498,10 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                             )}
                             <Divider />
                             <Stack direction="row" justifyContent="space-between">
-                                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                     {t('Total to pay')}
                                 </Typography>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                     {formatMoney(total)}
                                 </Typography>
                             </Stack>
@@ -499,7 +513,10 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                         </Stack>
                     )}
 
-                    <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1.5} justifyContent="space-between" sx={{ mt: 3 }}>
+                    <Typography variant="subtitle1" sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'space-between', mt: '16px', fontWeight: 700 }}>
+                        <span>{t('Total')}</span><span>{formatMoney(total)}</span>
+                    </Typography>
+                    <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={1.5} justifyContent="space-between" sx={{ mt: '16px', position: { xs: 'sticky', sm: 'static' }, bottom: { xs: 72 }, zIndex: 10, bgcolor: { xs: 'rgba(255,253,248,.96)', sm: 'transparent' }, p: { xs: '8px', sm: 0 }, mx: { xs: '-8px', sm: 0 }, backdropFilter: { xs: 'blur(12px)', sm: 'none' } }}>
                         <Button
                             disabled={activeStep === 0}
                             onClick={() => setActiveStep((s) => s - 1)}
@@ -515,7 +532,7 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 disabled={!canNext()}
                                 onClick={() => setActiveStep((s) => s + 1)}
                                 fullWidth
-                                sx={{ maxWidth: { sm: 200 }, fontWeight: 800 }}
+                                sx={{ maxWidth: { sm: 200 }, fontWeight: 700 }}
                             >
                                 {t('Continue')}
                             </Button>
@@ -525,13 +542,23 @@ export default function CheckoutIndex({ shop, loyalty, paymentMethods = [] }) {
                                 onClick={handlePlaceOrder}
                                 disabled={processing || items.length === 0 || !data.payment_method_id || !data.payment_proof}
                                 fullWidth
-                                sx={{ maxWidth: { sm: 240 }, fontWeight: 800 }}
+                                sx={{ maxWidth: { sm: 240 }, fontWeight: 700 }}
                             >
                                 {t(processing ? 'Submitting...' : 'Submit order')}
                             </Button>
                         )}
                     </Stack>
                 </Paper>
+                <Paper elevation={0} sx={{ ...sectionShellSx, p: '20px', display: { xs: 'none', md: 'block' }, position: 'sticky', top: 112 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: '16px' }}>{t('Order summary')}</Typography>
+                    <Stack spacing="10px">
+                        {items.map((line) => <Stack key={line.skuId} direction="row" justifyContent="space-between" spacing="12px"><Typography variant="body2" sx={{ minWidth: 0 }}>{line.name} × {line.qty}</Typography><Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{formatMoney(line.price * line.qty)}</Typography></Stack>)}
+                        <Divider />
+                        <Stack direction="row" justifyContent="space-between"><Typography variant="body2">{t('Shipping')}</Typography><Typography variant="body2">{shipping === 0 ? t('Free') : formatMoney(shipping)}</Typography></Stack>
+                        <Stack direction="row" justifyContent="space-between"><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t('Total')}</Typography><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{formatMoney(total)}</Typography></Stack>
+                    </Stack>
+                </Paper>
+                </Box>
             </Container>
 
             <Footer />

@@ -1,66 +1,21 @@
 import { useEffect } from 'react';
-import GuestLayout from '@/Layouts/GuestLayout';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import CustomerAuthShell from '@/Components/User/CustomerAuthShell';
 import { Head, useForm, usePage } from '@/spa/router';
+import { Button, Stack, TextField } from '@mui/material';
+import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function ConfirmPassword() {
-    const { admin_app_url } = usePage().props;
+    const { app_base } = usePage().props;
     const t = usePhraseTranslation();
-    const { data, setData, post, processing, errors, reset } = useForm({
-        password: '',
-    });
-
-    useEffect(() => {
-        return () => {
-            reset('password');
-        };
-    }, []);
-
-    const handleOnChange = (event) => {
-        setData(event.target.name, event.target.value);
-    };
-
-    const submit = (e) => {
-        e.preventDefault();
-
-        post(`${admin_app_url}/confirm-password`);
-    };
-
-    return (
-        <GuestLayout>
-            <Head title={t('Confirm Password')} />
-
-            <div className="mb-4 text-sm text-gray-600">
-                {t('This is a secure area of the application. Please confirm your password before continuing.')}
-            </div>
-
-            <form onSubmit={submit}>
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value={t('Password')} />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        isFocused={true}
-                        onChange={handleOnChange}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="flex items-center justify-end mt-4">
-                    <PrimaryButton className="ml-4" disabled={processing}>
-                        {t('Confirm')}
-                    </PrimaryButton>
-                </div>
-            </form>
-        </GuestLayout>
-    );
+    const { data, setData, post, processing, errors, reset } = useForm({ password: '' });
+    useEffect(() => () => reset('password'), []);
+    const submit = (event) => { event.preventDefault(); post(routeWithBase('/confirm-password', app_base)); };
+    return <CustomerAuthShell title={t('Confirm your password')} subtitle={t('For your security, enter your password before continuing.')}>
+        <Head title={t('Confirm Password')} />
+        <form onSubmit={submit}><Stack spacing="16px">
+            <TextField autoFocus fullWidth type="password" label={t('Password')} value={data.password} onChange={(e) => setData('password', e.target.value)} error={Boolean(errors.password)} helperText={errors.password} autoComplete="current-password" />
+            <Button fullWidth type="submit" variant="contained" size="large" disabled={processing}>{t(processing ? 'Confirming...' : 'Confirm')}</Button>
+        </Stack></form>
+    </CustomerAuthShell>;
 }

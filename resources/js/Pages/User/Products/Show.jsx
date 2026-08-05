@@ -12,6 +12,7 @@ import {
 import { 
     Add as AddIcon, 
     Remove as RemoveIcon,
+    Favorite,
     FavoriteBorder,
     Share,
     ShoppingBag,
@@ -30,6 +31,7 @@ import UserBrandHead from '@/Components/User/UserBrandHead';
 import { storageUrl, routeWithBase } from '@/Utils/url';
 import { productListGridSx } from '@/Utils/productListGrid';
 import { useCartStore } from '@/stores/cartStore';
+import { useWishlistStore } from '@/stores/wishlistStore';
 import { formatMoney, hasFlashSale, skuOriginalPrice, skuPrice } from '@/Utils/pricing';
 import {
     eyebrowSxForTheme,
@@ -39,9 +41,9 @@ import {
 } from '@/Components/User/musicStoreDesign';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
-const productImageUrl = (image, appUrl) => {
+const productImageUrl = (image, appUrl, appBase) => {
     const path = image?.image_url || image?.image_path;
-    return path ? storageUrl(path, appUrl) : 'https://via.placeholder.com/600?text=No+Image';
+    return path ? storageUrl(path, appUrl) : routeWithBase('/images/product-placeholder.svg', appBase);
 };
 
 const safeProductListHref = (currentUrl, appBase) => {
@@ -78,8 +80,10 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     ));
     const [quantity, setQuantity] = useState(1);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
-    const [cartToast, setCartToast] = useState(false);
+    const [actionToast, setActionToast] = useState({ open: false, message: '' });
     const addItem = useCartStore((s) => s.addItem);
+    const toggleWishlist = useWishlistStore((s) => s.toggle);
+    const inWishlist = useWishlistStore((s) => s.items.some((item) => item.productId === product.id));
     const selectedSkuQtyLimit = Math.min(ORDER_QTY_MAX, Math.max(1, Number(selectedSku?.available_qty ?? 1)));
     const reviewRows = reviews.data || product.reviews || [];
     const { data, setData, post, processing, errors } = useForm({
@@ -89,13 +93,23 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
     const productListHref = useMemo(() => safeProductListHref(page.url, app_base), [app_base, page.url]);
 
     const images = useMemo(() => {
-        return product.images.length > 0 ? product.images : [{ image_path: 'https://via.placeholder.com/600?text=No+Image' }];
+        return product.images.length > 0 ? product.images : [{ image_path: null }];
     }, [product.images]);
     const buyableSkus = useMemo(
         () => productSkus.filter((sku) => sku.is_active !== false && Number(sku.available_qty ?? 0) > 0),
         [productSkus]
     );
     const hasMultipleImages = images.length > 1;
+    const wishlistPayload = useMemo(() => ({
+        productId: product.id,
+        slug: product.slug,
+        name: product.name,
+        imagePath: product.primary_image?.image_path || product.images?.[0]?.image_path || null,
+        skus: productSkus,
+        categoryName: product.category?.name || null,
+        rating: Number(product.rating || 0),
+        review_count: Number(product.review_count || 0),
+    }), [product, productSkus]);
 
     const selectImage = useCallback((index) => {
         if (images.length === 0) return;
@@ -137,9 +151,17 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
             isPreorder: false,
             qty: Math.min(quantity, Number(selectedSku.available_qty ?? 1)),
         });
-        setCartToast(true);
+        setActionToast({ open: true, message: t('Added to your cart') });
         setQuantity(1);
     };
+
+    const handleWishlist = useCallback(() => {
+        const added = toggleWishlist(wishlistPayload);
+        setActionToast({
+            open: true,
+            message: t(added ? 'Saved to wishlist' : 'Removed from wishlist'),
+        });
+    }, [toggleWishlist, wishlistPayload, t]);
 
     const submitReview = (e) => {
         e.preventDefault();
@@ -173,7 +195,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
             
             <Navbar />
 
-            <Container maxWidth="xl" sx={{ mt: { xs: 2, md: 4 }, px: { lg: 6 } }}>
+            <Container maxWidth="lg" sx={{ mt: { xs: '16px', md: '24px' }, pb: { xs: '24px', md: '32px' } }}>
                 <BackLink href={productListHref}>
                     {t('Back to Shop')}
                 </BackLink>
@@ -181,7 +203,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                 <Box sx={{ 
                     display: 'grid', 
                     gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 0.4fr) minmax(0, 0.6fr)' }, 
-                    gap: { xs: 4, md: 8 },
+                    gap: { xs: '20px', md: '32px' },
                     alignItems: 'start'
                 }}>
                     {/* Image Gallery */}
@@ -203,7 +225,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             }}
                             sx={{
                                 position: 'relative',
-                                pt: '133.33%',
+                                aspectRatio: { xs: '1 / 1', sm: '3 / 4' },
                                 borderRadius: 2,
                                 overflow: 'hidden',
                                 border: '1px solid',
@@ -219,7 +241,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                             <Box 
                                 component="img" 
                                 key={images[activeImageIndex]?.id || images[activeImageIndex]?.image_path || activeImageIndex}
-                                src={productImageUrl(images[activeImageIndex], app_url)}
+                                src={productImageUrl(images[activeImageIndex], app_url, app_base)}
                                 alt={`${product.name} ${activeImageIndex + 1}`}
                                 sx={{ 
                                     position: 'absolute',
@@ -311,12 +333,12 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                     </Stack>
 
                     {/* Product Info */}
-                    <Stack spacing={3.5} sx={{ minWidth: 0 }}>
+                    <Stack spacing="20px" sx={{ minWidth: 0 }}>
                         <Box>
                             <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 1.5 }}>
                                 {product.category?.name || t('Uncategorized')}
                             </Typography>
-                            <Typography variant="h3" sx={{ fontWeight: 950, mb: 2, lineHeight: 1.08, color: musicColors.ink }}>
+                            <Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '1.45rem', sm: '1.75rem' }, mb: 2, lineHeight: 1.18, color: musicColors.ink }}>
                                 {product.name}
                             </Typography>
                             <Stack direction="row" spacing={1.5} alignItems="center">
@@ -328,12 +350,12 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                         </Box>
 
                         <Box sx={{ py: 1 }}>
-                            <Typography variant="h3" sx={{ fontWeight: 950, mb: 1, color: musicColors.rosin }}>
+                            <Typography variant="h3" sx={{ fontWeight: 700, fontSize: { xs: '1.35rem', sm: '1.6rem' }, mb: 1, color: musicColors.rosin }}>
                                 {formatMoney(skuPrice(selectedSku))}
                             </Typography>
                             {hasFlashSale(selectedSku) && (
                                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                                    <Chip label={t('Flash Sale')} color="error" size="small" sx={{ fontWeight: 800 }} />
+                                    <Chip label={t('Flash Sale')} color="error" size="small" sx={{ fontWeight: 700 }} />
                                     <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
                                         {formatMoney(skuOriginalPrice(selectedSku))}
                                     </Typography>
@@ -354,7 +376,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                     key={idx}
                                     onClick={() => selectImage(idx)}
                                     component="img"
-                                    src={productImageUrl(img, app_url)}
+                                    src={productImageUrl(img, app_url, app_base)}
                                     sx={{ 
                                         width: 72, 
                                         height: 96, 
@@ -373,7 +395,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                         {/* Variants Selection */}
                         {buyableSkus.length > 1 && (
                             <Box sx={{ py: 1 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 2 }}>{t('Choose finish / variant')}</Typography>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>{t('Choose finish / variant')}</Typography>
                                 <ToggleButtonGroup
                                     value={selectedSku?.id}
                                     exclusive
@@ -391,7 +413,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                         }
                                     }}
                                     size="small"
-                                    sx={{ flexWrap: 'wrap', gap: 1.5, '& .MuiToggleButton-root': { border: '1px solid !important', borderRadius: '8px !important', px: 2, py: 1 } }}
+                                    sx={{ flexWrap: 'wrap', gap: 1.5, '& .MuiToggleButton-root': { border: '1px solid !important', borderRadius: '8px !important', minHeight: 44, px: 2, py: 1, '&.Mui-selected': { borderColor: 'primary.main !important', bgcolor: 'primary.light' } } }}
                                 >
                                     {buyableSkus.map((sku) => (
                                         <ToggleButton key={sku.id} value={sku.id}>
@@ -399,7 +421,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                                 <Typography variant="caption" sx={{ fontWeight: 600 }}>
                                                     {Object.values(sku.attributes || {}).join(' / ') || sku.sku_code}
                                                 </Typography>
-                                                <Typography variant="caption" color={hasFlashSale(sku) ? 'error.main' : 'text.secondary'} sx={{ fontWeight: 800 }}>
+                                                <Typography variant="caption" color={hasFlashSale(sku) ? 'error.main' : 'text.secondary'} sx={{ fontWeight: 700 }}>
                                                     {formatMoney(skuPrice(sku))}
                                                 </Typography>
                                             </Stack>
@@ -411,10 +433,10 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
 
                         {/* Quantity & Actions */}
                         <Stack
-                            direction={{ xs: 'column', sm: 'row' }}
+                            direction="row"
                             spacing={1.25}
-                            alignItems={{ xs: 'stretch', sm: 'center' }}
-                            sx={{ pt: 2, width: '100%', minWidth: 0 }}
+                            alignItems="center"
+                            sx={{ pt: 2, width: '100%', minWidth: 0, position: { xs: 'sticky', sm: 'static' }, bottom: { xs: 72 }, zIndex: 20, p: { xs: '8px', sm: 0 }, mx: { xs: '-8px', sm: 0 }, bgcolor: { xs: 'rgba(255,253,248,.96)', sm: 'transparent' }, borderRadius: 2, backdropFilter: { xs: 'blur(14px)', sm: 'none' }, boxShadow: { xs: '0 -10px 28px rgba(36,27,24,.10)', sm: 'none' } }}
                         >
                             <Box sx={{ 
                                 display: 'flex', 
@@ -425,8 +447,8 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                 borderRadius: 2,
                                 bgcolor: musicColors.sheet,
                                 p: 0.5,
-                                width: { xs: '100%', sm: 120 },
-                                flex: { xs: '0 0 auto', sm: '0 0 120px' },
+                                width: 112,
+                                flex: '0 0 112px',
                             }}>
                                 <IconButton size="small" onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1}>
                                     <RemoveIcon fontSize="small" />
@@ -447,10 +469,10 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                 onClick={handleAddToCart}
                                 sx={{
                                     py: 1.75,
-                                    fontWeight: 800,
+                                    fontWeight: 700,
                                     borderRadius: 2,
                                     fontSize: '1rem',
-                                    flex: { xs: '0 0 auto', sm: '1 1 0' },
+                                    flex: '1 1 0',
                                     minWidth: 0,
                                     whiteSpace: 'nowrap',
                                 }}
@@ -458,27 +480,32 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                 {t('Add to Cart')}
                             </Button>
                             <IconButton
+                                aria-label={t(inWishlist ? 'Remove from wishlist' : 'Add to wishlist')}
+                                aria-pressed={inWishlist}
+                                onClick={handleWishlist}
                                 sx={{
                                     border: '1px solid',
-                                    borderColor: 'divider',
+                                    borderColor: inWishlist ? 'primary.main' : 'divider',
                                     borderRadius: 2,
-                                    p: 1.5,
-                                    width: { xs: '100%', sm: 56 },
-                                    height: 56,
-                                    flex: { xs: '0 0 auto', sm: '0 0 56px' },
+                                    width: 48,
+                                    height: 48,
+                                    p: 0,
+                                    flex: '0 0 48px',
+                                    bgcolor: inWishlist ? 'primary.light' : musicColors.sheet,
+                                    '&:hover': { bgcolor: 'primary.light', borderColor: 'primary.main' },
                                 }}
                             >
-                                <FavoriteBorder color="primary" />
+                                {inWishlist ? <Favorite color="primary" /> : <FavoriteBorder color="primary" />}
                             </IconButton>
                         </Stack>
 
-                        <Box sx={{ ...sectionShellSx, p: { xs: 2.5, md: 4 }, mt: 4 }}>
+                        {product.description && <Box sx={{ ...sectionShellSx, p: { xs: '16px', md: '24px' }, mt: '24px' }}>
                             <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>{t('Details')}</Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>{t('Product description')}</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, color: musicColors.ink }}>{t('Product description')}</Typography>
                             <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, opacity: 0.9 }}>
-                                {product.description || t('No description available.')}
+                                {product.description}
                             </Typography>
-                        </Box>
+                        </Box>}
 
                         <Stack direction="row" spacing={3}>
                             <Stack direction="row" spacing={1} alignItems="center" sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}>
@@ -489,11 +516,11 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                     </Stack>
                 </Box>
 
-                <Box sx={{ mt: 8 }}>
+                <Box sx={{ mt: { xs: '32px', md: '48px' }, maxWidth: 960 }}>
                     <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
                         {t('Feedback')}
                     </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: musicColors.ink }}>
                         {t('Ratings & Reviews')}
                     </Typography>
                     <Stack spacing={2}>
@@ -530,7 +557,7 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                                             },
                                         }}
                                     />
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
                                         {t('Your rating')}: {Number(data.rating) || 1} / 5
                                     </Typography>
                                 </Stack>
@@ -598,8 +625,8 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
 
                 {/* Recommendations */}
                 {frequentlyBoughtTogether.length > 0 && (
-                    <Box sx={{ mt: 10, mb: 4 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>{t('Frequently Bought Together')}</Typography>
+                    <Box sx={{ mt: { xs: '32px', md: '48px' }, mb: '24px' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>{t('Frequently Bought Together')}</Typography>
                         <Box sx={{
                             ...productListGridSx,
                         }}>
@@ -611,8 +638,8 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
                 )}
 
                 {recommendedProducts.length > 0 && (
-                    <Box sx={{ mt: 10, mb: 4 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>{t('Recommended for you')}</Typography>
+                    <Box sx={{ mt: { xs: '32px', md: '48px' }, mb: '24px' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>{t('Recommended for you')}</Typography>
                         <Box sx={{ 
                             ...productListGridSx,
                         }}>
@@ -625,8 +652,8 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
 
                 {/* Related Products */}
                 {relatedProducts.length > 0 && (
-                    <Box sx={{ mt: 6, mb: 4 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>{t('You May Also Like')}</Typography>
+                    <Box sx={{ mt: { xs: '32px', md: '48px' }, mb: '24px' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>{t('You May Also Like')}</Typography>
                         <Box sx={{ 
                             ...productListGridSx,
                         }}>
@@ -643,14 +670,14 @@ const Show = ({ product, relatedProducts, recommendedProducts = [], frequentlyBo
             <MobileBottomNav />
 
             <Snackbar
-                open={cartToast}
+                open={actionToast.open}
                 autoHideDuration={3000}
-                onClose={() => setCartToast(false)}
+                onClose={() => setActionToast((current) => ({ ...current, open: false }))}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
                 sx={{ bottom: { xs: 72, sm: 24 } }}
             >
-                <Alert severity="success" variant="filled" onClose={() => setCartToast(false)} sx={{ width: '100%' }}>
-                    {t('Added to your cart')}
+                <Alert severity="success" variant="filled" onClose={() => setActionToast((current) => ({ ...current, open: false }))} sx={{ width: '100%' }}>
+                    {actionToast.message}
                 </Alert>
             </Snackbar>
         </Box>

@@ -337,7 +337,7 @@ export default function UserChatShow() {
             <UserBrandHead title={t('Support Chat')} />
             <Navbar />
 
-            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', width: '100%', maxWidth: 840, mx: 'auto' }}>
                 <Box sx={{ px: { xs: 1, sm: 1.5 }, pt: { xs: 1, md: 1.25 }, pb: 0.75, flexShrink: 0 }}>
                     <BackLink
                         href={routeWithBase('/profile', app_base)}
@@ -376,22 +376,22 @@ export default function UserChatShow() {
                                     width: { xs: 30, sm: 32 },
                                     height: { xs: 30, sm: 32 },
                                     background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-                                    fontWeight: 800,
+                                    fontWeight: 700,
                                     fontSize: '0.82rem',
                                 }}
                             >
                                 {(counterpart?.name || 'S')[0]}
                             </Avatar>
                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.08, fontSize: { xs: '0.8rem', sm: '0.86rem' } }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                                     {appName} Support
                                 </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.62rem', lineHeight: 1.2 }}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem', lineHeight: 1.3 }}>
                                     {counterpart?.name ? `${counterpart.name} • ${counterpart.role || 'support'}` : 'Connecting you with our team…'}
                                 </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right' }}>
-                                <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.62rem' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', fontSize: '0.75rem' }}>
                                     {pollQuery.isFetching ? t('Updating...') : t('Live')}
                                 </Typography>
                             </Box>
@@ -448,7 +448,7 @@ export default function UserChatShow() {
                                                 variant="outlined"
                                                 onClick={loadOlder}
                                                 disabled={loadingOlder}
-                                                sx={{ borderRadius: 1.25, fontWeight: 750, fontSize: '0.68rem', py: 0.25 }}
+                                                sx={{ borderRadius: 1.25, fontWeight: 700, fontSize: '0.68rem', py: 0.25 }}
                                             >
                                                 {loadingOlder ? t('Loading...') : t('Load older messages')}
                                             </Button>
@@ -522,8 +522,8 @@ export default function UserChatShow() {
                                                                 sx={{
                                                                     fontWeight: 600,
                                                                     whiteSpace: 'pre-wrap',
-                                                                    fontSize: { xs: '0.7rem', sm: '0.74rem' },
-                                                                    lineHeight: 1.32,
+                                                                    fontSize: '0.875rem',
+                                                                    lineHeight: 1.45,
                                                                 }}
                                                             >
                                                                 {m.body}
@@ -536,7 +536,7 @@ export default function UserChatShow() {
                                                                 sx={{
                                                                     color: mine ? 'rgba(255,255,255,0.82)' : 'text.secondary',
                                                                     fontWeight: 700,
-                                                                    fontSize: '0.57rem',
+                                                                    fontSize: '0.7rem',
                                                                 }}
                                                             >
                                                                 {time}
@@ -545,7 +545,7 @@ export default function UserChatShow() {
                                                                 m.seen_at ? (
                                                                     <DoneAll sx={{ fontSize: 13, color: 'rgba(255,255,255,0.92)' }} />
                                                                 ) : (
-                                                                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.72)', fontWeight: 800, fontSize: '0.57rem' }}>
+                                                                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.78)', fontWeight: 700, fontSize: '0.7rem' }}>
                                                                         {t('Sent')}
                                                                     </Typography>
                                                                 )
@@ -556,7 +556,7 @@ export default function UserChatShow() {
                                                                     color="inherit"
                                                                     startIcon={<ErrorOutlineOutlined />}
                                                                     onClick={() => retryOptimistic(m)}
-                                                                    sx={{ fontWeight: 900, color: '#fff' }}
+                                                                    sx={{ fontWeight: 700, color: '#fff' }}
                                                                 >
                                                                     {t('Retry')}
                                                                 </Button>
@@ -570,7 +570,7 @@ export default function UserChatShow() {
 
                                     {typingOn && (
                                         <Stack direction="row" spacing={0.6} alignItems="center" sx={{ mt: 0.85, opacity: 0.85 }}>
-                                            <Typography variant="caption" sx={{ fontWeight: 750, color: 'primary.main', fontSize: '0.65rem' }}>
+                                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main', fontSize: '0.65rem' }}>
                                                 Support is typing
                                             </Typography>
                                             <Stack direction="row" spacing={0.5}>
@@ -644,7 +644,7 @@ export default function UserChatShow() {
                                 {uploadPct !== null && uploadPct < 100 ? (
                                     <Box sx={{ px: { xs: 0.9, sm: 1.1 }, pt: 0.55, flexShrink: 0 }}>
                                         <LinearProgress variant="determinate" value={uploadPct} sx={{ borderRadius: 1, height: 4 }} />
-                                        <Typography variant="caption" sx={{ fontWeight: 750, display: 'block', mt: 0.45, fontSize: '0.65rem' }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mt: 0.45, fontSize: '0.65rem' }}>
                                             {t('Uploading...')} {uploadPct}%
                                         </Typography>
                                     </Box>
@@ -671,8 +671,8 @@ export default function UserChatShow() {
                                         <IconButton
                                             component="label"
                                             sx={{
-                                                width: { xs: 34, sm: 36 },
-                                                height: { xs: 34, sm: 36 },
+                                                width: 44,
+                                                height: 44,
                                                 p: 0,
                                                 flexShrink: 0,
                                                 borderRadius: 1.5,
@@ -712,8 +712,8 @@ export default function UserChatShow() {
                                                 '& .MuiOutlinedInput-root': {
                                                     borderRadius: 1.5,
                                                     backgroundColor: 'rgba(255,255,255,0.92)',
-                                                    fontSize: '0.78rem',
-                                                    minHeight: { xs: 34, sm: 36 },
+                                                    fontSize: '0.875rem',
+                                                    minHeight: 44,
                                                     px: { xs: 1, sm: 1.1 },
                                                     py: 0,
                                                 },
@@ -723,7 +723,7 @@ export default function UserChatShow() {
                                                     lineHeight: 1.35,
                                                 },
                                                 '& .MuiInputBase-input::placeholder': {
-                                                    fontSize: '0.78rem',
+                                                    fontSize: '0.875rem',
                                                     opacity: 0.72,
                                                 },
                                             }}
@@ -734,8 +734,8 @@ export default function UserChatShow() {
                                             onClick={sendNow}
                                             disabled={busy || (!draft.trim() && !previewFile)}
                                             sx={{
-                                                width: { xs: 34, sm: 36 },
-                                                height: { xs: 34, sm: 36 },
+                                                width: 44,
+                                                height: 44,
                                                 p: 0,
                                                 flexShrink: 0,
                                                 borderRadius: 1.5,

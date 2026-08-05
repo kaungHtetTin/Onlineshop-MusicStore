@@ -12,8 +12,10 @@ import {
     Typography,
 } from '@mui/material';
 import {
+    ArticleOutlined,
     ChatBubbleOutlined,
     FavoriteBorder,
+    HelpOutlineOutlined,
     KeyboardArrowDown,
     Login,
     Logout,
@@ -98,7 +100,7 @@ function MenuLinkItem({ href, icon, label, secondary, badge, onClose }) {
                         bgcolor: 'primary.main',
                         color: 'primary.contrastText',
                         fontSize: '0.65rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         lineHeight: 1.4,
                     }}
                 >
@@ -230,6 +232,19 @@ export default function ProfileMenu() {
                             onClose={handleClose}
                         />
                         <MenuLinkItem
+                            href={routeWithBase('/blogs', app_base)}
+                            icon={<ArticleOutlined fontSize="small" />}
+                            label={t('storefront.blog', 'Blog')}
+                            secondary={t('storefront.blog_hint', 'Stories, tips & product guides')}
+                            onClose={handleClose}
+                        />
+                        <MenuLinkItem
+                            href={routeWithBase('/buying-guide', app_base)}
+                            icon={<HelpOutlineOutlined fontSize="small" />}
+                            label={t('storefront.buying_guide', 'Buying guide & help')}
+                            onClose={handleClose}
+                        />
+                        <MenuLinkItem
                             href={routeWithBase('/products', app_base)}
                             icon={<ShoppingBag fontSize="small" />}
                             label={t('storefront.continue_shopping', 'Continue shopping')}
@@ -249,7 +264,7 @@ export default function ProfileMenu() {
                 ) : (
                     <>
                         <Box sx={{ px: 2.5, pt: 1.5, pb: 1 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: musicColors.rosin }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: musicColors.rosin }}>
                                 {t('storefront.welcome_to', `Welcome to ${appName}`, { app: appName })}
                             </Typography>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
@@ -267,6 +282,19 @@ export default function ProfileMenu() {
                             href={routeWithBase('/register', app_base)}
                             icon={<PersonAdd fontSize="small" />}
                             label={t('storefront.create_account', 'Create account')}
+                            onClose={handleClose}
+                        />
+                        <MenuLinkItem
+                            href={routeWithBase('/blogs', app_base)}
+                            icon={<ArticleOutlined fontSize="small" />}
+                            label={t('storefront.blog', 'Blog')}
+                            secondary={t('storefront.blog_hint', 'Stories, tips & product guides')}
+                            onClose={handleClose}
+                        />
+                        <MenuLinkItem
+                            href={routeWithBase('/buying-guide', app_base)}
+                            icon={<HelpOutlineOutlined fontSize="small" />}
+                            label={t('storefront.buying_guide', 'Buying guide & help')}
                             onClose={handleClose}
                         />
                         <MenuLinkItem
@@ -294,7 +322,7 @@ function StackRow({ user, app_url }) {
                     width: 44,
                     height: 44,
                     bgcolor: 'primary.main',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     fontSize: '1rem',
                     border: '2px solid rgba(255,255,255,0.9)',
                     boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.2)}`,
@@ -303,7 +331,7 @@ function StackRow({ user, app_url }) {
                 {!user.avatar && (user.name?.charAt(0)?.toUpperCase() || '?')}
             </Avatar>
             <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Typography variant="body2" noWrap sx={{ fontWeight: 800, lineHeight: 1.3 }}>
+                <Typography variant="body2" noWrap sx={{ fontWeight: 700, lineHeight: 1.3 }}>
                     {user.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>

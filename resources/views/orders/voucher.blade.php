@@ -172,6 +172,26 @@
             font-weight: 800;
             text-transform: capitalize;
         }
+        @media screen and (max-width: 640px) {
+            body { font-size: 12px; background: #f6f3ed; }
+            .sheet,
+            .top-actions { width: calc(100% - 24px); margin-left: 12px; margin-right: 12px; }
+            .sheet { min-height: 0; padding: 18px; margin-top: 12px; overflow: hidden; }
+            .top-actions { margin-top: 12px; }
+            .top-actions button,
+            .top-actions a { flex: 1; min-height: 44px; text-align: center; }
+            .header { grid-template-columns: 1fr; }
+            .invoice-meta { text-align: left; }
+            h2 { text-align: left; }
+            .grid { grid-template-columns: 1fr; }
+            .items { font-size: 10px; }
+            .items th,
+            .items td { padding: 5px 3px; }
+            .totals { width: 100%; }
+            .footer { grid-template-columns: 1fr; }
+            .qr { text-align: left; }
+            .qr img { margin-left: 0; }
+        }
         @media print {
             body { background: #fff; }
             .sheet { margin: 0; border: 0; width: auto; min-height: auto; }

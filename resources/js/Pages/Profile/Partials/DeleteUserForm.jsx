@@ -47,7 +47,7 @@ export default function DeleteUserForm({ className }) {
 
     return (
         <Box component="section" className={className}>
-            <Stack spacing={0.5}>
+            <Stack spacing="6px">
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
                     {t('Delete Account')}
                 </Typography>
@@ -56,7 +56,7 @@ export default function DeleteUserForm({ className }) {
                 </Typography>
             </Stack>
 
-            <Button color="error" variant="outlined" sx={{ mt: 2 }} onClick={confirmUserDeletion}>
+            <Button color="error" variant="outlined" sx={{ mt: '16px' }} onClick={confirmUserDeletion}>
                 {t('Delete Account')}
             </Button>
 

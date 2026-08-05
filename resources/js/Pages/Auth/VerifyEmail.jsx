@@ -1,47 +1,20 @@
-import GuestLayout from '@/Layouts/GuestLayout';
-import PrimaryButton from '@/Components/PrimaryButton';
+import CustomerAuthShell from '@/Components/User/CustomerAuthShell';
 import { Head, Link, useForm, usePage } from '@/spa/router';
+import { Alert, Button, Stack } from '@mui/material';
+import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function VerifyEmail({ status }) {
-    const { admin_app_url } = usePage().props;
+    const { app_base } = usePage().props;
     const t = usePhraseTranslation();
     const { post, processing } = useForm({});
-
-    const submit = (e) => {
-        e.preventDefault();
-
-        post(`${admin_app_url}/email/verification-notification`);
-    };
-
-    return (
-        <GuestLayout>
-            <Head title={t('Email Verification')} />
-
-            <div className="mb-4 text-sm text-gray-600">
-                {t("Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn't receive the email, we will gladly send you another.")}
-            </div>
-
-            {status === 'verification-link-sent' && (
-                <div className="mb-4 font-medium text-sm text-green-600">
-                    {t('A new verification link has been sent to the email address you provided during registration.')}
-                </div>
-            )}
-
-            <form onSubmit={submit}>
-                <div className="mt-4 flex items-center justify-between">
-                    <PrimaryButton disabled={processing}>{t('Resend Verification Email')}</PrimaryButton>
-
-                    <Link
-                        href={`${admin_app_url}/logout`}
-                        method="post"
-                        as="button"
-                        className="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        {t('Log Out')}
-                    </Link>
-                </div>
-            </form>
-        </GuestLayout>
-    );
+    const submit = (event) => { event.preventDefault(); post(routeWithBase('/email/verification-notification', app_base)); };
+    return <CustomerAuthShell title={t('Verify your email')} subtitle={t('Open the verification link we sent to your email address. If it did not arrive, request another below.')}>
+        <Head title={t('Email Verification')} />
+        <form onSubmit={submit}><Stack spacing="16px">
+            {status === 'verification-link-sent' && <Alert severity="success">{t('A new verification link has been sent to your email address.')}</Alert>}
+            <Button fullWidth type="submit" variant="contained" size="large" disabled={processing}>{t(processing ? 'Sending...' : 'Resend verification email')}</Button>
+            <Button component={Link} href={routeWithBase('/logout', app_base)} method="post" as="button" fullWidth color="inherit">{t('Log out')}</Button>
+        </Stack></form>
+    </CustomerAuthShell>;
 }

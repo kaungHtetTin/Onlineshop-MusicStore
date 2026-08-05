@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { Card, CardMedia, CardContent, Typography, Box, IconButton, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox } from '@mui/material';
-import { FavoriteBorder, Favorite, AddShoppingCart, Add, Remove, StarRounded } from '@mui/icons-material';
+import { Card, CardMedia, CardContent, Typography, Box, IconButton, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { FavoriteBorder, Favorite, AddShoppingCart, Add, Remove, StarRounded, CheckCircleRounded, RadioButtonUncheckedRounded } from '@mui/icons-material';
 import { usePage, Link } from '@/spa/router';
 import { storageUrl, routeWithBase } from '@/Utils/url';
 import { useCartStore } from '@/stores/cartStore';
@@ -18,12 +18,6 @@ const formatSkuLabel = (sku) => {
         return entries.map(([k, v]) => `${k}: ${v}`).join(' / ');
     }
     return sku?.sku_code || 'Default';
-};
-
-const getSkuImageUrl = (sku, fallbackUrl, appUrl) => {
-    const path = sku?.image?.image_url || sku?.image?.image_path;
-    if (!path) return fallbackUrl;
-    return storageUrl(path, appUrl);
 };
 
 const ProductCard = ({ product, returnTo = null }) => {
@@ -60,8 +54,8 @@ const ProductCard = ({ product, returnTo = null }) => {
     const imageUrl = useMemo(() => {
         return product.primary_image
             ? storageUrl(product.primary_image.image_url || product.primary_image.image_path, app_url)
-            : 'https://via.placeholder.com/300?text=No+Image';
-    }, [product.primary_image, app_url]);
+            : routeWithBase('/images/product-placeholder.svg', app_base);
+    }, [product.primary_image, app_url, app_base]);
 
     const detailHref = useMemo(() => {
         const href = routeWithBase(`/products/${product.slug}`, app_base);
@@ -201,7 +195,7 @@ const ProductCard = ({ product, returnTo = null }) => {
             <Box
                 component={Link}
                 href={detailHref}
-                sx={{ position: 'relative', pt: '133.33%', display: 'block' }}
+                sx={{ position: 'relative', pt: '125%', display: 'block' }}
             >
                 <CardMedia
                     component="img"
@@ -229,10 +223,12 @@ const ProductCard = ({ product, returnTo = null }) => {
                 <IconButton
                     sx={{
                         position: 'absolute',
-                        top: 8,
-                        right: 8,
+                        top: 10,
+                        right: 10,
+                        width: 44,
+                        height: 44,
                         bgcolor: 'rgba(255,253,248,0.94)',
-                        padding: '5px',
+                        padding: 0,
                         zIndex: 1,
                         border: '1px solid rgba(36,27,24,0.08)',
                         '&:hover': { bgcolor: 'white' },
@@ -242,18 +238,20 @@ const ProductCard = ({ product, returnTo = null }) => {
                     aria-label={t(inWishlist ? 'Remove from wishlist' : 'Add to wishlist')}
                 >
                     {inWishlist ? (
-                        <Favorite sx={{ fontSize: '1rem' }} color="primary" />
+                        <Favorite sx={{ fontSize: '1.15rem' }} color="primary" />
                     ) : (
-                        <FavoriteBorder sx={{ fontSize: '1rem' }} color="primary" />
+                        <FavoriteBorder sx={{ fontSize: '1.15rem' }} color="primary" />
                     )}
                 </IconButton>
                 <IconButton
                     sx={{
                         position: 'absolute',
-                        top: 44,
-                        right: 8,
+                        top: 62,
+                        right: 10,
+                        width: 44,
+                        height: 44,
                         bgcolor: 'rgba(255,253,248,0.94)',
-                        padding: '5px',
+                        padding: 0,
                         zIndex: 1,
                         border: '1px solid rgba(36,27,24,0.08)',
                         '&:hover': { bgcolor: 'white' },
@@ -263,11 +261,11 @@ const ProductCard = ({ product, returnTo = null }) => {
                     disabled={!defaultSku || !canAddCart}
                     aria-label={t('Add to cart')}
                 >
-                    <AddShoppingCart sx={{ fontSize: '1rem' }} color="primary" />
+                    <AddShoppingCart sx={{ fontSize: '1.15rem' }} color="primary" />
                 </IconButton>
             </Box>
-            <CardContent sx={{ flexGrow: 1, p: '10px !important' }}>
-                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: 900, color: musicColors.rosin, textTransform: 'uppercase', letterSpacing: 0 }}>
+            <CardContent sx={{ flexGrow: 1, p: { xs: '12px !important', sm: '14px !important' } }}>
+                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: 700, color: musicColors.rosin, textTransform: 'uppercase', letterSpacing: '0.035em' }}>
                     {product.category?.name || t('Uncategorized')}
                 </Typography>
                 <Typography
@@ -275,11 +273,12 @@ const ProductCard = ({ product, returnTo = null }) => {
                     component={Link}
                     href={detailHref}
                     sx={{
-                        fontWeight: 850,
-                        mt: 0.25,
-                        mb: 0.5,
-                        lineHeight: 1.2,
-                        height: '2.4em',
+                        fontWeight: 600,
+                        fontSize: '0.84rem',
+                        mt: '4px',
+                        mb: '8px',
+                        lineHeight: 1.35,
+                        height: '2.7em',
                         overflow: 'hidden',
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
@@ -294,9 +293,11 @@ const ProductCard = ({ product, returnTo = null }) => {
 
                 <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1, minHeight: 18 }}>
                     <StarRounded sx={{ fontSize: '0.95rem', color: reviewCount > 0 ? '#f5a623' : 'text.disabled' }} />
-                    <Typography variant="caption" sx={{ fontSize: '0.72rem', color: 'text.primary', fontWeight: 800 }}>
-                        {ratingValue > 0 ? ratingValue.toFixed(1).replace(/\.0$/, '') : '0'}
-                    </Typography>
+                    {reviewCount > 0 && (
+                        <Typography variant="caption" sx={{ fontSize: '0.7rem', color: 'text.primary', fontWeight: 600 }}>
+                            {ratingValue.toFixed(1).replace(/\.0$/, '')}
+                        </Typography>
+                    )}
                     <Typography
                         variant="caption"
                         sx={{
@@ -315,13 +316,13 @@ const ProductCard = ({ product, returnTo = null }) => {
                         {showFlashPrice && (
                             <Typography
                                 variant="caption"
-                                sx={{ color: 'error.main', fontWeight: 800, display: 'block', lineHeight: 1.1 }}
+                                sx={{ color: 'error.main', fontWeight: 700, display: 'block', lineHeight: 1.1 }}
                             >
                                 {t('Flash Sale')}
                             </Typography>
                         )}
                         <Stack direction="row" spacing={0.75} alignItems="baseline" useFlexGap flexWrap="wrap">
-                    <Typography variant="subtitle2" sx={{ fontWeight: 950, lineHeight: 1, color: musicColors.rosin }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.15, color: musicColors.rosin }}>
                         {formatMoney(minPrice)}
                     </Typography>
                             {showFlashPrice && (
@@ -356,42 +357,30 @@ const ProductCard = ({ product, returnTo = null }) => {
             </Snackbar>
 
             <Dialog open={variantDialogOpen} onClose={() => setVariantDialogOpen(false)} fullWidth maxWidth="xs">
-                <DialogTitle sx={{ pb: 1, fontWeight: 800 }}>{t('Select option')}</DialogTitle>
-                <DialogContent>
-                    <Stack spacing={1}>
+                <DialogTitle>{t('Select option')}</DialogTitle>
+                <DialogContent sx={{ pt: '8px !important', pb: '8px' }}>
+                    <Stack spacing="8px">
                         {purchasableSkus.map((sku) => {
                             const isSelected = selectedSkuIds.includes(sku.id);
-                            const skuImageUrl = getSkuImageUrl(sku, imageUrl, app_url);
                             const quantity = getSkuQuantity(sku);
                             return (
                                 <Box
                                     key={sku.id}
                                     sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: { xs: '34px minmax(0, 1fr) auto', sm: 'auto minmax(0, 1fr) auto' },
-                                        gap: { xs: 0.75, sm: 1 },
-                                        alignItems: 'center',
-                                        p: { xs: 0.75, sm: 1 },
+                                        p: '10px 12px',
                                         border: '1px solid',
                                         borderColor: isSelected ? 'primary.main' : 'divider',
-                                        borderRadius: 1,
-                                        bgcolor: isSelected ? 'primary.main' : 'background.paper',
-                                        color: isSelected ? 'primary.contrastText' : 'text.primary',
+                                        borderRadius: 2,
+                                        bgcolor: isSelected ? 'primary.light' : 'background.paper',
+                                        color: 'text.primary',
                                         transition: 'border-color 0.15s, background 0.15s',
                                     }}
                                 >
-                                    <Checkbox
-                                        checked={isSelected}
-                                        onChange={() => toggleSkuSelection(sku)}
-                                        inputProps={{ 'aria-label': `${t('Select option')} ${formatSkuLabel(sku)}` }}
-                                        sx={{
-                                            color: isSelected ? 'primary.contrastText' : 'text.secondary',
-                                            '&.Mui-checked': { color: isSelected ? 'primary.contrastText' : 'primary.main' },
-                                        }}
-                                    />
                                     <Box
                                         role="button"
                                         tabIndex={0}
+                                        aria-pressed={isSelected}
+                                        aria-label={`${t('Select option')} ${formatSkuLabel(sku)}`}
                                         onClick={() => toggleSkuSelection(sku)}
                                         onKeyDown={(event) => {
                                             if (event.key === 'Enter' || event.key === ' ') {
@@ -399,90 +388,66 @@ const ProductCard = ({ product, returnTo = null }) => {
                                                 toggleSkuSelection(sku);
                                             }
                                         }}
-                                        sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 1.25 }, minWidth: 0, cursor: 'pointer' }}
-                                    >
-                                        <Box
-                                            component="img"
-                                            src={skuImageUrl}
-                                            alt={formatSkuLabel(sku)}
-                                            sx={{ display: { xs: 'none', sm: 'block' }, width: 44, aspectRatio: '3 / 4', objectFit: 'cover', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
-                                        />
-                                        <Box sx={{ minWidth: 0, textAlign: 'left' }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 800, lineHeight: 1.18, fontSize: { xs: '0.86rem', sm: '0.875rem' } }} noWrap title={formatSkuLabel(sku)}>
-                                                {formatSkuLabel(sku)}
-                                            </Typography>
-                                            <Stack direction="row" spacing={0.75} alignItems="baseline" useFlexGap flexWrap="wrap" sx={{ mt: 0.25 }}>
-                                                <Typography variant="caption" sx={{ color: isSelected ? 'rgba(255,255,255,0.82)' : 'text.secondary', lineHeight: 1.1 }}>
-                                                    {t('In stock')} ({sku.available_qty})
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ fontWeight: 900, lineHeight: 1.1 }}>
-                                                    {formatMoney(skuPrice(sku))}
-                                                </Typography>
-                                                {hasFlashSale(sku) && (
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{ textDecoration: 'line-through', color: isSelected ? 'rgba(255,255,255,0.72)' : 'text.secondary' }}
-                                                    >
-                                                        {formatMoney(skuOriginalPrice(sku))}
-                                                    </Typography>
-                                                )}
-                                            </Stack>
-                                        </Box>
-                                    </Box>
-                                    <Box
                                         sx={{
                                             display: 'grid',
-                                            gridTemplateColumns: { xs: '28px 30px 28px', sm: '32px 38px 32px' },
+                                            gridTemplateColumns: '22px minmax(0, 1fr) auto',
+                                            gap: '10px',
                                             alignItems: 'center',
-                                            justifySelf: 'end',
-                                            border: '1px solid',
-                                            borderColor: isSelected ? 'rgba(255,255,255,0.5)' : 'divider',
-                                            borderRadius: 1,
-                                            bgcolor: 'background.paper',
-                                            color: 'text.primary',
-                                            overflow: 'hidden',
+                                            minHeight: 44,
+                                            minWidth: 0,
+                                            cursor: 'pointer',
+                                            outline: 'none',
+                                            '&:focus-visible': { boxShadow: '0 0 0 3px', boxShadowColor: 'primary.light', borderRadius: 1 },
                                         }}
                                     >
-                                        <IconButton
-                                            size="small"
-                                            aria-label={`${t('Decrease quantity for')} ${formatSkuLabel(sku)}`}
-                                            disabled={quantity <= 1}
-                                            onClick={() => changeSkuQuantity(sku, quantity - 1)}
-                                            sx={{ width: { xs: 28, sm: 32 }, height: { xs: 30, sm: 34 }, borderRadius: 0 }}
-                                        >
-                                            <Remove fontSize="small" />
-                                        </IconButton>
-                                        <Typography
-                                            aria-label={`${t('Qty')} ${formatSkuLabel(sku)}`}
-                                            sx={{
-                                                height: { xs: 30, sm: 34 },
-                                                lineHeight: { xs: '30px', sm: '34px' },
-                                                textAlign: 'center',
-                                                fontWeight: 900,
-                                                borderLeft: '1px solid',
-                                                borderRight: '1px solid',
-                                                borderColor: 'divider',
-                                                fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                                            }}
-                                        >
-                                            {quantity}
+                                        {isSelected
+                                            ? <CheckCircleRounded color="primary" sx={{ fontSize: 21 }} />
+                                            : <RadioButtonUncheckedRounded color="disabled" sx={{ fontSize: 21 }} />}
+                                        <Box sx={{ minWidth: 0, textAlign: 'left' }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }} title={formatSkuLabel(sku)}>
+                                                {formatSkuLabel(sku)}
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="body2" color="primary" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                            {formatMoney(skuPrice(sku))}
                                         </Typography>
-                                        <IconButton
-                                            size="small"
-                                            aria-label={`${t('Increase quantity for')} ${formatSkuLabel(sku)}`}
-                                            disabled={quantity >= skuQtyLimit(sku)}
-                                            onClick={() => changeSkuQuantity(sku, quantity + 1)}
-                                            sx={{ width: { xs: 28, sm: 32 }, height: { xs: 30, sm: 34 }, borderRadius: 0 }}
-                                        >
-                                            <Add fontSize="small" />
-                                        </IconButton>
                                     </Box>
+                                    {isSelected && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', pt: '8px', mt: '6px', borderTop: '1px solid', borderColor: 'divider' }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                                                {t('Quantity')}
+                                            </Typography>
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: '44px 34px 44px', alignItems: 'center', border: '1px solid', borderColor: 'divider', borderRadius: 1.5, bgcolor: 'background.paper', overflow: 'hidden' }}>
+                                                <IconButton
+                                                    size="small"
+                                                    aria-label={`${t('Decrease quantity for')} ${formatSkuLabel(sku)}`}
+                                                    disabled={quantity <= 1}
+                                                    onClick={() => changeSkuQuantity(sku, quantity - 1)}
+                                                    sx={{ width: 44, height: 44, borderRadius: 0 }}
+                                                >
+                                                    <Remove fontSize="small" />
+                                                </IconButton>
+                                                <Typography aria-label={`${t('Qty')} ${formatSkuLabel(sku)}`} sx={{ height: 44, lineHeight: '44px', textAlign: 'center', fontWeight: 700, borderLeft: '1px solid', borderRight: '1px solid', borderColor: 'divider', fontSize: '0.875rem' }}>
+                                                    {quantity}
+                                                </Typography>
+                                                <IconButton
+                                                    size="small"
+                                                    aria-label={`${t('Increase quantity for')} ${formatSkuLabel(sku)}`}
+                                                    disabled={quantity >= skuQtyLimit(sku)}
+                                                    onClick={() => changeSkuQuantity(sku, quantity + 1)}
+                                                    sx={{ width: 44, height: 44, borderRadius: 0 }}
+                                                >
+                                                    <Add fontSize="small" />
+                                                </IconButton>
+                                            </Box>
+                                        </Box>
+                                    )}
                                 </Box>
                             );
                         })}
                     </Stack>
                 </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
+                <DialogActions>
                     <Button onClick={() => setVariantDialogOpen(false)} color="inherit">
                         {t('Cancel')}
                     </Button>

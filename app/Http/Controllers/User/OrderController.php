@@ -13,7 +13,7 @@ class OrderController extends Controller
     {
         $orders = Order::query()
             ->where('user_id', $request->user()->id)
-            ->with(['items.product', 'items.sku'])
+            ->with(['items.product.primaryImage', 'items.sku'])
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -29,7 +29,7 @@ class OrderController extends Controller
             abort(403);
         }
 
-        $order->load(['items.product', 'items.sku']);
+        $order->load(['items.product.primaryImage', 'items.sku']);
 
         return Spa::render('User/Orders/Show', [
             'order' => $order,

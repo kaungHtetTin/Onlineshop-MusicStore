@@ -10,6 +10,12 @@ import ProductCard from '@/Components/User/ProductCard';
 import { routeWithBase } from '@/Utils/url';
 import { productListGridSx } from '@/Utils/productListGrid';
 import { useWishlistStore } from '@/stores/wishlistStore';
+import { useCartStore } from '@/stores/cartStore';
+import { pickDefaultSkuForProduct } from '@/Utils/pickDefaultSku';
+import { hasFlashSale, skuOriginalPrice, skuPrice } from '@/Utils/pricing';
+import { FavoriteBorderRounded } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { storefrontBackgroundSx } from '@/Components/User/musicStoreDesign';
 
 function wishlistItemToProduct(w) {
     return {
@@ -25,8 +31,11 @@ function wishlistItemToProduct(w) {
 }
 
 export default function WishlistIndex() {
+    const theme = useTheme();
     const { app_base } = usePage().props;
     const items = useWishlistStore((s) => s.items);
+    const removeWishlistItem = useWishlistStore((s) => s.remove);
+    const addToCart = useCartStore((s) => s.addItem);
     const visibleItems = useMemo(
         () => items.filter((item) => (item.skus || []).some((sku) => sku.is_active !== false && Number(sku.available_qty ?? 0) > 0)),
         [items]
@@ -45,23 +54,50 @@ export default function WishlistIndex() {
         }
     }, [page, pageCount]);
 
+    const moveAllToCart = () => {
+        visibleItems.forEach((item) => {
+            const product = wishlistItemToProduct(item);
+            const sku = pickDefaultSkuForProduct(product);
+            if (!sku) return;
+            const attributes = sku.attributes || {};
+            addToCart({
+                skuId: sku.id,
+                productId: item.productId,
+                name: item.name,
+                skuLabel: Object.entries(attributes).map(([key, value]) => `${key}: ${value}`).join(' / ') || sku.sku_code || 'Default',
+                skuCode: sku.sku_code || null,
+                variantAttributes: attributes,
+                price: skuPrice(sku),
+                originalPrice: skuOriginalPrice(sku),
+                flashSale: hasFlashSale(sku) ? sku.flash_sale : null,
+                imagePath: sku?.image?.image_path || item.imagePath || null,
+                maxQty: Number(sku.available_qty || 0),
+                qty: 1,
+            });
+            removeWishlistItem(item.productId);
+        });
+    };
+
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Box className="user-storefront" sx={{ ...storefrontBackgroundSx(theme), minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title="Wishlist" />
             <Navbar />
 
-            <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 4 }, px: { xs: 2, sm: 3 } }}>
+            <Container maxWidth="lg" sx={{ mt: { xs: '16px', md: '24px' }, pb: { xs: '24px', md: '32px' } }}>
                 <BackLink href={routeWithBase('/products', app_base)}>
                     Continue shopping
                 </BackLink>
 
-                <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
-                    Wishlist
-                </Typography>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" gap="12px" sx={{ mb: '16px' }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700 }}>Wishlist {visibleItems.length > 0 && `(${visibleItems.length})`}</Typography>
+                    {visibleItems.length > 0 && <Button variant="outlined" onClick={moveAllToCart}>Move all to cart</Button>}
+                </Stack>
 
                 {visibleItems.length === 0 ? (
-                    <Paper elevation={0} sx={{ p: 4, borderRadius: 2, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
-                        <Typography color="text.secondary" sx={{ mb: 2 }}>
+                    <Paper elevation={0} sx={{ p: { xs: '24px', sm: '28px' }, borderRadius: 2, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+                        <FavoriteBorderRounded sx={{ fontSize: 48, color: 'primary.main', mb: '12px' }} />
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: '8px' }}>Your wishlist is ready for inspiration</Typography>
+                        <Typography color="text.secondary" sx={{ mb: '16px', maxWidth: 520, mx: 'auto' }}>
                             Save items you love — tap the heart on any product card.
                         </Typography>
                         <Button variant="contained" component={Link} href={routeWithBase('/products', app_base)}>
@@ -70,7 +106,7 @@ export default function WishlistIndex() {
                     </Paper>
                 ) : (
                     <>
-                        <Box sx={{ ...productListGridSx, mb: 4 }}>
+                        <Box sx={{ ...productListGridSx, mb: '24px' }}>
                             {paginatedItems.map((w) => (
                                 <ProductCard key={w.productId} product={wishlistItemToProduct(w)} />
                             ))}

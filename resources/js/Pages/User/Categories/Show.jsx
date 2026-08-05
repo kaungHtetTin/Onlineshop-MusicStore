@@ -7,12 +7,10 @@ import {
     Paper,
     Stack,
     Avatar,
-    Button,
     Breadcrumbs,
     Chip,
     Pagination,
 } from '@mui/material';
-import { ShoppingBag } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
@@ -22,6 +20,7 @@ import ProductCard from '@/Components/User/ProductCard';
 import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
 import { productListGridSx } from '@/Utils/productListGrid';
+import { storefrontBackgroundSx } from '@/Components/User/musicStoreDesign';
 
 function categoryVisual(cat) {
     return {
@@ -36,7 +35,6 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
     const { app_base } = usePage().props;
     const v = categoryVisual(category);
     const subs = category.children || [];
-    const shopHref = `${routeWithBase('/products', app_base)}?category=${encodeURIComponent(category.slug)}`;
     const productRows = products.data || [];
 
     const handlePageChange = (_event, page) => {
@@ -44,32 +42,32 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
     };
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Box className="user-storefront" sx={{ ...storefrontBackgroundSx(theme), minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title={category.name} />
             <Navbar />
 
-            <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
-                <Breadcrumbs sx={{ mb: 2, '& a': { fontWeight: 700, fontSize: '0.8rem' } }}>
+            <Container maxWidth="lg" sx={{ mt: { xs: '16px', md: '24px' }, pb: { xs: '24px', md: '32px' } }}>
+                <Breadcrumbs sx={{ display: { xs: 'none', md: 'flex' }, mb: '16px', '& a': { fontWeight: 700, fontSize: '0.8rem' } }}>
                     <Link href={routeWithBase('/', app_base)} style={{ textDecoration: 'none', color: 'inherit' }}>
                         Home
                     </Link>
                     <Link href={routeWithBase('/categories', app_base)} style={{ textDecoration: 'none', color: 'inherit' }}>
                         Categories
                     </Link>
-                    <Typography color="text.primary" sx={{ fontWeight: 800, fontSize: '0.8rem' }}>
+                    <Typography color="text.primary" sx={{ fontWeight: 700, fontSize: '0.8rem' }}>
                         {category.name}
                     </Typography>
                 </Breadcrumbs>
 
-                <BackLink href={routeWithBase('/categories', app_base)}>
+                <BackLink href={routeWithBase('/categories', app_base)} sx={{ display: { xs: 'inline-flex', md: 'none' } }}>
                     All categories
                 </BackLink>
 
                 <Paper
                     elevation={0}
                     sx={{
-                        p: { xs: 2, sm: 3 },
-                        mb: 3,
+                        p: { xs: '16px', sm: '20px' },
+                        mb: '20px',
                         borderRadius: 4,
                         border: `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
                         background: `linear-gradient(135deg, rgba(255,255,255,0.96) 0%, ${alpha(theme.palette.primary.main, 0.04)} 100%)`,
@@ -92,7 +90,7 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
                             {v.emoji}
                         </Avatar>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="h5" sx={{ fontWeight: 950, letterSpacing: '-0.02em', mb: 0.5 }}>
+                            <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5 }}>
                                 {category.name}
                             </Typography>
                             {category.description ? (
@@ -105,16 +103,6 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
                                 </Typography>
                             ) : null}
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
-                                <Button
-                                    component={Link}
-                                    href={shopHref}
-                                    variant="contained"
-                                    size="medium"
-                                    startIcon={<ShoppingBag />}
-                                    sx={{ fontWeight: 900, borderRadius: 999, px: 2.5 }}
-                                >
-                                    Shop this category
-                                </Button>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
                                     {category.products_count ?? 0}{' '}
                                     {(category.products_count ?? 0) === 1 ? 'product' : 'products'}
@@ -125,8 +113,8 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
                 </Paper>
 
                 {subs.length > 0 ? (
-                    <Box sx={{ mb: 3 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1.25 }}>
+                    <Box sx={{ mb: '20px' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.25 }}>
                             Subcategories
                         </Typography>
                         <Stack direction="row" flexWrap="wrap" gap={1}>
@@ -137,7 +125,7 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
                                     href={routeWithBase(`/categories/${sub.slug}`, app_base)}
                                     label={`${sub.name} (${sub.products_count ?? 0})`}
                                     clickable
-                                    sx={{ fontWeight: 800 }}
+                                    sx={{ fontWeight: 700 }}
                                 />
                             ))}
                         </Stack>
@@ -146,7 +134,7 @@ export default function CategoriesShow({ category, products = { data: [] } }) {
 
                 {productRows.length > 0 ? (
                     <>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 900, mb: 1.5 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }}>
                             Products in {category.name}
                         </Typography>
                         <Box sx={{ ...productListGridSx, mb: 2 }}>

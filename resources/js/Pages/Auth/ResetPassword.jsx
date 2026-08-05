@@ -1,97 +1,24 @@
 import { useEffect } from 'react';
-import GuestLayout from '@/Layouts/GuestLayout';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import CustomerAuthShell from '@/Components/User/CustomerAuthShell';
+import PwaHeadTags from '@/Components/User/PwaHeadTags';
 import { Head, useForm, usePage } from '@/spa/router';
+import { Button, Stack, TextField } from '@mui/material';
+import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
 export default function ResetPassword({ token, email }) {
-    const { admin_app_url } = usePage().props;
+    const { app_base } = usePage().props;
     const t = usePhraseTranslation();
-    const { data, setData, post, processing, errors, reset } = useForm({
-        token: token,
-        email: email,
-        password: '',
-        password_confirmation: '',
-    });
-
-    useEffect(() => {
-        return () => {
-            reset('password', 'password_confirmation');
-        };
-    }, []);
-
-    const onHandleChange = (event) => {
-        setData(event.target.name, event.target.value);
-    };
-
-    const submit = (e) => {
-        e.preventDefault();
-
-        post(`${admin_app_url}/reset-password`);
-    };
-
-    return (
-        <GuestLayout>
-            <Head title={t('Reset Password')} />
-
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value={t('Email')} />
-
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        onChange={onHandleChange}
-                    />
-
-                    <InputError message={errors.email} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value={t('Password')} />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        isFocused={true}
-                        onChange={onHandleChange}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4">
-                    <InputLabel htmlFor="password_confirmation" value={t('Confirm Password')} />
-
-                    <TextInput
-                        type="password"
-                        name="password_confirmation"
-                        value={data.password_confirmation}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={onHandleChange}
-                    />
-
-                    <InputError message={errors.password_confirmation} className="mt-2" />
-                </div>
-
-                <div className="flex items-center justify-end mt-4">
-                    <PrimaryButton className="ml-4" disabled={processing}>
-                        {t('Reset Password')}
-                    </PrimaryButton>
-                </div>
-            </form>
-        </GuestLayout>
-    );
+    const { data, setData, post, processing, errors, reset } = useForm({ token, email, password: '', password_confirmation: '' });
+    useEffect(() => () => reset('password', 'password_confirmation'), []);
+    const submit = (event) => { event.preventDefault(); post(routeWithBase('/reset-password', app_base)); };
+    return <CustomerAuthShell title={t('Choose a new password')} subtitle={t('Use at least eight characters and avoid a password you use elsewhere.')}>
+        <Head title={t('Reset Password')}><PwaHeadTags /></Head>
+        <form onSubmit={submit}><Stack spacing="16px">
+            <TextField fullWidth type="email" label={t('Email address')} value={data.email} onChange={(e) => setData('email', e.target.value)} error={Boolean(errors.email)} helperText={errors.email} autoComplete="username" />
+            <TextField autoFocus fullWidth type="password" label={t('New password')} value={data.password} onChange={(e) => setData('password', e.target.value)} error={Boolean(errors.password)} helperText={errors.password} autoComplete="new-password" />
+            <TextField fullWidth type="password" label={t('Confirm new password')} value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} error={Boolean(errors.password_confirmation)} helperText={errors.password_confirmation} autoComplete="new-password" />
+            <Button fullWidth type="submit" variant="contained" size="large" disabled={processing}>{t(processing ? 'Updating...' : 'Reset password')}</Button>
+        </Stack></form>
+    </CustomerAuthShell>;
 }

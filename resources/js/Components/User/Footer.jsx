@@ -42,7 +42,7 @@ function ContactList({ title, items, icon, hrefFor }) {
 
     return (
         <Box>
-            <Typography variant="caption" sx={{ fontWeight: 800, mb: 1, display: 'block' }}>
+            <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>
                 {title}
             </Typography>
             <Stack spacing={0.75}>
@@ -93,7 +93,7 @@ export default function Footer() {
             sx={{
                 background: musicGradientForTheme(theme),
                 color: 'white',
-                py: { xs: 3, md: 4 },
+                py: { xs: '24px', md: '32px' },
                 mt: 'auto',
                 borderTop: `1px solid ${musicColors.amber}`,
             }}
@@ -103,7 +103,7 @@ export default function Footer() {
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: { xs: '1fr', sm: '1.1fr 0.9fr', md: hasContacts ? '1.1fr 0.8fr 1.4fr' : '1.2fr 1fr' },
-                        gap: { xs: 2.5, md: 4 },
+                        gap: { xs: '20px', md: '28px' },
                     }}
                 >
                     <Box>
@@ -137,17 +137,17 @@ export default function Footer() {
                                     <MusicNote fontSize="small" />
                                 </Box>
                             )}
-                            <Typography variant="subtitle2" sx={{ fontWeight: 900 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.05rem' }}>
                                 {appName}
                             </Typography>
                         </Stack>
-                        <Typography variant="caption" sx={{ opacity: 0.82, display: 'block', maxWidth: 280 }}>
+                        <Typography variant="body2" sx={{ opacity: 0.84, display: 'block', maxWidth: 320 }}>
                             {t('storefront.footer_text', 'Instruments, accessories, and essentials for practice rooms, studios, and stages.')}
                         </Typography>
                     </Box>
 
                     <Box>
-                        <Typography variant="caption" sx={{ fontWeight: 800, mb: 1, display: 'block' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>
                             {t('storefront.shop', 'Shop')}
                         </Typography>
                         <Stack spacing={0.75}>
@@ -169,11 +169,19 @@ export default function Footer() {
                             </Typography>
                             <Typography
                                 component={Link}
-                                href={routeWithBase('/blogs', app_base)}
+                                href={routeWithBase('/buying-guide', app_base)}
                                 variant="caption"
                                 sx={{ opacity: 0.86, color: 'inherit', textDecoration: 'none', '&:hover': { opacity: 1, textDecoration: 'underline' } }}
                             >
                                 {t('storefront.buying_guides', 'Buying guides')}
+                            </Typography>
+                            <Typography
+                                component={Link}
+                                href={routeWithBase('/blogs', app_base)}
+                                variant="caption"
+                                sx={{ opacity: 0.86, color: 'inherit', textDecoration: 'none', '&:hover': { opacity: 1, textDecoration: 'underline' } }}
+                            >
+                                {t('storefront.blog', 'Blog')}
                             </Typography>
                         </Stack>
                     </Box>
@@ -214,7 +222,7 @@ export default function Footer() {
                     )}
                 </Box>
 
-                <Divider sx={{ my: 3, bgcolor: 'rgba(244,194,103,0.22)' }} />
+                <Divider sx={{ my: { xs: '20px', md: '24px' }, bgcolor: 'rgba(244,194,103,0.22)' }} />
                 <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ opacity: 0.72, mb: 0.75 }}>
                     <Headphones sx={{ fontSize: 15 }} />
                     <Typography variant="caption" sx={{ fontWeight: 700 }}>

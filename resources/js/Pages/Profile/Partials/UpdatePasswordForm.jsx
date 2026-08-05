@@ -39,7 +39,7 @@ export default function UpdatePasswordForm({ className }) {
 
     return (
         <Box component="section" className={className}>
-            <Stack spacing={0.5}>
+            <Stack spacing="6px">
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
                     {t('Update Password')}
                 </Typography>
@@ -48,8 +48,8 @@ export default function UpdatePasswordForm({ className }) {
                 </Typography>
             </Stack>
 
-            <Box component="form" onSubmit={updatePassword} sx={{ mt: 3 }}>
-                <Stack spacing={2}>
+            <Box component="form" onSubmit={updatePassword} sx={{ mt: '20px' }}>
+                <Stack spacing="16px">
                     <TextField
                         id="current_password"
                         type="password"

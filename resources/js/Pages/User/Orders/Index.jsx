@@ -9,6 +9,7 @@ import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 import { formatMoney } from '@/Utils/pricing';
+import { ReceiptLongRounded } from '@mui/icons-material';
 
 const statusColor = {
     pending: 'warning',
@@ -42,18 +43,20 @@ export default function OrdersIndex({ orders }) {
             <UserBrandHead title="My orders" />
             <Navbar />
 
-            <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
+            <Container maxWidth="md" sx={{ mt: { xs: '16px', md: '24px' }, pb: { xs: '24px', md: '32px' } }}>
                 <BackLink href={routeWithBase('/products', app_base)}>
                     {t('Back to shop')}
                 </BackLink>
 
-                <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
                     {t('My orders')}
                 </Typography>
 
                 {orders.data.length === 0 ? (
-                    <Paper elevation={0} sx={{ p: 4, borderRadius: 2, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
-                        <Typography color="text.secondary" sx={{ mb: 2 }}>
+                    <Paper elevation={0} sx={{ p: { xs: '24px', sm: '28px' }, borderRadius: 2, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+                        <ReceiptLongRounded sx={{ fontSize: 48, color: 'primary.main', mb: '12px' }} />
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: '8px' }}>{t('No orders yet')}</Typography>
+                        <Typography color="text.secondary" sx={{ mb: '16px' }}>
                             {t('You have not placed any orders yet.')}
                         </Typography>
                         <Button variant="contained" component={Link} href={routeWithBase('/products', app_base)}>
@@ -69,7 +72,7 @@ export default function OrdersIndex({ orders }) {
                                 href={routeWithBase(`/orders/${order.id}`, app_base)}
                                 elevation={0}
                                 sx={{
-                                    p: 2,
+                                    p: { xs: '14px', sm: '16px' },
                                     borderRadius: 2,
                                     border: '1px solid',
                                     borderColor: 'divider',
@@ -81,14 +84,17 @@ export default function OrdersIndex({ orders }) {
                             >
                                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ sm: 'center' }}>
                                     <Box>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                             {order.order_number}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
                                             {order.created_at}
                                         </Typography>
+                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: '4px' }}>
+                                            {(order.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)} {t('items')}
+                                        </Typography>
                                     </Box>
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                    <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing="8px" alignItems={{ xs: 'flex-start', sm: 'center' }} flexWrap="wrap">
                                         <Chip size="small" label={t(order.status)} color={statusColor[order.status] || 'default'} variant="outlined" />
                                         <Chip
                                             size="small"
@@ -96,7 +102,7 @@ export default function OrdersIndex({ orders }) {
                                             color={paymentStatusColor[order.payment_status] || 'default'}
                                             variant="outlined"
                                         />
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
                                             {formatMoney(order.final_amount)}
                                         </Typography>
                                     </Stack>

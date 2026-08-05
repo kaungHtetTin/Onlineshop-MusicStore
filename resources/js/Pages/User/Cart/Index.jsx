@@ -10,7 +10,7 @@ import {
     Stack,
     Typography,
 } from '@mui/material';
-import { Add, DeleteOutlined, Remove } from '@mui/icons-material';
+import { Add, DeleteOutlined, Remove, ShoppingCartRounded } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
@@ -53,7 +53,7 @@ export default function CartIndex() {
             <UserBrandHead title="Your Cart" />
             <Navbar />
 
-            <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 }, flex: '1 0 auto', width: '100%' }}>
+            <Container maxWidth="lg" sx={{ mt: { xs: '16px', md: '24px' }, pb: { xs: '24px', md: '32px' }, flex: '1 0 auto', width: '100%' }}>
                 <BackLink href={routeWithBase('/products', app_base)}>
                     {t('Continue shopping')}
                 </BackLink>
@@ -61,13 +61,15 @@ export default function CartIndex() {
                 <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
                     {t('Your setlist')}
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 950, mb: 2, color: musicColors.ink }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: musicColors.ink }}>
                     {t('Shopping cart')}
                 </Typography>
 
                 {items.length === 0 ? (
-                    <Paper elevation={0} sx={{ ...sectionShellSx, p: 4, textAlign: 'center' }}>
-                        <Typography color="text.secondary" sx={{ mb: 2 }}>
+                    <Paper elevation={0} sx={{ ...sectionShellSx, p: { xs: '24px', sm: '28px' }, textAlign: 'center' }}>
+                        <ShoppingCartRounded sx={{ fontSize: 52, color: 'primary.main', mb: '12px' }} />
+                        <Typography variant="h6" sx={{ fontWeight: 700, mb: '8px' }}>{t('Your cart is empty')}</Typography>
+                        <Typography color="text.secondary" sx={{ mb: '16px', maxWidth: 520, mx: 'auto' }}>
                             {t('Your cart is empty. Add an instrument, cable, accessory, or studio essential to get started.')}
                         </Typography>
                         <Button variant="contained" component={Link} href={routeWithBase('/products', app_base)}>
@@ -75,29 +77,39 @@ export default function CartIndex() {
                         </Button>
                     </Paper>
                 ) : (
-                    <Stack spacing={1.25}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 340px' }, gap: { xs: '12px', md: '16px' }, alignItems: 'start' }}>
                         {items.map((line) => (
                             <Paper
                                 key={line.skuId}
                                 elevation={0}
                                 sx={{
-                                    p: { xs: 1.25, sm: 1.5 },
+                                    p: { xs: '12px', sm: '16px' },
                                     borderRadius: 1.5,
                                     border: '1px solid',
                                     borderColor: 'rgba(36,27,24,0.09)',
                                     bgcolor: musicColors.sheet,
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    alignItems: 'stretch',
-                                    gap: { xs: 1, sm: 1.25 },
+                                    gridColumn: { md: 1 },
+                                    display: 'grid',
+                                    gridTemplateColumns: {
+                                        xs: '76px minmax(0, 1fr)',
+                                        sm: '90px minmax(0, 1fr) auto',
+                                    },
+                                    gridTemplateAreas: {
+                                        xs: '"image details" "actions actions"',
+                                        sm: '"image details actions"',
+                                    },
+                                    columnGap: { xs: '12px', sm: '14px' },
+                                    rowGap: { xs: '12px', sm: 0 },
+                                    alignItems: { xs: 'start', sm: 'stretch' },
                                 }}
                             >
                                 <Box
                                     component="img"
-                                    src={line.imagePath ? storageUrl(line.imagePath, app_url) : 'https://via.placeholder.com/300x400?text=No+Image'}
+                                    src={line.imagePath ? storageUrl(line.imagePath, app_url) : routeWithBase('/images/product-placeholder.svg', app_base)}
                                     alt=""
                                     sx={{
-                                        width: { xs: 88, sm: 90 },
+                                        gridArea: 'image',
+                                        width: { xs: 76, sm: 90 },
                                         aspectRatio: '3 / 4',
                                         height: 'auto',
                                         objectFit: 'cover',
@@ -105,29 +117,31 @@ export default function CartIndex() {
                                         alignSelf: 'flex-start',
                                     }}
                                 />
-                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                <Box sx={{ gridArea: 'details', minWidth: 0 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.3, mb: '2px' }}>
                                         {line.name}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-                                        {line.skuLabel}
-                                    </Typography>
-                                    {line.skuCode && (
-                                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.25 }}>
-                                            {t('SKU')}: {line.skuCode}
+                                    <Stack spacing="2px" sx={{ mb: '4px', minWidth: 0 }}>
+                                        <Typography component="div" variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
+                                            {line.skuLabel}
                                         </Typography>
-                                    )}
-                                    {line.isPreorder && (
-                                        <Typography variant="caption" color="warning.main" display="block" sx={{ fontWeight: 700 }}>
-                                            {t('Pre-order')}
-                                        </Typography>
-                                    )}
-                                    {line.flashSale && (
-                                        <Typography variant="caption" color="error.main" display="block" sx={{ fontWeight: 800 }}>
-                                            {t('Flash Sale')}
-                                        </Typography>
-                                    )}
-                                    <Typography variant="body2" color="primary" sx={{ fontWeight: 800 }}>
+                                        {line.skuCode && (
+                                            <Typography component="div" variant="caption" color="text.secondary" sx={{ lineHeight: 1.35, overflowWrap: 'anywhere' }}>
+                                                {t('SKU')}: {line.skuCode}
+                                            </Typography>
+                                        )}
+                                        {line.isPreorder && (
+                                            <Typography component="div" variant="caption" color="warning.main" sx={{ fontWeight: 700 }}>
+                                                {t('Pre-order')}
+                                            </Typography>
+                                        )}
+                                        {line.flashSale && (
+                                            <Typography component="div" variant="caption" color="error.main" sx={{ fontWeight: 700 }}>
+                                                {t('Flash Sale')}
+                                            </Typography>
+                                        )}
+                                    </Stack>
+                                    <Typography variant="body2" color="primary" sx={{ fontWeight: 700, mt: '4px' }}>
                                         {formatMoney(line.price)} {t('each')}
                                     </Typography>
                                     {line.flashSale && line.originalPrice && (
@@ -138,24 +152,25 @@ export default function CartIndex() {
                                 </Box>
                                 <Box
                                     sx={{
+                                        gridArea: 'actions',
                                         display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'flex-end',
-                                        justifyContent: 'flex-end',
-                                        gap: 0.75,
-                                        ml: 'auto',
-                                        width: 'auto',
+                                        flexDirection: { xs: 'row', sm: 'column' },
+                                        alignItems: { xs: 'center', sm: 'flex-end' },
+                                        justifyContent: { xs: 'space-between', sm: 'flex-end' },
+                                        gap: { xs: '8px', sm: '6px' },
+                                        minWidth: 0,
+                                        width: { xs: '100%', sm: 'auto' },
                                     }}
                                 >
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, whiteSpace: 'nowrap', minWidth: 0 }}>
                                         {formatMoney(line.price * line.qty)}
                                     </Typography>
                                     <Stack
                                         direction="row"
                                         alignItems="center"
-                                        spacing={0.5}
+                                        spacing="4px"
                                         justifyContent="flex-end"
-                                        sx={{ width: 'auto' }}
+                                        sx={{ width: 'auto', flexShrink: 0 }}
                                     >
                                         <Box
                                             sx={{
@@ -167,20 +182,21 @@ export default function CartIndex() {
                                                 bgcolor: 'background.paper',
                                             }}
                                         >
-                                            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => setQty(line.skuId, line.qty - 1)} disabled={line.qty <= 1}>
+                                            <IconButton aria-label={t('Decrease quantity')} size="small" sx={{ width: 44, height: 44 }} onClick={() => setQty(line.skuId, line.qty - 1)} disabled={line.qty <= 1}>
                                                 <Remove fontSize="small" />
                                             </IconButton>
-                                            <Typography sx={{ px: 1, minWidth: 22, textAlign: 'center', fontWeight: 700, fontSize: '0.9rem' }}>{line.qty}</Typography>
+                                            <Typography aria-live="polite" sx={{ px: '4px', minWidth: 24, textAlign: 'center', fontWeight: 700, fontSize: '0.875rem' }}>{line.qty}</Typography>
                                             <IconButton
+                                                aria-label={t('Increase quantity')}
                                                 size="small"
-                                                sx={{ p: 0.5 }}
+                                                sx={{ width: 44, height: 44 }}
                                                 onClick={() => setQty(line.skuId, line.qty + 1)}
                                                 disabled={line.qty >= ORDER_QTY_MAX}
                                             >
                                                 <Add fontSize="small" />
                                             </IconButton>
                                         </Box>
-                                        <IconButton size="small" color="error" sx={{ p: 0.5 }} onClick={() => removeItem(line.skuId)} aria-label={t('Remove')}>
+                                        <IconButton size="small" color="error" sx={{ width: 44, height: 44 }} onClick={() => removeItem(line.skuId)} aria-label={t('Remove')}>
                                             <DeleteOutlined />
                                         </IconButton>
                                     </Stack>
@@ -188,21 +204,21 @@ export default function CartIndex() {
                             </Paper>
                         ))}
 
-                        <Paper elevation={0} sx={{ ...sectionShellSx, p: 2.5 }}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                        <Paper elevation={0} sx={{ ...sectionShellSx, p: { xs: '14px', sm: '20px' }, gridColumn: { md: 2 }, gridRow: { md: '1 / span 99' }, position: 'sticky', top: { md: 112 }, bottom: { xs: 72, md: 'auto' }, zIndex: 10, backdropFilter: { xs: 'blur(14px)', md: 'none' }, boxShadow: { xs: '0 -8px 24px rgba(36,27,24,.10)', md: sectionShellSx.boxShadow } }}>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', gap: '12px', alignItems: 'center' }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                                     {t('Subtotal')}
                                 </Typography>
-                                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 700, textAlign: 'right', overflowWrap: 'normal' }}>
                                     {formatMoney(subtotal)}
                                 </Typography>
-                            </Stack>
+                            </Box>
                             <Divider sx={{ my: 2 }} />
                             <Button
                                 fullWidth
                                 variant="contained"
                                 size="large"
-                                sx={{ py: 1.5, fontWeight: 800, borderRadius: 2 }}
+                                sx={{ py: 1.5, fontWeight: 700, borderRadius: 2 }}
                                 onClick={() => {
                                     if (!auth?.user) {
                                         router.visit(routeWithBase('/login', app_base));
@@ -214,7 +230,7 @@ export default function CartIndex() {
                                 {t(auth?.user ? 'Proceed to checkout' : 'Log in to checkout')}
                             </Button>
                         </Paper>
-                    </Stack>
+                    </Box>
                 )}
             </Container>
 

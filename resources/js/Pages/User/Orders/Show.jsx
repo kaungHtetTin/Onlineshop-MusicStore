@@ -15,6 +15,7 @@ import {
     Typography,
 } from '@mui/material';
 import { Close } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import BackLink from '@/Components/User/BackLink';
 import Navbar from '@/Components/User/Navbar';
 import MobileBottomNav, { MobileBottomNavSpacer } from '@/Components/User/MobileBottomNav';
@@ -23,6 +24,7 @@ import UserBrandHead from '@/Components/User/UserBrandHead';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 import { formatMoney } from '@/Utils/pricing';
+import { storefrontBackgroundSx } from '@/Components/User/musicStoreDesign';
 
 const statusColor = {
     pending: 'warning',
@@ -47,6 +49,7 @@ const paymentStatusColor = {
 };
 
 export default function OrdersShow({ order, paymentStatusLabels = {} }) {
+    const theme = useTheme();
     const { app_base, app_url, flash } = usePage().props;
     const t = usePhraseTranslation();
     const [proofLightbox, setProofLightbox] = useState(false);
@@ -55,14 +58,18 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
     const proofUrl = order.payment_proof_url || storageUrl(order.payment_proof_path, app_url);
 
     return (
-        <Box sx={{ bgcolor: 'background.default', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Box className="user-storefront" sx={{ ...storefrontBackgroundSx(theme), minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <UserBrandHead title={`Order ${order.order_number}`} />
             <Navbar />
 
-            <Container maxWidth="md" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
+            <Container maxWidth="lg" sx={{ mt: { xs: '16px', md: '24px' }, pb: { xs: '24px', md: '32px' } }}>
                 <BackLink href={routeWithBase('/orders', app_base)}>
                     {t('All orders')}
                 </BackLink>
+                <Stack direction="row" spacing="10px" flexWrap="wrap" sx={{ mb: '20px' }}>
+                    <Button component={Link} href={routeWithBase('/products', app_base)} variant="outlined">{t('Continue shopping')}</Button>
+                    <Button component={Link} href={routeWithBase('/chat', app_base)} variant="outlined">{t('Contact support')}</Button>
+                </Stack>
 
                 {flash?.success && (
                     <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>
@@ -72,7 +79,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
 
                 {order.payment_status === 'rejected' && (
                     <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
                             Payment not accepted
                         </Typography>
                         <Typography variant="body2">
@@ -88,10 +95,10 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                     </Alert>
                 )}
 
-                <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, border: '1px solid', borderColor: 'divider', mb: 2 }}>
+                <Paper elevation={0} sx={{ p: { xs: '16px', sm: '20px' }, borderRadius: 2, border: '1px solid', borderColor: 'divider', mb: '16px' }}>
                     <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ sm: 'flex-start' }}>
                         <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
                                 {order.order_number}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
@@ -116,6 +123,17 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
 
                     <Divider sx={{ my: 2 }} />
 
+                    <Stack direction="row" alignItems="flex-start" sx={{ mb: '20px', overflowX: 'auto', pb: '4px' }}>
+                        {['Placed', 'Processing', 'Shipped', 'Delivered'].map((label, index) => {
+                            const current = Math.max(0, ['pending', 'processing', 'shipped', 'delivered'].indexOf(order.status));
+                            const active = order.status !== 'cancelled' && index <= current;
+                            return <Box key={label} sx={{ flex: 1, minWidth: 88, position: 'relative', textAlign: 'center', '&:not(:last-child)::after': { content: '\"\"', position: 'absolute', top: 9, left: '58%', right: '-42%', height: 2, bgcolor: active && index < current ? 'primary.main' : 'divider' } }}>
+                                <Box sx={{ width: 20, height: 20, borderRadius: '50%', mx: 'auto', mb: '6px', bgcolor: active ? 'primary.main' : 'grey.300', border: '4px solid white', boxShadow: '0 0 0 1px rgba(0,0,0,.1)', position: 'relative', zIndex: 1 }} />
+                                <Typography variant="caption" sx={{ fontWeight: active ? 800 : 600, color: active ? 'text.primary' : 'text.secondary' }}>{t(label)}</Typography>
+                            </Box>;
+                        })}
+                    </Stack>
+
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
                         Ship to
                     </Typography>
@@ -138,13 +156,14 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                     )}
                 </Paper>
 
-                <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2 }}>
+                <Paper elevation={0} sx={{ p: { xs: '16px', sm: '20px' }, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
                         Items
                     </Typography>
                     <Stack spacing={2}>
                         {order.items.map((item) => (
-                            <Stack key={item.id} direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+                            <Stack key={item.id} direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                                <Box component="img" src={item.product?.primary_image?.image_url || (item.product?.primary_image?.image_path ? storageUrl(item.product.primary_image.image_path, app_url) : routeWithBase('/images/product-placeholder.svg', app_base))} alt="" sx={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 1.5, bgcolor: 'grey.100', flexShrink: 0 }} />
                                 <Box sx={{ minWidth: 0 }}>
                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                         {item.product?.name}
@@ -153,7 +172,7 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                                         {t('Qty')} {item.quantity} - {formatMoney(item.unit_price)} {t('each')}
                                     </Typography>
                                 </Box>
-                                <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                     {formatMoney(item.total_price)}
                                 </Typography>
                             </Stack>
@@ -170,10 +189,10 @@ export default function OrdersShow({ order, paymentStatusLabels = {} }) {
                             <Typography variant="body2">{formatMoney(order.shipping_fee)}</Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between" sx={{ pt: 1 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                 Total
                             </Typography>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                 {formatMoney(order.final_amount)}
                             </Typography>
                         </Stack>

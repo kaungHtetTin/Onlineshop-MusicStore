@@ -26,6 +26,7 @@ import {
     Headphones,
     MusicNote,
     Piano,
+    ArrowBackRounded,
 } from '@mui/icons-material';
 import { alpha, darken, useTheme } from '@mui/material/styles';
 import { eyebrowSx, getMusicStoreColors, musicGradientForTheme } from '@/Components/User/musicStoreDesign';
@@ -121,7 +122,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                         <Typography
                             variant="h2"
                             sx={{
-                                fontWeight: 950,
+                                fontWeight: 700,
                                 lineHeight: 0.98,
                                 fontSize: { md: '4.2rem' },
                                 mb: 2,
@@ -129,7 +130,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                         >
                             {t('Keep the store in tune.')}
                         </Typography>
-                        <Typography sx={{ color: alpha('#fff', 0.78), fontWeight: 650, lineHeight: 1.7, maxWidth: 440 }}>
+                        <Typography sx={{ color: alpha('#fff', 0.78), fontWeight: 600, lineHeight: 1.7, maxWidth: 440 }}>
                             {t('Manage instruments, inventory, orders, and customer requests from the staff console.')}
                         </Typography>
                         <Stack direction="row" spacing={1.25} sx={{ mt: 3 }} useFlexGap flexWrap="wrap">
@@ -154,7 +155,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                     }}
                                 >
                                     <Icon sx={{ fontSize: 18, color: musicColors.amber }} />
-                                    <Typography variant="caption" sx={{ fontWeight: 850 }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 700 }}>
                                         {t(label)}
                                     </Typography>
                                 </Stack>
@@ -193,10 +194,10 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                 <AdminPanelSettings sx={{ fontSize: 32 }} />
                             </Box>
                             <Box>
-                                <Typography variant="h4" sx={{ fontWeight: 950, color: musicColors.ink, lineHeight: 1.05 }}>
+                                <Typography variant="h4" sx={{ fontWeight: 700, color: musicColors.ink, lineHeight: 1.05 }}>
                                     {t('Staff Login')}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, fontWeight: 650 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, fontWeight: 600 }}>
                                     {t('Sign in to manage')} {appName}.
                                 </Typography>
                             </Box>
@@ -268,10 +269,10 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                                 sx={{ color: musicColors.rosin, '&.Mui-checked': { color: musicColors.rosin } }}
                                             />
                                         }
-                                        label={<Typography variant="body2" sx={{ fontWeight: 650 }}>{t('Remember me')}</Typography>}
+                                        label={<Typography variant="body2" sx={{ fontWeight: 600 }}>{t('Remember me')}</Typography>}
                                     />
                                     <Link href={routeWithBase('/forgot-password', app_base)} style={{ textDecoration: 'none' }}>
-                                        <Typography variant="body2" sx={{ color: musicColors.rosin, fontWeight: 850 }}>
+                                        <Typography variant="body2" sx={{ color: musicColors.rosin, fontWeight: 700 }}>
                                             {t('Forgot?')}
                                         </Typography>
                                     </Link>
@@ -286,7 +287,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                     sx={{
                                         py: 1.45,
                                         fontSize: '1rem',
-                                        fontWeight: 900,
+                                        fontWeight: 700,
                                         bgcolor: musicColors.rosin,
                                         color: 'white',
                                         boxShadow: `0 12px 28px ${alpha(musicColors.rosin, 0.26)}`,
@@ -314,7 +315,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
             alignItems: 'center',
             justifyContent: 'center',
             background: musicGradientForTheme(theme),
-            py: 4,
+            py: { xs: '20px', sm: '32px' },
         }}>
             <Head title={t('Log in')}>
                 <PwaHeadTags />
@@ -322,7 +323,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
 
             <Container maxWidth="xs">
                 <Paper elevation={0} sx={{
-                    p: 4,
+                    p: { xs: '24px', sm: '28px' },
                     borderRadius: 2,
                     bgcolor: 'rgba(255, 253, 248, 0.92)',
                     backdropFilter: 'blur(20px)',
@@ -330,10 +331,11 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                     boxShadow: '0 24px 70px rgba(23,19,18,0.24)',
                     textAlign: 'center',
                 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 950, color: musicColors.ink, mb: 1 }}>
+                    {app_settings?.logo_url && <Box component="img" src={app_settings.logo_url} alt={appName} sx={{ width: 56, height: 56, objectFit: 'contain', mx: 'auto', mb: '16px', borderRadius: 2, bgcolor: 'white' }} />}
+                    <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '1.5rem', sm: '1.7rem' }, color: musicColors.ink, mb: 1 }}>
                         {t('Welcome to')} {appName}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: '24px' }}>
                         {t('Log in to save instruments, track orders, and chat with the shop team.')}
                     </Typography>
 
@@ -350,7 +352,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                     )}
 
                     <form onSubmit={submit}>
-                        <Stack spacing={2.5}>
+                        <Stack spacing="16px">
                             <TextField
                                 fullWidth
                                 label={t('Email or phone')}
@@ -426,7 +428,8 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                     </form>
 
                     <>
-                        <Box sx={{ my: 4 }}>
+                        {googleAuthAvailable && <>
+                        <Box sx={{ my: '24px' }}>
                             <Divider>
                                 <Typography variant="caption" color="text.secondary">
                                     {t('OR CONTINUE WITH')}
@@ -437,10 +440,9 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                         <Button
                             fullWidth
                             component="a"
-                            href={googleAuthAvailable ? routeWithBase('/auth/google', app_base) : undefined}
+                            href={routeWithBase('/auth/google', app_base)}
                             variant="outlined"
                             startIcon={<GoogleIcon />}
-                            disabled={!googleAuthAvailable}
                             sx={{
                                 borderColor: '#ddd',
                                 color: 'text.primary',
@@ -449,14 +451,9 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                         >
                             Google
                         </Button>
+                        </>}
 
-                        {!googleAuthAvailable && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25 }}>
-                                {t('Add Google OAuth credentials in .env to enable this button.')}
-                            </Typography>
-                        )}
-
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 4 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: '24px' }}>
                             {t("Don't have an account?")}{' '}
                             <Link href={routeWithBase('/register', app_base)} style={{ textDecoration: 'none' }}>
                                 <Typography component="span" variant="body2" color="primary" sx={{ fontWeight: 700 }}>
@@ -465,6 +462,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                             </Link>
                         </Typography>
                     </>
+                    <Button component={Link} href={routeWithBase('/', app_base)} startIcon={<ArrowBackRounded />} sx={{ mt: '16px', color: 'text.secondary' }}>{t('Back to shop')}</Button>
                 </Paper>
             </Container>
         </Box>

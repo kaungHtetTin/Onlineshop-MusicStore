@@ -37,7 +37,7 @@ export default function CategoriesIndex({ categories = [] }) {
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
     const { app_base } = usePage().props;
-    const categoryRows = categories.data || categories;
+    const categoryRows = (categories.data || categories).filter((category) => Number(category.products_count || 0) > 0);
 
     const handlePageChange = (_event, page) => {
         router.get(routeWithBase('/categories', app_base), { page }, { preserveScroll: false, preserveState: true });
@@ -56,16 +56,16 @@ export default function CategoriesIndex({ categories = [] }) {
             <UserBrandHead title="Categories" />
             <Navbar />
 
-            <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
+            <Container maxWidth="lg" sx={{ mt: { xs: '16px', md: '24px' }, pb: { xs: '24px', md: '32px' } }}>
                 <BackLink href={routeWithBase('/', app_base)}>
                     Back to home
                 </BackLink>
 
-                <Box sx={{ mb: 3 }}>
+                <Box sx={{ mb: '16px' }}>
                     <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
                         Departments
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 950, mb: 0.5, color: musicColors.ink, lineHeight: 1.1 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: musicColors.ink, lineHeight: 1.1 }}>
                         Shop by sound
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, maxWidth: 520 }}>
@@ -81,7 +81,7 @@ export default function CategoriesIndex({ categories = [] }) {
                             sm: 'repeat(3, minmax(0, 1fr))',
                             md: 'repeat(4, minmax(0, 1fr))',
                         },
-                        gap: { xs: 1.5, sm: 2 },
+                        gap: { xs: '10px', sm: '12px', md: '16px' },
                     }}
                 >
                     {categoryRows.map((cat) => {
@@ -96,7 +96,7 @@ export default function CategoriesIndex({ categories = [] }) {
                                 href={routeWithBase(`/categories/${cat.slug}`, app_base)}
                                 elevation={0}
                                 sx={{
-                                    p: 2,
+                                    p: { xs: '12px', sm: '14px' },
                                     borderRadius: 3,
                                     textDecoration: 'none',
                                     color: 'inherit',
@@ -106,7 +106,7 @@ export default function CategoriesIndex({ categories = [] }) {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'stretch',
-                                    minHeight: { xs: 148, sm: 160 },
+                                    minHeight: { xs: 128, sm: 140 },
                                     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                                     '&:hover': {
                                         transform: 'translateY(-3px)',
@@ -133,12 +133,12 @@ export default function CategoriesIndex({ categories = [] }) {
                                     <Box sx={{ minWidth: 0, flex: 1 }}>
                                         <Typography
                                             variant="subtitle2"
-                                            sx={{ fontWeight: 900, lineHeight: 1.25, mb: 0.25 }}
+                                            sx={{ fontWeight: 700, lineHeight: 1.25, mb: 0.25 }}
                                             noWrap
                                         >
                                             {cat.name}
                                         </Typography>
-                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 650 }}>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                                             {count} {count === 1 ? 'item' : 'items'}
                                         </Typography>
                                     </Box>
@@ -174,8 +174,8 @@ export default function CategoriesIndex({ categories = [] }) {
                                                 size="small"
                                                 onClick={(e) => e.stopPropagation()}
                                                 sx={{
-                                                    height: 22,
-                                                    fontSize: '0.65rem',
+                                                    minHeight: 28,
+                                                    fontSize: '0.72rem',
                                                     fontWeight: 700,
                                                     '& .MuiChip-label': { px: 0.75 },
                                                 }}
@@ -207,7 +207,7 @@ export default function CategoriesIndex({ categories = [] }) {
                             href={routeWithBase('/products', app_base)}
                             variant="outlined"
                             color="primary"
-                            sx={{ fontWeight: 800, borderRadius: 999, px: 3 }}
+                            sx={{ fontWeight: 700, borderRadius: 999, px: 3 }}
                         >
                             View all products
                         </Button>

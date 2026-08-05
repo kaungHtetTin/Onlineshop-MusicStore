@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, IconButton, Badge, InputBase, Box, Container, Stack, Button } from '@mui/material';
-import { Search, ShoppingCart, ChatBubbleOutlined, Favorite, MusicNote, Piano, Headphones } from '@mui/icons-material';
+import { ArticleOutlined, Search, ShoppingCart, ChatBubbleOutlined, Favorite, MusicNote, Piano, Headphones } from '@mui/icons-material';
 import { styled, alpha, useTheme } from '@mui/material/styles';
 import { Link, router, usePage } from '@/spa/router';
 import { routeWithBase } from '@/Utils/url';
@@ -14,7 +14,7 @@ import { useTranslation } from '@/Utils/i18n';
 
 const SearchContainer = styled('form')(({ theme }) => ({
     position: 'relative',
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: alpha(theme.palette.common.white, 0.92),
     '&:hover': {
         backgroundColor: theme.palette.common.white,
@@ -28,10 +28,12 @@ const SearchContainer = styled('form')(({ theme }) => ({
     },
     border: '1px solid rgba(244, 194, 103, 0.35)',
     minWidth: 0,
+    minHeight: 44,
 }));
 
 const SearchIconWrapper = styled('button')(({ theme }) => ({
-    padding: theme.spacing(0, 1.25),
+    width: 44,
+    padding: 0,
     height: '100%',
     position: 'absolute',
     left: 0,
@@ -52,20 +54,21 @@ const StyledInputBase = styled(InputBase)((({ theme }) => ({
     color: theme.palette.text.primary,
     width: '100%',
     '& .MuiInputBase-input': {
-        padding: theme.spacing(0.75, 1, 0.75, 0),
-        paddingLeft: `calc(1em + ${theme.spacing(3)})`,
+        minHeight: 42,
+        padding: theme.spacing(1, 1.5, 1, 0),
+        paddingLeft: 44,
         transition: theme.transitions.create('width'),
-        fontSize: '0.85rem',
-        fontWeight: 600,
+        fontSize: '0.875rem',
+        fontWeight: 500,
         color: getMusicStoreColors(theme).ink,
         '&::placeholder': {
             color: alpha(getMusicStoreColors(theme).coal, 0.72),
             opacity: 1,
-            fontWeight: 500,
+            fontWeight: 400,
         },
         width: '100%',
         [theme.breakpoints.up('md')]: {
-            width: '25ch',
+            width: '28ch',
         },
     },
 })));
@@ -126,11 +129,11 @@ const Navbar = ({ persistentRoot = false }) => {
             color: 'white',
             backdropFilter: 'blur(16px)',
             borderBottom: `1px solid ${alpha(musicColors.amber, 0.34)}`,
-            boxShadow: '0 16px 40px rgba(23, 19, 18, 0.16)',
+            boxShadow: '0 3px 12px rgba(23, 19, 18, 0.12)',
             zIndex: 1100,
         }}>
             <Container maxWidth="lg">
-                <Toolbar variant="dense" sx={{ px: { xs: 0, sm: 1 }, minHeight: { xs: 50, sm: 56 } }}>
+                <Toolbar variant="dense" sx={{ px: { xs: 0, sm: 1 }, minHeight: { xs: 56, sm: 64 } }}>
                     <Box
                         component={Link}
                         href={routeWithBase('/', app_base)}
@@ -150,8 +153,8 @@ const Navbar = ({ persistentRoot = false }) => {
                                 src={app_settings.logo_url}
                                 alt=""
                                 sx={{
-                                    width: { xs: 28, sm: 30 },
-                                    height: { xs: 28, sm: 30 },
+                                    width: { xs: 32, sm: 36 },
+                                    height: { xs: 32, sm: 36 },
                                     objectFit: 'contain',
                                     borderRadius: 1,
                                     bgcolor: musicColors.sheet,
@@ -160,15 +163,15 @@ const Navbar = ({ persistentRoot = false }) => {
                         ) : (
                             <Box
                                 sx={{
-                                    width: { xs: 28, sm: 30 },
-                                    height: { xs: 28, sm: 30 },
+                                    width: { xs: 32, sm: 36 },
+                                    height: { xs: 32, sm: 36 },
                                     display: 'grid',
                                     placeItems: 'center',
                                     borderRadius: 1.5,
                                     bgcolor: musicColors.brass,
                                     color: musicColors.ink,
                                     fontSize: '0.95rem',
-                                    fontWeight: 900,
+                                    fontWeight: 700,
                                 }}
                             >
                                 <MusicNote fontSize="inherit" />
@@ -180,14 +183,14 @@ const Navbar = ({ persistentRoot = false }) => {
                                 noWrap
                                 sx={{
                                     maxWidth: { sm: 180, md: 220 },
-                                    fontWeight: 900,
+                                    fontWeight: 700,
                                     color: musicColors.amber,
                                     lineHeight: 1.05,
                                 }}
                             >
                                 {appName}
                             </Typography>
-                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.68)', fontWeight: 700, display: { sm: 'none', md: 'block' } }}>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500, fontSize: '0.75rem', display: { sm: 'none', md: 'block' } }}>
                                 {t('storefront.tagline', 'Instruments, gear & studio essentials')}
                             </Typography>
                         </Box>
@@ -201,8 +204,9 @@ const Navbar = ({ persistentRoot = false }) => {
                             ml: 1,
                             '& .MuiButton-root': {
                                 color: 'rgba(255,255,255,0.78)',
-                                fontWeight: 800,
+                                fontWeight: 700,
                                 px: 1.25,
+                                minHeight: 42,
                                 '&:hover': { color: musicColors.amber, bgcolor: alpha(musicColors.amber, 0.08) },
                             },
                         }}
@@ -212,6 +216,9 @@ const Navbar = ({ persistentRoot = false }) => {
                         </Button>
                         <Button component={Link} href={routeWithBase('/categories', app_base)} startIcon={<Headphones fontSize="small" />}>
                             {t('storefront.categories', 'Categories')}
+                        </Button>
+                        <Button component={Link} href={routeWithBase('/blogs', app_base)} startIcon={<ArticleOutlined fontSize="small" />}>
+                            {t('storefront.blog', 'Blog')}
                         </Button>
                     </Stack>
 
@@ -227,7 +234,7 @@ const Navbar = ({ persistentRoot = false }) => {
                             aria-label={t('storefront.support_chat', 'Open support chat')}
                             component={Link}
                             href={routeWithBase(auth?.user ? '/chat' : '/login', app_base)}
-                            sx={{ color: musicColors.amber }}
+                            sx={{ color: musicColors.amber, width: { xs: 40, sm: 42 }, height: { xs: 40, sm: 42 } }}
                         >
                             <Badge
                                 badgeContent={chat_unread_count || 0}
@@ -243,7 +250,7 @@ const Navbar = ({ persistentRoot = false }) => {
                             component={Link}
                             href={routeWithBase('/wishlist', app_base)}
                             aria-label={t('storefront.wishlist', 'Wishlist')}
-                            sx={{ display: { xs: 'none', sm: 'flex' }, color: musicColors.amber }}
+                            sx={{ display: { xs: 'none', sm: 'flex' }, color: musicColors.amber, width: 42, height: 42 }}
                         >
                             <Badge
                                 badgeContent={wishCount}
@@ -259,7 +266,7 @@ const Navbar = ({ persistentRoot = false }) => {
                             component={Link}
                             href={routeWithBase('/cart', app_base)}
                             aria-label={t('storefront.cart', 'Cart')}
-                            sx={{ color: musicColors.amber }}
+                            sx={{ color: musicColors.amber, width: { xs: 40, sm: 42 }, height: { xs: 40, sm: 42 } }}
                         >
                             <Badge
                                 badgeContent={cartCount}
@@ -274,7 +281,7 @@ const Navbar = ({ persistentRoot = false }) => {
                         <ProfileMenu />
                     </Box>
                 </Toolbar>
-                <Box sx={{ pb: 1, px: 1, display: { xs: 'block', md: 'none' } }}>
+                <Box sx={{ pb: 2, px: { xs: 0, sm: 1 }, display: { xs: 'block', md: 'none' } }}>
                     {renderSearch(t('storefront.search_mobile', 'Search guitars, keys, drums...'))}
                 </Box>
             </Container>

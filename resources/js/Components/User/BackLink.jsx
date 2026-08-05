@@ -42,8 +42,9 @@ export default function BackLink({ href, children = 'Back', sx = {} }) {
                 boxShadow: `0 10px 28px ${alpha(theme.palette.primary.main, 0.08)}`,
                 backdropFilter: 'blur(12px)',
                 textTransform: 'none',
-                fontWeight: 850,
-                fontSize: '0.78rem',
+                minHeight: 40,
+                fontWeight: 700,
+                fontSize: '0.82rem',
                 lineHeight: 1.2,
                 '& .MuiButton-startIcon': {
                     m: 0,

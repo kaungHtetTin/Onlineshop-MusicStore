@@ -40,10 +40,12 @@ function BlogCard({ post }) {
                 color: 'inherit',
                 textDecoration: 'none',
                 border: '1px solid rgba(0,0,0,0.06)',
-                borderRadius: 1,
+                borderRadius: 2,
                 overflow: 'hidden',
-                minHeight: 320,
-                '&:hover': { borderColor: 'primary.main' },
+                minHeight: 300,
+                boxShadow: '0 12px 34px rgba(36,27,24,.06)',
+                transition: 'transform .2s ease, box-shadow .2s ease',
+                '&:hover': { borderColor: 'primary.main', transform: 'translateY(-3px)', boxShadow: '0 18px 42px rgba(36,27,24,.11)' },
             }}
         >
             <Box sx={{ aspectRatio: '16 / 9', bgcolor: 'primary.light', display: 'grid', placeItems: 'center', overflow: 'hidden', position: 'relative' }}>
@@ -68,16 +70,16 @@ function BlogCard({ post }) {
                         icon={<PlayCircle />}
                         label={t('Video')}
                         size="small"
-                        sx={{ position: 'absolute', right: 10, bottom: 10, bgcolor: 'rgba(255,255,255,0.92)', fontWeight: 800 }}
+                        sx={{ position: 'absolute', right: 10, bottom: 10, bgcolor: 'rgba(255,255,255,0.92)', fontWeight: 700 }}
                     />
                 )}
             </Box>
-            <Stack spacing={1} sx={{ p: 2 }}>
+            <Stack spacing="10px" sx={{ p: { xs: '16px', md: '18px' } }}>
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                     {post.category && <Chip size="small" label={post.category.name} color="primary" variant="outlined" />}
                     <Typography variant="caption" color="text.secondary">{formatDate(post.published_at)}</Typography>
                 </Stack>
-                <Typography variant="subtitle1" sx={{ fontWeight: 900, lineHeight: 1.25 }}>{post.title}</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.25 }}>{post.title}</Typography>
                 {post.excerpt && (
                     <Typography variant="body2" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {post.excerpt}
@@ -114,16 +116,16 @@ export default function BlogsIndex({ posts, filters, categories, tags }) {
             <Head title={t('Blog')} />
             <Navbar />
 
-            <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
-                <Stack spacing={1.5} sx={{ mb: 3 }}>
-                    <Typography variant="overline" color="primary" sx={{ fontWeight: 900, letterSpacing: 1.5 }}>{t('Journal')}</Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 950 }}>{t('Ideas, guides, and updates')}</Typography>
+            <Container maxWidth="lg" sx={{ py: { xs: '24px', md: '32px' } }}>
+                <Stack spacing="8px" sx={{ mb: '20px' }}>
+                    <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: 1.5 }}>{t('Journal')}</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700 }}>{t('Ideas, guides, and updates')}</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 620 }}>
                         {t('Shop smarter with product stories, gift guides, care tips, and campaign videos.')}
                     </Typography>
                 </Stack>
 
-                <Box component="form" onSubmit={submit} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr auto' }, gap: 1.25, mb: 2 }}>
+                {posts.data.length > 0 && <><Box component="form" onSubmit={submit} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr auto' }, gap: '12px', mb: '16px' }}>
                     <TextField size="small" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('Search blog posts...')} />
                     <Button type="submit" variant="contained">{t('Search')}</Button>
                 </Box>
@@ -148,16 +150,18 @@ export default function BlogsIndex({ posts, filters, categories, tags }) {
                             onClick={() => applyFilters({ tag: tag.slug, category: undefined })}
                         />
                     ))}
-                </Stack>
+                </Stack></>}
 
                 {posts.data.length > 0 ? (
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: { xs: '12px', md: '16px' } }}>
                         {posts.data.map((post) => <BlogCard key={post.id} post={post} />)}
                     </Box>
                 ) : (
-                    <Box sx={{ p: 4, bgcolor: 'white', borderRadius: 1, textAlign: 'center' }}>
-                        <Typography sx={{ fontWeight: 800 }}>{t('No blog posts found')}</Typography>
-                        <Button component={Link} href={routeWithBase('/products', app_base)} endIcon={<ArrowForward />} sx={{ mt: 1 }}>
+                    <Box sx={{ p: { xs: '24px', sm: '28px' }, bgcolor: 'white', borderRadius: 2, border: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+                        <ArticleOutlined sx={{ fontSize: 48, color: 'primary.main', mb: '12px' }} />
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>{t('Stories are coming soon')}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: '8px', maxWidth: 520, mx: 'auto' }}>{t('Explore the shop while our next buying guides and product stories are being prepared.')}</Typography>
+                        <Button component={Link} href={routeWithBase('/products', app_base)} endIcon={<ArrowForward />} sx={{ mt: '16px' }}>
                             {t('Browse products')}
                         </Button>
                     </Box>

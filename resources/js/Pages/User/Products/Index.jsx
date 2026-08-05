@@ -37,7 +37,10 @@ import {
 } from '@/Components/User/musicStoreDesign';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
-const Index = ({ products, categories, filters }) => {
+const Index = ({ products, categories, filters: rawFilters }) => {
+    // Laravel serializes an empty associative array as `[]`; normalize it so
+    // Array.prototype.sort is never mistaken for an active sort filter.
+    const filters = useMemo(() => (Array.isArray(rawFilters) ? {} : (rawFilters || {})), [rawFilters]);
     const theme = useTheme();
     const musicColors = getMusicStoreColors(theme);
     const sectionShellSx = sectionShellSxForTheme(theme);
@@ -49,6 +52,7 @@ const Index = ({ products, categories, filters }) => {
     const [minPrice, setMinPrice] = useState(filters.min_price || '');
     const [maxPrice, setMaxPrice] = useState(filters.max_price || '');
     const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+    const [desktopAdvancedOpen, setDesktopAdvancedOpen] = useState(false);
 
     useEffect(() => {
         setSearch(filters.search || '');
@@ -66,7 +70,7 @@ const Index = ({ products, categories, filters }) => {
         let n = 0;
         if (filters.category) n += 1;
         if (filters.search && String(filters.search).trim()) n += 1;
-        if (filters.sort && filters.sort !== 'newest') n += 1;
+        if (filters.sort && !['newest', 'latest'].includes(String(filters.sort))) n += 1;
         if (filters.min_price) n += 1;
         if (filters.max_price) n += 1;
         if (filters.min_rating) n += 1;
@@ -170,7 +174,7 @@ const Index = ({ products, categories, filters }) => {
                 variant={!filters.category ? 'filled' : 'outlined'}
                 color={!filters.category ? 'primary' : 'default'}
                 size="small"
-                sx={{ fontWeight: 850, flexShrink: 0, borderRadius: 1.5 }}
+                sx={{ fontWeight: 700, flexShrink: 0, borderRadius: 1.5 }}
             />
             {categories.map((cat) => (
                 <Chip
@@ -180,7 +184,7 @@ const Index = ({ products, categories, filters }) => {
                     variant={filters.category === cat.slug ? 'filled' : 'outlined'}
                     color={filters.category === cat.slug ? 'primary' : 'default'}
                     size="small"
-                    sx={{ fontWeight: 850, flexShrink: 0, borderRadius: 1.5 }}
+                    sx={{ fontWeight: 700, flexShrink: 0, borderRadius: 1.5 }}
                 />
             ))}
         </Box>
@@ -287,7 +291,7 @@ const Index = ({ products, categories, filters }) => {
                     minHeight: 40,
                     px: 2,
                     borderRadius: 1.5,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     whiteSpace: 'nowrap',
                     color: filters.flash_sale ? 'primary.main' : 'text.primary',
                     borderColor: filters.flash_sale ? 'primary.main' : 'divider',
@@ -307,7 +311,7 @@ const Index = ({ products, categories, filters }) => {
                     minHeight: 40,
                     px: 3,
                     borderRadius: 1.5,
-                    fontWeight: 900,
+                    fontWeight: 700,
                     whiteSpace: 'nowrap',
                 }}
             >
@@ -330,11 +334,11 @@ const Index = ({ products, categories, filters }) => {
 
             <Navbar />
 
-            <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 4 }, px: { xs: 2, sm: 3 } }}>
+            <Container maxWidth="lg" sx={{ mt: { xs: '16px', md: '24px' }, pb: { xs: '24px', md: '32px' } }}>
                 <Box
                     sx={{
                         ...sectionShellSx,
-                        p: { xs: 2, sm: 2.5 },
+                        p: { xs: '16px', sm: '20px' },
                         display: 'flex',
                         alignItems: 'flex-start',
                         justifyContent: 'space-between',
@@ -346,12 +350,12 @@ const Index = ({ products, categories, filters }) => {
                         <Typography sx={{ ...eyebrowSxForTheme(theme), mb: 0.5 }}>
                             {t('Instrument catalog')}
                         </Typography>
-                        <Typography variant="h4" sx={{ fontWeight: 950, mb: 0.5, color: musicColors.ink, lineHeight: 1.1 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5, color: musicColors.ink, lineHeight: 1.1 }}>
                             {filters.category
                                 ? categories.find((c) => c.slug === filters.category)?.name
                                 : t('All instruments & gear')}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 650 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
                             {t('Showing')} {products.from || 0}-{products.to || 0} {t('of')} {products.total} {t('items for players, studios, and stage setups.')}
                         </Typography>
                         {filters.flash_sale ? (
@@ -361,7 +365,7 @@ const Index = ({ products, categories, filters }) => {
                                 color="primary"
                                 size="small"
                                 onDelete={() => applyFilters({ flash_sale: undefined })}
-                                sx={{ mt: 1, fontWeight: 800 }}
+                                sx={{ mt: 1, fontWeight: 700 }}
                             />
                         ) : null}
                     </Box>
@@ -372,7 +376,7 @@ const Index = ({ products, categories, filters }) => {
                             overlap="circular"
                             badgeContent={activeFilterCount}
                             invisible={activeFilterCount === 0}
-                            sx={{ flexShrink: 0, '& .MuiBadge-badge': { fontWeight: 800 } }}
+                            sx={{ flexShrink: 0, '& .MuiBadge-badge': { fontWeight: 700 } }}
                         >
                             <Button
                                 variant={activeFilterCount > 0 ? 'contained' : 'outlined'}
@@ -382,7 +386,7 @@ const Index = ({ products, categories, filters }) => {
                                 onClick={() => setFilterDrawerOpen(true)}
                                 aria-label={t('Open filters')}
                                 sx={{
-                                    fontWeight: 800,
+                                    fontWeight: 700,
                                     borderRadius: 2,
                                     px: 1.5,
                                     py: 1,
@@ -405,7 +409,7 @@ const Index = ({ products, categories, filters }) => {
                             direction={{ xs: 'column', md: 'row' }}
                             spacing={1.5}
                             alignItems={{ md: 'flex-start' }}
-                            sx={{ mb: 3 }}
+                            sx={{ mb: '16px' }}
                         >
                             <Box
                                 component="form"
@@ -443,7 +447,7 @@ const Index = ({ products, categories, filters }) => {
                                         borderRadius: 1.5,
                                         fontWeight: 700,
                                         flexShrink: 0,
-                                        minHeight: 40,
+                                    minHeight: 44,
                                     }}
                                 >
                                     {t('Search')}
@@ -465,8 +469,18 @@ const Index = ({ products, categories, filters }) => {
                                     <MenuItem value="rating">{t('Top rated')}</MenuItem>
                                 </Select>
                             </FormControl>
+                            <Badge color="primary" badgeContent={activeFilterCount} invisible={activeFilterCount === 0}>
+                                <Button
+                                    variant={desktopAdvancedOpen || activeFilterCount > 0 ? 'contained' : 'outlined'}
+                                    startIcon={<Tune />}
+                                    onClick={() => setDesktopAdvancedOpen((open) => !open)}
+                                    sx={{ minHeight: 46, whiteSpace: 'nowrap' }}
+                                >
+                                    {t('Filters')}
+                                </Button>
+                            </Badge>
                         </Stack>
-                        <Box sx={{ mb: 3 }}>{advancedFilters}</Box>
+                        {desktopAdvancedOpen && <Box sx={{ ...sectionShellSx, p: '16px', mb: '16px' }}>{advancedFilters}</Box>}
                     </>
                 ) : null}
 
@@ -498,7 +512,7 @@ const Index = ({ products, categories, filters }) => {
                             bgcolor: 'background.paper',
                         }}
                     >
-                        <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                             {t('Categories & filters')}
                         </Typography>
                         <IconButton
@@ -511,22 +525,22 @@ const Index = ({ products, categories, filters }) => {
                         </IconButton>
                     </Box>
 
-                    <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 2 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>
+                    <Box sx={{ flex: 1, overflowY: 'auto', px: '16px', py: '16px', pb: '84px' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1 }}>
                             {t('Category')}
                         </Typography>
                         {categoryChips}
 
                         <Divider sx={{ my: 2 }} />
 
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1 }}>
                             {t('Search & sort')}
                         </Typography>
                         {searchAndSort}
 
                         <Divider sx={{ my: 2 }} />
 
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800, display: 'block', mb: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, display: 'block', mb: 1 }}>
                             {t('Price & rating')}
                         </Typography>
                         {advancedFilters}
@@ -539,7 +553,7 @@ const Index = ({ products, categories, filters }) => {
                             color="inherit"
                             startIcon={<Clear />}
                             onClick={clearFilters}
-                            sx={{ fontWeight: 800 }}
+                            sx={{ fontWeight: 700, position: 'sticky', bottom: 0, bgcolor: 'background.paper', boxShadow: '0 -12px 24px rgba(0,0,0,.08)' }}
                         >
                             {t('Reset all filters')}
                         </Button>
@@ -578,7 +592,7 @@ const Index = ({ products, categories, filters }) => {
                                 <LocalFireDepartment fontSize="small" />
                             </Box>
                             <Box>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                                     {t('Limited-time gear deals')}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
@@ -591,7 +605,7 @@ const Index = ({ products, categories, filters }) => {
                             size="small"
                             color="primary"
                             onClick={() => applyFilters({ flash_sale: undefined })}
-                            sx={{ borderRadius: 1.5, fontWeight: 900, bgcolor: 'background.paper' }}
+                            sx={{ borderRadius: 1.5, fontWeight: 700, bgcolor: 'background.paper' }}
                         >
                             {t('Show all')}
                         </Button>

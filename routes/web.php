@@ -5,6 +5,7 @@ use App\Http\Controllers\User\BlogController;
 use App\Http\Controllers\User\CategoryController;
 use App\Http\Controllers\User\CheckoutController;
 use App\Http\Controllers\User\ChatController;
+use App\Http\Controllers\User\GuideController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\OrderController;
 use App\Http\Controllers\User\ProductController;
@@ -51,6 +52,7 @@ Route::get('/products', [ProductController::class, 'index'])->name('products.ind
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/blogs', [BlogController::class, 'index'])->name('blogs.index');
 Route::get('/blogs/{slug}', [BlogController::class, 'show'])->name('blogs.show');
+Route::get('/buying-guide', [GuideController::class, 'index'])->name('buying-guide');
 Route::get('/invoices/{token}', [PublicInvoiceController::class, 'show'])->name('public.invoices.show');
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');

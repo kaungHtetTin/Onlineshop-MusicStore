@@ -39,7 +39,7 @@ export const storefrontBackgroundSx = (theme) => {
 export const glassPanelSx = {
     bgcolor: 'rgba(255, 253, 248, 0.9)',
     border: '1px solid rgba(36, 27, 24, 0.1)',
-    boxShadow: '0 18px 54px rgba(36, 27, 24, 0.09)',
+    boxShadow: '0 18px 48px rgba(36, 27, 24, 0.08)',
     backdropFilter: 'blur(14px)',
 };
 
@@ -47,7 +47,7 @@ export const sectionShellSx = {
     bgcolor: musicStoreColors.sheet,
     border: '1px solid rgba(36, 27, 24, 0.08)',
     borderRadius: 2,
-    boxShadow: '0 16px 44px rgba(36, 27, 24, 0.07)',
+    boxShadow: '0 14px 38px rgba(36, 27, 24, 0.065)',
 };
 
 export const sectionShellSxForTheme = (theme) => {
@@ -57,15 +57,15 @@ export const sectionShellSxForTheme = (theme) => {
         bgcolor: colors.sheet,
         border: `1px solid ${alpha(colors.rosin, 0.12)}`,
         borderRadius: 2,
-        boxShadow: `0 16px 44px ${alpha(colors.rosin, 0.08)}`,
+        boxShadow: `0 14px 38px ${alpha(colors.rosin, 0.07)}`,
     };
 };
 
 export const eyebrowSx = {
     color: musicStoreColors.rosin,
     fontSize: '0.68rem',
-    fontWeight: 900,
-    letterSpacing: 0,
+    fontWeight: 700,
+    letterSpacing: '0.06em',
     textTransform: 'uppercase',
 };
 
@@ -79,7 +79,7 @@ export const softButtonSx = (theme) => ({
     borderColor: alpha(theme.palette.primary.main, 0.28),
     color: musicStoreColors.ink,
     bgcolor: musicStoreColors.sheet,
-    fontWeight: 850,
+    fontWeight: 700,
     '&:hover': {
         borderColor: theme.palette.primary.main,
         bgcolor: alpha(theme.palette.primary.main, 0.08),

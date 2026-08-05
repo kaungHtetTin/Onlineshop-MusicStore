@@ -20,6 +20,7 @@ import {
     Visibility as VisibilityIcon,
     VisibilityOff as VisibilityOffIcon,
     Google as GoogleIcon,
+    ArrowBackRounded,
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { getMusicStoreColors, musicGradientForTheme } from '@/Components/User/musicStoreDesign';
@@ -58,14 +59,14 @@ export default function Register({ error, googleAuthAvailable = false }) {
             alignItems: 'center',
             justifyContent: 'center',
             background: musicGradientForTheme(theme),
-            py: 4,
+            py: { xs: '20px', sm: '32px' },
         }}>
             <Head title={t('Register')} />
             <PwaHeadTags />
 
             <Container maxWidth="xs">
                 <Paper elevation={0} sx={{
-                    p: 4,
+                    p: { xs: '24px', sm: '28px' },
                     borderRadius: 2,
                     bgcolor: 'rgba(255, 253, 248, 0.92)',
                     backdropFilter: 'blur(20px)',
@@ -73,10 +74,11 @@ export default function Register({ error, googleAuthAvailable = false }) {
                     boxShadow: '0 24px 70px rgba(23,19,18,0.24)',
                     textAlign: 'center',
                 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 950, color: musicColors.ink, mb: 1 }}>
+                    {app_settings?.logo_url && <Box component="img" src={app_settings.logo_url} alt={app_settings?.app_name || t('Store')} sx={{ width: 56, height: 56, objectFit: 'contain', mx: 'auto', mb: '16px', borderRadius: 2, bgcolor: 'white' }} />}
+                    <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: '1.5rem', sm: '1.7rem' }, color: musicColors.ink, mb: 1 }}>
                         {t('Join')} {app_settings?.app_name || t('the music shop')}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: '24px' }}>
                         {t('Save instruments, track orders, and keep your gear wishlist close.')}
                     </Typography>
 
@@ -87,7 +89,7 @@ export default function Register({ error, googleAuthAvailable = false }) {
                     )}
 
                     <form onSubmit={submit}>
-                        <Stack spacing={2}>
+                        <Stack spacing="16px">
                             <TextField
                                 fullWidth
                                 label={t('Full Name')}
@@ -178,7 +180,8 @@ export default function Register({ error, googleAuthAvailable = false }) {
                         </Stack>
                     </form>
 
-                    <Box sx={{ my: 3 }}>
+                    {googleAuthAvailable && <>
+                    <Box sx={{ my: '24px' }}>
                         <Divider>
                             <Typography variant="caption" color="text.secondary">
                                 {t('OR SIGN UP WITH')}
@@ -189,10 +192,9 @@ export default function Register({ error, googleAuthAvailable = false }) {
                     <Button
                         fullWidth
                         component="a"
-                        href={googleAuthAvailable ? routeWithBase('/auth/google', app_base) : undefined}
+                        href={routeWithBase('/auth/google', app_base)}
                         variant="outlined"
                         startIcon={<GoogleIcon />}
-                        disabled={!googleAuthAvailable}
                         sx={{
                             py: 1,
                             borderColor: '#ddd',
@@ -202,14 +204,9 @@ export default function Register({ error, googleAuthAvailable = false }) {
                     >
                         Google
                     </Button>
+                    </>}
 
-                    {!googleAuthAvailable && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.25 }}>
-                            {t('Add Google OAuth credentials in .env to enable this button.')}
-                        </Typography>
-                    )}
-
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: '24px' }}>
                         {t('Already have an account?')}{' '}
                         <Link href={routeWithBase('/login', app_base)} style={{ textDecoration: 'none' }}>
                             <Typography component="span" variant="body2" color="primary" sx={{ fontWeight: 700 }}>
@@ -217,6 +214,7 @@ export default function Register({ error, googleAuthAvailable = false }) {
                             </Typography>
                         </Link>
                     </Typography>
+                    <Button component={Link} href={routeWithBase('/', app_base)} startIcon={<ArrowBackRounded />} sx={{ mt: '16px', color: 'text.secondary' }}>{t('Back to shop')}</Button>
                 </Paper>
             </Container>
         </Box>
