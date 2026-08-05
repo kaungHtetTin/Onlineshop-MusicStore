@@ -6,10 +6,11 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@/spa/router';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import { useTranslation } from '@/Utils/i18n';
+import { routeWithBase } from '@/Utils/url';
 
 export default function Authenticated({ auth, header, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
-    const { admin_app_url } = usePage().props;
+    const { app_base } = usePage().props;
     const t = useTranslation();
 
     return (
@@ -19,13 +20,13 @@ export default function Authenticated({ auth, header, children }) {
                     <div className="flex justify-between h-16">
                         <div className="flex">
                             <div className="shrink-0 flex items-center">
-                                <Link href="/">
+                                <Link href={routeWithBase('/', app_base)}>
                                     <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
                                 </Link>
                             </div>
 
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-                                <NavLink href={`${admin_app_url}/dashboard`} active={window.location.pathname.includes('/admin/dashboard')}>
+                                <NavLink href={routeWithBase('/admin/dashboard', app_base)} active={window.location.pathname.includes('/admin/dashboard')}>
                                     {t('admin.items.dashboard', 'Dashboard')}
                                 </NavLink>
                             </div>
@@ -60,8 +61,8 @@ export default function Authenticated({ auth, header, children }) {
                                     </Dropdown.Trigger>
 
                                     <Dropdown.Content>
-                                        <Dropdown.Link href={`${admin_app_url}/profile`}>{t('storefront.profile', 'Profile')}</Dropdown.Link>
-                                        <Dropdown.Link href={`${admin_app_url}/logout`} method="post" as="button">
+                                        <Dropdown.Link href={routeWithBase('/admin/profile', app_base)}>{t('storefront.profile', 'Profile')}</Dropdown.Link>
+                                        <Dropdown.Link href={routeWithBase('/admin/logout', app_base)} method="post" as="button">
                                             {t('admin.log_out', 'Log out')}
                                         </Dropdown.Link>
                                     </Dropdown.Content>
@@ -97,7 +98,7 @@ export default function Authenticated({ auth, header, children }) {
 
                 <div className={(showingNavigationDropdown ? 'block' : 'hidden') + ' sm:hidden'}>
                     <div className="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink href={`${admin_app_url}/dashboard`} active={window.location.pathname.includes('/admin/dashboard')}>
+                        <ResponsiveNavLink href={routeWithBase('/admin/dashboard', app_base)} active={window.location.pathname.includes('/admin/dashboard')}>
                             {t('admin.items.dashboard', 'Dashboard')}
                         </ResponsiveNavLink>
                     </div>
@@ -114,8 +115,8 @@ export default function Authenticated({ auth, header, children }) {
                             <div className="px-4 py-2">
                                 <LanguageSwitcher />
                             </div>
-                            <ResponsiveNavLink href={`${admin_app_url}/profile`}>{t('storefront.profile', 'Profile')}</ResponsiveNavLink>
-                            <ResponsiveNavLink method="post" href={`${admin_app_url}/logout`} as="button">
+                            <ResponsiveNavLink href={routeWithBase('/admin/profile', app_base)}>{t('storefront.profile', 'Profile')}</ResponsiveNavLink>
+                            <ResponsiveNavLink method="post" href={routeWithBase('/admin/logout', app_base)} as="button">
                                 {t('admin.log_out', 'Log out')}
                             </ResponsiveNavLink>
                         </div>

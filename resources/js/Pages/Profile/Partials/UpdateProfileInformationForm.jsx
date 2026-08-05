@@ -20,10 +20,10 @@ import { usePhraseTranslation } from '@/Utils/i18n';
 export default function UpdateProfileInformation({ mustVerifyEmail, status, className }) {
     const { url, props } = usePage();
     const t = usePhraseTranslation();
-    const { auth, admin_app_url, app_base, app_url } = props;
+    const { auth, app_base, app_url } = props;
     const user = auth?.user;
     const isAdminContext = typeof url === 'string' && url.includes('/admin');
-    const profileEndpoint = isAdminContext ? `${admin_app_url}/profile` : routeWithBase('/profile', app_base);
+    const profileEndpoint = routeWithBase(isAdminContext ? '/admin/profile' : '/profile', app_base);
     const avatarSrc = user?.avatar ? storageUrl(user.avatar, app_url) : undefined;
 
     const { data, setData, patch, post, transform, errors, processing, recentlySuccessful } = useForm({

@@ -33,9 +33,8 @@ class Spa
 
     private static function sharedProps(Request $request): array
     {
-        $configuredPath = parse_url(config('app.url'), PHP_URL_PATH) ?: '';
-        $requestPath = parse_url(url('/'), PHP_URL_PATH) ?: '';
-        $path = rtrim($configuredPath ?: $requestPath, '/');
+        $path = rtrim($request->getBaseUrl(), '/');
+        $appUrl = rtrim($request->getSchemeAndHttpHost().$path, '/');
         $appSettings = app(AppSettingsService::class)->publicSettings();
         $user = $request->user();
         $isAdminUser = $user?->isAdminStaff() ?? false;
@@ -49,8 +48,7 @@ class Spa
         }
 
         return [
-            'admin_app_url' => config('app.admin_app_url'),
-            'app_url' => config('app.url'),
+            'app_url' => $appUrl,
             'app_base' => $path,
             'app_settings' => $appSettings,
             'locale' => app()->getLocale(),

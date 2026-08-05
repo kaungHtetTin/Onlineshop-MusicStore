@@ -35,7 +35,7 @@ export const routeWithBase = (path, base = '') => {
 };
 
 /**
- * Get the full URL for an uploaded public file using APP_URL from .env.
+ * Get the full URL for an uploaded public file using the request-derived app URL.
  * 
  * @param {string} path 
  * @param {string} appUrl 

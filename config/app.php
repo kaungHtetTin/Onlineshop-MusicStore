@@ -55,9 +55,10 @@ return [
     */
 
     'url' => rtrim(env('APP_URL', 'http://localhost'), '/'),
-    'admin_app_url' => rtrim(env('ADMIN_APP_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/admin'), '/'),
 
-    'asset_url' => env('ASSET_URL') ? rtrim(env('ASSET_URL'), '/') : null,
+    // Assets are served from the host and base path handling the current
+    // request. This keeps one production build portable between deployments.
+    'asset_url' => null,
 
     /*
     |--------------------------------------------------------------------------

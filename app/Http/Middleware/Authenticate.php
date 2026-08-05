@@ -16,7 +16,7 @@ class Authenticate extends Middleware
     {
         if (! $request->expectsJson()) {
             if ($request->is('admin/*') || $request->is('admin')) {
-                return rtrim(config('app.admin_app_url'), '/').'/login';
+                return url('/admin/login');
             }
 
             return url('/login');

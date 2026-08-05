@@ -7,9 +7,9 @@ import { usePhraseTranslation } from '@/Utils/i18n';
 export default function DeleteUserForm({ className }) {
     const { url, props } = usePage();
     const t = usePhraseTranslation();
-    const { admin_app_url, app_base } = props;
+    const { app_base } = props;
     const isAdminContext = typeof url === 'string' && url.includes('/admin');
-    const profileEndpoint = isAdminContext ? `${admin_app_url}/profile` : routeWithBase('/profile', app_base);
+    const profileEndpoint = routeWithBase(isAdminContext ? '/admin/profile' : '/profile', app_base);
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
     const passwordInput = useRef();
 
