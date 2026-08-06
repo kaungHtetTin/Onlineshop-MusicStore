@@ -161,15 +161,17 @@ export default function CouponsIndex({ coupons, filters }) {
 
             {open && (
                 <div className="modal-backdrop" onClick={closeModal}>
-                    <form className="operation-modal compact glass" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Coupon')}</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editing ? t('Edit coupon') : t('New coupon')}</h2>
+                    <form className="operation-modal compact glass admin-form-modal" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
+                        <div className="drawer-header admin-form-modal-header">
+                            <div className="admin-form-modal-title">
+                                <span className="admin-form-title-icon"><Icon name="tag" size={16} /></span>
+                                <div>
+                                    <h2>{editing ? t('Edit coupon') : t('New coupon')}</h2>
+                                </div>
                             </div>
-                            <button type="button" className="icon-btn small" onClick={closeModal}><Icon name="close" size={14} /></button>
+                            <button type="button" className="icon-btn small" onClick={closeModal} aria-label={t('Close')}><Icon name="close" size={14} /></button>
                         </div>
-                        <div className="crud-grid">
+                        <div className="crud-grid admin-form-grid">
                             <label className="form-field">
                                 <span>{t('Code')}</span>
                                 <input value={form.data.code} onChange={(e) => form.setData('code', e.target.value.toUpperCase())} required />
@@ -201,9 +203,14 @@ export default function CouponsIndex({ coupons, filters }) {
                                 <span>{t('Usage limit')}</span>
                                 <input type="number" value={form.data.usage_limit} onChange={(e) => form.setData('usage_limit', e.target.value)} />
                             </label>
-                            <label className="form-field checkbox-row">
+                            <label className="payment-active-setting admin-form-toggle span-2">
+                                <span className="payment-active-icon"><Icon name="check" size={14} /></span>
+                                <span className="payment-active-copy">
+                                    <strong>{t('Active')}</strong>
+                                    <small>{t('Allow customers to use this coupon.')}</small>
+                                </span>
                                 <input type="checkbox" checked={form.data.is_active} onChange={(e) => form.setData('is_active', e.target.checked)} />
-                                <span>{t('Active')}</span>
+                                <span className="payment-toggle" aria-hidden="true"><i /></span>
                             </label>
                         </div>
                         <div className="modal-actions">

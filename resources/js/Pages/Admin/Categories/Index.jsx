@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
@@ -38,6 +38,7 @@ export default function Index({ categories, parentCategories }) {
     const [editMode, setEditMode] = useState(false);
     const [currentCategory, setCurrentCategory] = useState(null);
     const [iconCropper, setIconCropper] = useState(null);
+    const iconInputRef = useRef(null);
 
     const { data, setData, post, patch, delete: destroy, processing, reset, errors } = useForm({
         parent_id: '',
@@ -227,130 +228,169 @@ export default function Index({ categories, parentCategories }) {
             {open && (
                 <div className="modal-backdrop" onClick={handleClose}>
                     <form
-                        className="operation-modal compact glass"
+                        className="operation-modal compact glass payment-method-modal category-modal"
                         onSubmit={handleSubmit}
                         onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="category-dialog-title"
                     >
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Category')}</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>
-                                    {editMode ? t('Edit category') : t('New category')}
-                                </h2>
+                        <div className="drawer-header payment-method-modal-header category-modal-header">
+                            <div className="payment-method-modal-title category-modal-title">
+                                <span className="payment-method-title-icon" aria-hidden="true">
+                                    <Icon name="tag" size={17} />
+                                </span>
+                                <div>
+                                    <h2 id="category-dialog-title">{editMode ? t('Edit category') : t('New category')}</h2>
+                                </div>
                             </div>
-                            <button type="button" className="icon-btn small" onClick={handleClose} aria-label={t('Close')}>
+                            <button type="button" className="icon-btn small" onClick={handleClose} aria-label={t('Close dialog')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
-                        <div className="crud-grid">
-                            <label className="form-field">
-                                <span>{t('Parent category')}</span>
-                                <select
-                                    value={data.parent_id}
-                                    onChange={(e) => setData('parent_id', e.target.value)}
+
+                        <div className="payment-method-modal-body category-modal-body">
+                            <section className="payment-method-brand-panel category-icon-panel" aria-labelledby="category-icon-heading">
+                                <h3 id="category-icon-heading" className="payment-logo-label">{t('Category icon')}</h3>
+                                <input
+                                    ref={iconInputRef}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                                    className="payment-logo-input"
+                                    onChange={(event) => {
+                                        const file = event.target.files?.[0] || null;
+                                        event.target.value = '';
+                                        if (file) openIconCropper(file);
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    className={`payment-logo-uploader category-icon-uploader ${iconPreviewUrl ? 'has-logo' : ''}`}
+                                    style={{ background: data.metadata.color || '#FCE4EC' }}
+                                    onClick={() => iconInputRef.current?.click()}
+                                    aria-label={iconPreviewUrl ? t('Change category icon image') : t('Choose category icon image')}
                                 >
-                                    <option value="">{t('None (top level)')}</option>
-                                    {parentCategories
-                                        .filter((pc) => !currentCategory || pc.id !== currentCategory.id)
-                                        .map((pc) => (
-                                            <option key={pc.id} value={pc.id}>
-                                                {pc.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </label>
-                            <label className="form-field">
-                                <span>{t('Display order')}</span>
-                                <input
-                                    type="number"
-                                    value={data.sort_order}
-                                    onChange={(e) => setData('sort_order', e.target.value)}
-                                />
-                            </label>
-                            <label className="form-field span-2">
-                                <span>{t('Category name')}</span>
-                                <input
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    required
-                                />
-                                {errors.name && <small style={{ color: '#ce4444' }}>{errors.name}</small>}
-                            </label>
-                            <label className="form-field">
-                                <span>{t('Icon')}</span>
-                                <input
-                                    value={data.icon}
-                                    onChange={(e) => setData('icon', e.target.value)}
-                                    placeholder={t('Emoji fallback')}
-                                />
-                            </label>
-                            <label className="form-field">
-                                <span>{t('Color')}</span>
-                                <input
-                                    type="color"
-                                    value={data.metadata.color}
-                                    onChange={(e) => setData('metadata', { ...data.metadata, color: e.target.value })}
-                                />
-                            </label>
-                            <div className="span-2 storefront-image-picker">
-                                <div className="storefront-image-preview" style={{ background: data.metadata.color || '#FCE4EC' }}>
-                                    {iconPreviewUrl ? (
-                                        <img src={iconPreviewUrl} alt="" />
-                                    ) : (
-                                        data.icon || <Icon name="tag" size={16} />
-                                    )}
+                                    <span className="payment-logo-preview">
+                                        {iconPreviewUrl ? (
+                                            <img src={iconPreviewUrl} alt="" />
+                                        ) : data.icon ? (
+                                            <span className="category-icon-fallback">{data.icon}</span>
+                                        ) : (
+                                            <span className="payment-logo-placeholder"><Icon name="image" size={24} /></span>
+                                        )}
+                                    </span>
+                                </button>
+                                {iconPreviewUrl && (
+                                    <button
+                                        type="button"
+                                        className="icon-btn small danger category-icon-remove"
+                                        onClick={() => setData({ ...data, icon_image: null, remove_icon_image: true })}
+                                        aria-label={t('Remove category icon image')}
+                                    >
+                                        <Icon name="trash" size={13} />
+                                    </button>
+                                )}
+                                {errors.icon_image && <small className="field-error">{errors.icon_image}</small>}
+                            </section>
+
+                            <section className="payment-method-account-panel category-details-panel" aria-labelledby="category-details-heading">
+                                <div className="payment-method-section-heading">
+                                    <span className="payment-section-icon" aria-hidden="true"><Icon name="settings" size={14} /></span>
+                                    <div>
+                                        <h3 id="category-details-heading">{t('Category details')}</h3>
+                                        <p>{t('Set the category hierarchy, appearance and storefront visibility.')}</p>
+                                    </div>
                                 </div>
-                                <div className="storefront-image-meta">
-                                    <strong>{t('Category icon image')}</strong>
-                                    <small>{data.icon_image?.name || (iconPreviewUrl ? t('Current image') : t('No image selected'))}</small>
-                                </div>
-                                <div className="storefront-image-actions">
-                                    <label className="btn secondary">
-                                        <Icon name="image" size={13} />
-                                        {t('Upload')}
+
+                                <div className="payment-account-grid category-details-grid">
+                                    <label className="form-field category-name-field">
+                                        <span>{t('Category name')}</span>
                                         <input
-                                            className="sr-only-file"
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/webp,image/svg+xml"
-                                            onChange={(event) => {
-                                                const file = event.target.files?.[0] || null;
-                                                event.target.value = '';
-                                                if (file) openIconCropper(file);
-                                            }}
+                                            value={data.name}
+                                            onChange={(e) => setData('name', e.target.value)}
+                                            placeholder={t('Enter category name')}
+                                            required
+                                        />
+                                        {errors.name && <small className="field-error">{errors.name}</small>}
+                                    </label>
+                                    <label className="form-field category-parent-field">
+                                        <span>{t('Parent category')}</span>
+                                        <select value={data.parent_id} onChange={(e) => setData('parent_id', e.target.value)}>
+                                            <option value="">{t('None (top level)')}</option>
+                                            {parentCategories
+                                                .filter((pc) => !currentCategory || pc.id !== currentCategory.id)
+                                                .map((pc) => (
+                                                    <option key={pc.id} value={pc.id}>{pc.name}</option>
+                                                ))}
+                                        </select>
+                                    </label>
+                                    <label className="form-field category-sort-field">
+                                        <span>{t('Display order')}</span>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={data.sort_order}
+                                            onChange={(e) => setData('sort_order', e.target.value)}
                                         />
                                     </label>
-                                    {iconPreviewUrl && (
-                                        <button type="button" className="icon-btn small danger" onClick={() => setData({ ...data, icon_image: null, remove_icon_image: true })}>
-                                            <Icon name="trash" size={13} />
-                                        </button>
-                                    )}
+                                    <label className="form-field category-fallback-field">
+                                        <span>{t('Emoji fallback')}</span>
+                                        <input
+                                            value={data.icon}
+                                            onChange={(e) => setData('icon', e.target.value)}
+                                            placeholder={t('Optional emoji or symbol')}
+                                        />
+                                    </label>
+                                    <label className="form-field category-color-field">
+                                        <span>{t('Color')}</span>
+                                        <input
+                                            type="color"
+                                            value={data.metadata.color}
+                                            onChange={(e) => setData('metadata', { ...data.metadata, color: e.target.value })}
+                                            aria-label={t('Category color')}
+                                        />
+                                    </label>
+                                    <label className="form-field category-description-field">
+                                        <span>{t('Description')}</span>
+                                        <textarea
+                                            value={data.description}
+                                            onChange={(e) => setData('description', e.target.value)}
+                                            placeholder={t('Optional category description')}
+                                        />
+                                    </label>
                                 </div>
-                            </div>
-                            <label className="form-field span-2">
-                                <span>{t('Description')}</span>
-                                <textarea
-                                    value={data.description}
-                                    onChange={(e) => setData('description', e.target.value)}
-                                />
-                            </label>
-                            {editMode && (
-                                <label className="form-field checkbox-row">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.is_active}
-                                        onChange={(e) => setData('is_active', e.target.checked)}
-                                    />
-                                    <span>{t('Active status')}</span>
-                                </label>
-                            )}
-                            <label className={`form-field checkbox-row ${editMode ? '' : 'span-2'}`}>
-                                <input
-                                    type="checkbox"
-                                    checked={data.homepage_featured}
-                                    onChange={(e) => setData('homepage_featured', e.target.checked)}
-                                />
-                                <span>{t('Show on homepage')}</span>
-                            </label>
+
+                                <div className={`category-toggle-grid ${editMode ? '' : 'single'}`}>
+                                    {editMode && (
+                                        <label className="payment-active-setting category-toggle-setting">
+                                            <span className="payment-active-icon" aria-hidden="true"><Icon name="check" size={14} /></span>
+                                            <span className="payment-active-copy">
+                                                <strong>{t('Active status')}</strong>
+                                                <small>{t('Keep this category available in the catalog.')}</small>
+                                            </span>
+                                            <input
+                                                type="checkbox"
+                                                checked={data.is_active}
+                                                onChange={(e) => setData('is_active', e.target.checked)}
+                                            />
+                                            <span className="payment-toggle" aria-hidden="true"><i /></span>
+                                        </label>
+                                    )}
+                                    <label className="payment-active-setting category-toggle-setting">
+                                        <span className="payment-active-icon" aria-hidden="true"><Icon name="storefront" size={14} /></span>
+                                        <span className="payment-active-copy">
+                                            <strong>{t('Show on homepage')}</strong>
+                                            <small>{t('Feature this category in the storefront.')}</small>
+                                        </span>
+                                        <input
+                                            type="checkbox"
+                                            checked={data.homepage_featured}
+                                            onChange={(e) => setData('homepage_featured', e.target.checked)}
+                                        />
+                                        <span className="payment-toggle" aria-hidden="true"><i /></span>
+                                    </label>
+                                </div>
+                            </section>
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={handleClose}>

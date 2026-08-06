@@ -10,13 +10,17 @@ export default function TransferCreate({ locations, categories = [] }) {
     const t = usePhraseTranslation();
 
     return (
-        <AdminLayout title={t('New transfer')} eyebrow={t('Inventory')}>
-            <Head title={t('New Transfer')} />
-            <div className="sticky-toolbar">
-                <Link className="back-link" href={routeWithBase('/admin/inventory/transfers', app_base)}>
-                    <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} /> {t('Back to transfers')}
+        <AdminLayout
+            title={t('New transfer')}
+            eyebrow={t('Inventory')}
+            contentClassName="transfer-create-page"
+            action={
+                <Link className="btn secondary" href={routeWithBase('/admin/inventory/transfers', app_base)}>
+                    <Icon name="arrowLeft" size={14} /> {t('Back to transfers')}
                 </Link>
-            </div>
+            }
+        >
+            <Head title={t('New Transfer')} />
             <TransferDocumentForm locations={locations} categories={categories} />
         </AdminLayout>
     );

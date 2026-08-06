@@ -246,49 +246,69 @@ export default function RolesIndex({ roles, permissionGroups }) {
 
             {createOpen && (
                 <div className="modal-backdrop" onClick={() => setCreateOpen(false)}>
-                    <form className="operation-modal glass role-create-modal" onSubmit={submitCreate} onClick={(event) => event.stopPropagation()}>
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Access control')}</p>
-                                <h2>{t('New role')}</h2>
+                    <form className="operation-modal glass role-create-modal admin-form-modal admin-form-modal-wide" onSubmit={submitCreate} onClick={(event) => event.stopPropagation()}>
+                        <div className="drawer-header admin-form-modal-header">
+                            <div className="admin-form-modal-title">
+                                <span className="admin-form-title-icon"><Icon name="lock" size={16} /></span>
+                                <div>
+                                    <h2>{t('New role')}</h2>
+                                </div>
                             </div>
                             <button type="button" className="icon-btn small" onClick={() => setCreateOpen(false)} aria-label={t('Close')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
-                        <div className="crud-grid">
-                            <label className="form-field">
-                                <span>{t('Display name')}</span>
-                                <input
-                                    value={createForm.data.display_name}
-                                    onChange={(event) => createForm.setData('display_name', event.target.value)}
-                                    required
+                        <div className="admin-form-modal-body">
+                            <section className="admin-form-section">
+                                <div className="admin-form-section-heading">
+                                    <span className="payment-section-icon"><Icon name="user" size={14} /></span>
+                                    <div>
+                                        <strong>{t('Role identity')}</strong>
+                                        <small>{t('Use a clear display name and stable system key.')}</small>
+                                    </div>
+                                </div>
+                                <div className="crud-grid admin-form-grid">
+                                    <label className="form-field">
+                                        <span>{t('Display name')}</span>
+                                        <input
+                                            value={createForm.data.display_name}
+                                            onChange={(event) => createForm.setData('display_name', event.target.value)}
+                                            required
+                                        />
+                                    </label>
+                                    <label className="form-field">
+                                        <span>{t('System key')}</span>
+                                        <input
+                                            value={createForm.data.name}
+                                            onChange={(event) => createForm.setData('name', event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+                                            placeholder="warehouse_clerk"
+                                            required
+                                        />
+                                    </label>
+                                    <label className="form-field span-2">
+                                        <span>{t('Description')}</span>
+                                        <input
+                                            value={createForm.data.description}
+                                            onChange={(event) => createForm.setData('description', event.target.value)}
+                                        />
+                                    </label>
+                                </div>
+                            </section>
+                            <section className="admin-form-section role-create-permissions">
+                                <div className="admin-form-section-heading">
+                                    <span className="payment-section-icon"><Icon name="lock" size={14} /></span>
+                                    <div>
+                                        <strong>{t('Permissions')}</strong>
+                                        <small>{t('Select the admin areas this role can access.')}</small>
+                                    </div>
+                                </div>
+                                <PermissionGroups
+                                    groups={permissionGroups}
+                                    selected={createForm.data.permissions || []}
+                                    disabled={false}
+                                    onChange={(permissions) => createForm.setData('permissions', permissions)}
                                 />
-                            </label>
-                            <label className="form-field">
-                                <span>{t('System key')}</span>
-                                <input
-                                    value={createForm.data.name}
-                                    onChange={(event) => createForm.setData('name', event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
-                                    placeholder="warehouse_clerk"
-                                    required
-                                />
-                            </label>
-                            <label className="form-field span-2">
-                                <span>{t('Description')}</span>
-                                <input
-                                    value={createForm.data.description}
-                                    onChange={(event) => createForm.setData('description', event.target.value)}
-                                />
-                            </label>
-                        </div>
-                        <div className="role-create-permissions">
-                            <PermissionGroups
-                                groups={permissionGroups}
-                                selected={createForm.data.permissions || []}
-                                disabled={false}
-                                onChange={(permissions) => createForm.setData('permissions', permissions)}
-                            />
+                            </section>
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={() => setCreateOpen(false)}>

@@ -240,6 +240,9 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState(null);
     const [search, setSearch] = useState(filters.q ?? '');
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(
+        Boolean(filters.from || filters.to || filters.type || filters.status || filters.category),
+    );
     const form = useForm({ ...emptyEntry });
 
     const categoryOptions = useMemo(() => {
@@ -320,7 +323,7 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
             <Head title={t('Finance')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
-            <div className="metrics-grid six">
+            <div className="metrics-grid six compact-kpi-strip finance-kpi-strip">
                 <MetricCard label="Order revenue" value={money(summary.order_revenue)} icon="receipt" />
                 <MetricCard label="Manual income" value={money(summary.manual_income)} icon="wallet" />
                 <MetricCard label="Expenses" value={money(summary.expenses)} icon="card" tone="danger" />
@@ -329,17 +332,26 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
                 <MetricCard label="Pending review" value={money(Number(summary.pending_income) + Number(summary.pending_expenses))} icon="bell" />
             </div>
 
-            <section className="panel glass" style={{ marginBottom: 14 }}>
+            <section className="panel glass finance-filter-panel">
                 <PanelHeading eyebrow={t('Period controls')} title={t('Finance filters')} />
                 <form className="finance-filter" onSubmit={submitSearch}>
-                    <div className="finance-filter-row search-row">
+                    <div className="finance-filter-row search-row has-filter-toggle">
                         <div className="search-box">
                             <Icon name="search" size={16} />
                             <input placeholder={t('Search title, reference, notes...')} value={search} onChange={(e) => setSearch(e.target.value)} />
                         </div>
+                        <button
+                            type="button"
+                            className="btn secondary"
+                            aria-expanded={showAdvancedFilters}
+                            onClick={() => setShowAdvancedFilters((visible) => !visible)}
+                        >
+                            <Icon name={showAdvancedFilters ? 'chevronUp' : 'chevronDown'} size={13} />
+                            {t('More filters')}
+                        </button>
                         <button type="submit" className="btn primary">{t('Search')}</button>
                     </div>
-                    <div className="finance-filter-row controls-row">
+                    {showAdvancedFilters && <div className="finance-filter-row controls-row">
                         <label className="form-field inline">
                             <span>{t('From')}</span>
                             <input type="date" value={filters.from || ''} onChange={(e) => applyFilters({ from: e.target.value || undefined })} />
@@ -370,7 +382,7 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
                             ))}
                         </select>
                         <button type="button" className="btn secondary" onClick={resetFilters}>{t('Reset')}</button>
-                    </div>
+                    </div>}
                 </form>
             </section>
 
@@ -381,19 +393,19 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
                 </section>
             </div>
 
-            <section className="panel glass" style={{ marginTop: 14 }}>
+            <section className="panel glass finance-ledger-panel">
                 <PanelHeading eyebrow={t('Manual ledger')} title={t('Income and expense entries')} />
                 <div className="table-wrap">
-                    <table>
+                    <table className="finance-ledger-table">
                         <thead>
                             <tr>
                                 <th>{t('Date')}</th>
                                 <th>{t('Entry')}</th>
                                 <th>{t('Type')}</th>
-                                <th>{t('Amount')}</th>
+                                <th className="numeric-cell">{t('Amount')}</th>
                                 <th>{t('Status')}</th>
                                 <th>{t('Recorded by')}</th>
-                                <th />
+                                <th className="table-actions-column" />
                             </tr>
                         </thead>
                         <tbody>
@@ -413,18 +425,18 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
                                             </small>
                                         </td>
                                         <td><StatusBadge status={entry.type === 'income' ? 'success' : 'warning'} label={t(entry.type)} /></td>
-                                        <td><strong>{money(entry.amount)}</strong></td>
+                                        <td className="money-cell"><strong>{money(entry.amount)}</strong></td>
                                         <td><StatusBadge status={entry.status} label={t(entry.status)} /></td>
                                         <td>{entry.recorder?.name || t('System')}</td>
-                                        <td>
+                                        <td className="table-actions-column">
                                             {isStockReceiptEntry ? (
                                                 <span className="muted">{t('Managed by receipt')}</span>
                                             ) : (
                                                 <div className="inline-actions">
-                                                    <button type="button" className="icon-btn small" onClick={() => openModal(entry)} aria-label={t('Edit entry')}>
+                                                    <button type="button" className="icon-btn small" onClick={() => openModal(entry)} aria-label={t('Edit entry')} title={t('Edit entry')}>
                                                         <Icon name="edit" size={13} />
                                                     </button>
-                                                    <button type="button" className="icon-btn small danger" onClick={() => remove(entry)} aria-label={t('Delete entry')}>
+                                                    <button type="button" className="icon-btn small danger" onClick={() => remove(entry)} aria-label={t('Delete entry')} title={t('Delete entry')}>
                                                         <Icon name="trash" size={13} />
                                                     </button>
                                                 </div>
@@ -442,18 +454,20 @@ export default function FinanceIndex({ entries, summary, trend, filters, options
 
             {open && (
                 <div className="modal-backdrop" onClick={closeModal}>
-                    <form className="operation-modal compact glass" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Finance entry')}</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editing ? t('Edit entry') : t('New entry')}</h2>
+                    <form className="operation-modal compact glass admin-form-modal" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
+                        <div className="drawer-header admin-form-modal-header">
+                            <div className="admin-form-modal-title">
+                                <span className="admin-form-title-icon"><Icon name="wallet" size={16} /></span>
+                                <div>
+                                    <h2>{editing ? t('Edit entry') : t('New entry')}</h2>
+                                </div>
                             </div>
-                            <button type="button" className="icon-btn small" onClick={closeModal}>
+                            <button type="button" className="icon-btn small" onClick={closeModal} aria-label={t('Close')} title={t('Close')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
 
-                        <div className="crud-grid">
+                        <div className="crud-grid admin-form-grid">
                             <label className="form-field">
                                 <span>{t('Type')}</span>
                                 <select

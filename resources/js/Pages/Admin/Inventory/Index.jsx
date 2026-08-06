@@ -3,7 +3,7 @@ import { Head, Link, router, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import AdminPagination from '@/Components/Admin/AdminPagination';
 import Icon from '@/Components/Admin/icons';
-import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
+import { ColumnVisibilityControl, PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import useInventoryRealtime from '@/Utils/useInventoryRealtime';
 import { usePhraseTranslation } from '@/Utils/i18n';
@@ -13,6 +13,7 @@ export default function InventoryIndex({ balances, locations, categories, filter
     const t = usePhraseTranslation();
     const [query, setQuery] = useState(filters.q || '');
     const [updatedAt, setUpdatedAt] = useState(lastUpdated);
+    const [visibleColumns, setVisibleColumns] = useState({ image: true, warehouse: true, reserved: true, reorder: true, status: true });
     const { state: realtimeState, lastEventAt } = useInventoryRealtime({
         locationIds: locations.map((location) => location.id),
         includeAll: can.realtimeAll,
@@ -29,6 +30,7 @@ export default function InventoryIndex({ balances, locations, categories, filter
     const applyFilters = (patch = {}) => {
         router.get(routeWithBase('/admin/inventory', app_base), { ...filters, q: query, ...patch }, { preserveState: true, replace: true });
     };
+    const toggleColumn = (key) => setVisibleColumns((current) => ({ ...current, [key]: current[key] === false }));
 
     return (
         <AdminLayout
@@ -46,7 +48,25 @@ export default function InventoryIndex({ balances, locations, categories, filter
                 <PanelHeading
                     eyebrow={t('Live balances')}
                     title={t('Stock by warehouse')}
-                    action={<small className="muted">{t('Realtime')} {t(realtimeState)} - {t('Updated')} {new Date(lastEventAt || updatedAt).toLocaleTimeString()}</small>}
+                    action={
+                        <div className="inline-actions">
+                            <span className={`realtime-indicator ${realtimeState}`}><span />{t('Realtime')} {t(realtimeState)} · {new Date(lastEventAt || updatedAt).toLocaleTimeString()}</span>
+                            <ColumnVisibilityControl
+                                columns={[
+                                    { key: 'image', label: 'Image' },
+                                    { key: 'product', label: 'Product / SKU', locked: true },
+                                    { key: 'warehouse', label: 'Warehouse' },
+                                    { key: 'onHand', label: 'On hand', locked: true },
+                                    { key: 'reserved', label: 'Reserved' },
+                                    { key: 'available', label: 'Available', locked: true },
+                                    { key: 'reorder', label: 'Reorder' },
+                                    { key: 'status', label: 'Status' },
+                                ]}
+                                visible={visibleColumns}
+                                onToggle={toggleColumn}
+                            />
+                        </div>
+                    }
                 />
                 <div className="inventory-filterbar">
                     <div className="search-box">
@@ -62,23 +82,23 @@ export default function InventoryIndex({ balances, locations, categories, filter
                         {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                     </select>
                     <label><input type="checkbox" checked={filters.out_of_stock} onChange={(event) => applyFilters({ out_of_stock: event.target.checked })} /> {t('Out of stock')}</label>
-                    <button type="button" className="icon-btn" onClick={() => applyFilters()} aria-label={t('Search')}><Icon name="search" size={15} /></button>
+                    <button type="button" className="icon-btn" onClick={() => applyFilters()} aria-label={t('Search')} title={t('Search')}><Icon name="search" size={15} /></button>
                     <a className="icon-btn" href={routeWithBase('/admin/inventory/export', app_base)} aria-label={t('Export balances')} title={t('Export balances')}><Icon name="download" size={15} /></a>
                 </div>
 
                 <div className="table-wrap">
                     <table className="data-table inventory-table">
-                        <thead><tr><th>{t('Image')}</th><th>{t('Product / SKU')}</th><th>{t('Warehouse')}</th><th>{t('On hand')}</th><th>{t('Reserved')}</th><th>{t('Available')}</th><th>{t('Reorder')}</th><th>{t('Status')}</th><th /></tr></thead>
+                        <thead><tr>{visibleColumns.image !== false && <th className="inventory-image-column">{t('Image')}</th>}<th className="inventory-product-column">{t('Product / SKU')}</th>{visibleColumns.warehouse !== false && <th>{t('Warehouse')}</th>}<th className="numeric-cell">{t('On hand')}</th>{visibleColumns.reserved !== false && <th className="numeric-cell">{t('Reserved')}</th>}<th className="numeric-cell">{t('Available')}</th>{visibleColumns.reorder !== false && <th className="numeric-cell">{t('Reorder')}</th>}{visibleColumns.status !== false && <th>{t('Status')}</th>}<th className="table-actions-column" /></tr></thead>
                         <tbody>
                             {balances.data.length === 0 ? (
-                                <tr><td colSpan="9" className="empty-table-cell">{t('No variants match these filters.')}</td></tr>
+                                <tr><td colSpan={4 + Object.values(visibleColumns).filter(Boolean).length} className="empty-table-cell">{t('No variants match these filters.')}</td></tr>
                             ) : balances.data.map((balance) => {
                                 const available = balance.on_hand_qty - balance.reserved_qty;
                                 const status = available <= 0 ? 'danger' : available <= balance.reorder_point ? 'warning' : 'success';
                                 const imagePath = balance.sku?.image_path || balance.sku?.product?.primary_image_path;
                                 return (
                                     <tr key={balance.id}>
-                                        <td>
+                                        {visibleColumns.image !== false && <td className="inventory-image-column">
                                             <div className="inventory-image-cell">
                                                 {imagePath ? (
                                                     <img src={storageUrl(imagePath, app_url)} alt="" />
@@ -86,22 +106,23 @@ export default function InventoryIndex({ balances, locations, categories, filter
                                                     <Icon name="box" size={17} />
                                                 )}
                                             </div>
-                                        </td>
-                                        <td><strong>{balance.sku.product.name}</strong><small className="table-subline">{balance.sku.sku_code}</small></td>
-                                        <td><strong>{balance.location.name}</strong><small className="table-subline">{balance.location.code}</small></td>
+                                        </td>}
+                                        <td className="inventory-product-column"><strong>{balance.sku.product.name}</strong><small className="table-subline">{balance.sku.sku_code}</small></td>
+                                        {visibleColumns.warehouse !== false && <td><strong>{balance.location.name}</strong><small className="table-subline">{balance.location.code}</small></td>}
                                         <td className="quantity-cell">{balance.on_hand_qty}</td>
-                                        <td className="quantity-cell">{balance.reserved_qty}</td>
+                                        {visibleColumns.reserved !== false && <td className="quantity-cell">{balance.reserved_qty}</td>}
                                         <td className="quantity-cell strong">{available}</td>
-                                        <td>{balance.reorder_point}</td>
-                                        <td><StatusBadge status={status} label={t(status === 'danger' ? 'Out' : status === 'warning' ? 'Low' : 'Healthy')} /></td>
-                                        <td>
+                                        {visibleColumns.reorder !== false && <td className="quantity-cell">{balance.reorder_point}</td>}
+                                        {visibleColumns.status !== false && <td><StatusBadge status={status} label={t(status === 'danger' ? 'Out' : status === 'warning' ? 'Low' : 'Healthy')} /></td>}
+                                        <td className="table-actions-column">
                                             <div className="inline-actions">
-                                                {can.history && <Link className="icon-btn small" href={routeWithBase(`/admin/inventory/skus/${balance.sku_id}`, app_base)} aria-label={t('View stock history')}><Icon name="history" size={14} /></Link>}
+                                                {can.history && <Link className="icon-btn small" href={routeWithBase(`/admin/inventory/skus/${balance.sku_id}`, app_base)} aria-label={t('View stock history')} title={t('View stock history')}><Icon name="history" size={14} /></Link>}
                                                 {can.adjust && (
                                                     <Link
                                                         className="icon-btn small"
                                                         href={routeWithBase(`/admin/inventory/adjustments/create?sku_id=${balance.sku_id}${balance.location_id ? `&location_id=${balance.location_id}` : ''}`, app_base)}
                                                         aria-label={t('Adjust stock')}
+                                                        title={t('Adjust stock')}
                                                     >
                                                         <Icon name="edit" size={14} />
                                                     </Link>

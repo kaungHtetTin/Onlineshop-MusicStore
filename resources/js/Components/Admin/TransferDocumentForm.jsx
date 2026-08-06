@@ -91,6 +91,20 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
         form.setData('items', items);
     };
 
+    const updateRequestedQuantity = (index, value, availableQuantity) => {
+        if (value === '') {
+            updateItem(index, { requested_quantity: '' });
+            return;
+        }
+
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue)) return;
+
+        const maximum = Math.max(1, Number(availableQuantity) || 0);
+        const requestedQuantity = Math.min(Math.max(Math.trunc(numericValue), 1), maximum);
+        updateItem(index, { requested_quantity: requestedQuantity });
+    };
+
     const removeSku = (skuId) => {
         form.setData('items', form.data.items.filter((line) => line.sku_id !== skuId));
     };
@@ -154,7 +168,7 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
     );
 
     return (
-        <form onSubmit={(event) => { event.preventDefault(); if (step === 'details') submit(event); }} className="receipt-wizard">
+        <form onSubmit={(event) => { event.preventDefault(); if (step === 'details') submit(event); }} className="receipt-wizard transfer-wizard">
             {Object.keys(form.errors).length > 0 && (
                 <div className="flash error">
                     {Object.values(form.errors).map((error) => <div key={error}>{error}</div>)}
@@ -174,7 +188,7 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
                 })}
             </nav>
 
-            <div className="receipt-wizard-topbar">
+            <div className="receipt-wizard-topbar transfer-wizard-commandbar">
                 <div className="receipt-summary-strip" aria-label={t('Transfer summary')}>
                     <span><small>{t('Source')}</small><strong>{source?.code || '-'}</strong></span>
                     <span><small>{t('Destination')}</small><strong>{destination?.code || '-'}</strong></span>
@@ -194,16 +208,21 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
                     {step === 'route' && (
                         <>
                                 <PanelHeading eyebrow="Transfer route" title="Choose the warehouses" action={<small className="muted">{t('Stock moves immediately when submitted.')}</small>} />
-                                <div className="receipt-basic-grid">
+                                <div className="receipt-basic-grid transfer-route-grid">
                                     <label className="form-field">
                                         <span>{t('Source warehouse')}</span>
-                                    <select value={form.data.source_location_id} onChange={(event) => setSource(event.target.value)} required>
-                                        {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-                                    </select>
-                                </label>
-                                <label className="form-field">
-                                    <span>{t('Destination warehouse')}</span>
-                                    <select value={form.data.destination_location_id} onChange={(event) => form.setData('destination_location_id', event.target.value)} required>
+                                        <select value={form.data.source_location_id} onChange={(event) => setSource(event.target.value)} required>
+                                            {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+                                        </select>
+                                    </label>
+                                    <div className="transfer-route-direction" aria-hidden="true">
+                                        <span><Icon name="truck" size={16} /></span>
+                                        <i />
+                                        <Icon name="navigation" size={13} />
+                                    </div>
+                                    <label className="form-field">
+                                        <span>{t('Destination warehouse')}</span>
+                                        <select value={form.data.destination_location_id} onChange={(event) => form.setData('destination_location_id', event.target.value)} required>
                                             {destinationOptions.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
                                         </select>
                                     </label>
@@ -236,6 +255,14 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
                                 </button>
                             </div>
 
+                            {!searching && catalogSkus.length > 0 && (
+                                <div className="transfer-product-list-head" aria-hidden="true">
+                                    <span>{t('Product / SKU')}</span>
+                                    <span>{t('On hand')}</span>
+                                    <span>{t('Available')}</span>
+                                    <span>{t('Action')}</span>
+                                </div>
+                            )}
                             <div className="receipt-product-catalog" aria-busy={searching}>
                                 {searching ? (
                                     <div className="spa-inline-list-skeleton" role="status" aria-label={t('Loading products')}>
@@ -255,8 +282,14 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
                                             <ProductIdentity sku={sku} />
                                             <span><strong>{sku.on_hand_qty}</strong><small>{t('on hand')}</small></span>
                                             <span><strong>{sku.available_qty}</strong><small>{t('available')}</small></span>
-                                            <button type="button" className={selected ? 'receipt-product-action remove' : 'receipt-product-action'} onClick={() => selected ? removeSku(sku.id) : addSku(sku)}>
-                                                {selected ? <><Icon name="trash" size={13} /> {t('Remove')}</> : t('Add')}
+                                            <button
+                                                type="button"
+                                                className={selected ? 'receipt-product-action remove transfer-remove-action' : 'receipt-product-action'}
+                                                onClick={() => selected ? removeSku(sku.id) : addSku(sku)}
+                                                aria-label={selected ? `${t('Remove')} ${sku.product_name}` : undefined}
+                                                title={selected ? t('Remove') : undefined}
+                                            >
+                                                {selected ? <span className="transfer-remove-icon"><Icon name="trash" size={15} /></span> : t('Add')}
                                             </button>
                                         </div>
                                     );
@@ -291,24 +324,31 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
                                 {lineCount === 0 ? <div className="empty-document-lines">{t('Select products before entering quantities.')}</div> : form.data.items.map((item, index) => (
                                     <div className="receipt-price-line transfer-price-line" key={item.sku_id}>
                                         <ProductIdentity sku={item.sku} />
-                                        <div className="transfer-line-control transfer-available-pill">
-                                            <span>{t('Available')}</span>
-                                            <strong>{item.sku.available_qty}</strong>
+                                        <div className="transfer-line-actions">
+                                            <div className="transfer-line-control transfer-available-pill">
+                                                <span>{t('Available')}</span>
+                                                <strong>{item.sku.available_qty}</strong>
+                                            </div>
+                                            <label className="transfer-line-control transfer-qty-control">
+                                                <span>{t('Requested')}</span>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max={item.sku.available_qty}
+                                                    step="1"
+                                                    inputMode="numeric"
+                                                    value={item.requested_quantity}
+                                                    onChange={(event) => updateRequestedQuantity(index, event.target.value, item.sku.available_qty)}
+                                                    onBlur={() => {
+                                                        if (item.requested_quantity === '') updateRequestedQuantity(index, '1', item.sku.available_qty);
+                                                    }}
+                                                    required
+                                                />
+                                            </label>
+                                            <button type="button" className="transfer-line-remove" onClick={() => removeSku(item.sku_id)} aria-label={t('Remove item')} title={t('Remove item')}>
+                                                <Icon name="trash" size={15} />
+                                            </button>
                                         </div>
-                                        <label className="transfer-line-control transfer-qty-control">
-                                            <span>{t('Requested')}</span>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max={item.sku.available_qty}
-                                                value={item.requested_quantity}
-                                                onChange={(event) => updateItem(index, { requested_quantity: event.target.value })}
-                                                required
-                                            />
-                                        </label>
-                                        <button type="button" className="icon-btn small danger" onClick={() => removeSku(item.sku_id)} aria-label={t('Remove item')}>
-                                            <Icon name="trash" size={13} />
-                                        </button>
                                     </div>
                                 ))}
                             </div>

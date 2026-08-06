@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { Head, Link, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import AdminPagination from '@/Components/Admin/AdminPagination';
-import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
+import { ColumnVisibilityControl, PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase, storageUrl } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 import { formatMoney } from '@/Utils/pricing';
@@ -12,6 +13,8 @@ export default function Index({ products, app_base }) {
     const { delete: destroy } = useForm({});
     const productRows = products.data || products;
     const t = usePhraseTranslation();
+    const [visibleColumns, setVisibleColumns] = useState({ category: true, stock: true, status: true });
+    const toggleColumn = (key) => setVisibleColumns((current) => ({ ...current, [key]: current[key] === false }));
 
     const handleDelete = (id) => {
         if (confirm(t('Are you sure you want to delete this product?'))) {
@@ -49,23 +52,39 @@ export default function Index({ products, app_base }) {
             <Head title={t('Manage Products')} />
 
             <section className="panel glass">
-                <PanelHeading eyebrow={t('Inventory')} title={t('Shop products')} />
+                <PanelHeading
+                    eyebrow={t('Inventory')}
+                    title={t('Shop products')}
+                    action={
+                        <ColumnVisibilityControl
+                            columns={[
+                                { key: 'product', label: 'Product', locked: true },
+                                { key: 'category', label: 'Category' },
+                                { key: 'price', label: 'Price', locked: true },
+                                { key: 'stock', label: 'Stock' },
+                                { key: 'status', label: 'Status' },
+                            ]}
+                            visible={visibleColumns}
+                            onToggle={toggleColumn}
+                        />
+                    }
+                />
                 <div className="table-wrap">
-                    <table>
+                    <table className="products-table">
                         <thead>
                             <tr>
                                 <th>{t('Product')}</th>
-                                <th>{t('Category')}</th>
-                                <th>{t('Price')}</th>
-                                <th>{t('Stock')}</th>
-                                <th>{t('Status')}</th>
-                                <th />
+                                {visibleColumns.category !== false && <th>{t('Category')}</th>}
+                                <th className="numeric-cell">{t('Price')}</th>
+                                {visibleColumns.stock !== false && <th className="numeric-cell">{t('Stock')}</th>}
+                                {visibleColumns.status !== false && <th>{t('Status')}</th>}
+                                <th className="table-actions-column" />
                             </tr>
                         </thead>
                         <tbody>
                             {productRows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6}>
+                                    <td colSpan={3 + Object.values(visibleColumns).filter(Boolean).length}>
                                         <span className="muted">{t('No products found.')}</span>
                                     </td>
                                 </tr>
@@ -100,25 +119,26 @@ export default function Index({ products, app_base }) {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>{product.category?.name || '-'}</td>
-                                            <td>
+                                            {visibleColumns.category !== false && <td>{product.category?.name || '-'}</td>}
+                                            <td className="numeric-cell">
                                                 <strong>{getPriceRange(product.skus)}</strong>
                                             </td>
-                                            <td>
+                                            {visibleColumns.stock !== false && <td className="numeric-cell">
                                                 <strong style={{ color: stock <= 5 ? '#ce4444' : undefined }}>{stock}</strong>
-                                            </td>
-                                            <td>
+                                            </td>}
+                                            {visibleColumns.status !== false && <td>
                                                 <StatusBadge status={status} label={t(product.status || 'active')} />
                                                 {product.is_featured && (
                                                     <StatusBadge status="info" label={t('FEATURED')} />
                                                 )}
-                                            </td>
-                                            <td>
+                                            </td>}
+                                            <td className="table-actions-column">
                                                 <div className="inline-actions">
                                                     <Link
                                                         href={`${routeWithBase(`/admin/products/${product.id}/edit`, app_base)}?return_page=${products.current_page || 1}`}
                                                         className="icon-btn small"
                                                         aria-label={t('Edit product')}
+                                                        title={t('Edit product')}
                                                     >
                                                         <Icon name="edit" size={13} />
                                                     </Link>
@@ -126,6 +146,7 @@ export default function Index({ products, app_base }) {
                                                         type="button"
                                                         className="icon-btn small danger"
                                                         aria-label={t('Delete product')}
+                                                        title={t('Delete product')}
                                                         onClick={() => handleDelete(product.id)}
                                                     >
                                                         <Icon name="trash" size={13} />

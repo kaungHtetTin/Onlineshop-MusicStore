@@ -25,7 +25,6 @@ export default function PaymentMethodsIndex({ methods, filters }) {
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState(null);
     const [iconPreview, setIconPreview] = useState(null);
-    const [iconName, setIconName] = useState('');
     const iconInputRef = useRef(null);
     const form = useForm({ ...emptyMethod });
 
@@ -42,8 +41,10 @@ export default function PaymentMethodsIndex({ methods, filters }) {
         if (iconPreview?.startsWith('blob:')) {
             URL.revokeObjectURL(iconPreview);
         }
+        if (iconInputRef.current) {
+            iconInputRef.current.value = '';
+        }
         setIconPreview(null);
-        setIconName('');
     };
 
     const openModal = (method = null) => {
@@ -64,7 +65,6 @@ export default function PaymentMethodsIndex({ methods, filters }) {
                 : { ...emptyMethod },
         );
         setIconPreview(method?.icon_url || null);
-        setIconName(method?.icon_path ? t('Current icon') : '');
         setOpen(true);
     };
 
@@ -81,16 +81,7 @@ export default function PaymentMethodsIndex({ methods, filters }) {
             URL.revokeObjectURL(iconPreview);
         }
         form.setData({ ...form.data, icon: file, remove_icon: false });
-        setIconName(file?.name || (editing?.icon_url ? t('Current icon') : ''));
         setIconPreview(file ? URL.createObjectURL(file) : editing?.icon_url || null);
-    };
-
-    const removeIcon = () => {
-        resetIconPreview();
-        form.setData({ ...form.data, icon: null, remove_icon: true });
-        if (iconInputRef.current) {
-            iconInputRef.current.value = '';
-        }
     };
 
     const submit = (e) => {
@@ -219,135 +210,125 @@ export default function PaymentMethodsIndex({ methods, filters }) {
 
             {open && (
                 <div className="modal-backdrop" onClick={closeModal}>
-                    <form className="operation-modal compact glass" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Payment method')}</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{editing ? t('Edit method') : t('New method')}</h2>
+                    <form
+                        className="operation-modal compact glass payment-method-modal"
+                        onSubmit={submit}
+                        onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="payment-method-dialog-title"
+                    >
+                        <div className="drawer-header payment-method-modal-header">
+                            <div className="payment-method-modal-title">
+                                <span className="payment-method-title-icon" aria-hidden="true">
+                                    <Icon name="wallet" size={17} />
+                                </span>
+                                <div>
+                                    <h2 id="payment-method-dialog-title">{editing ? t('Edit method') : t('New method')}</h2>
+                                </div>
                             </div>
-                            <button type="button" className="icon-btn small" onClick={closeModal}>
+                            <button type="button" className="icon-btn small" onClick={closeModal} aria-label={t('Close dialog')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
 
-                        <div className="crud-grid">
-                            <label className="form-field">
-                                <span>{t('Banking service')}</span>
-                                <input
-                                    value={form.data.banking_service}
-                                    onChange={(e) => form.setData('banking_service', e.target.value)}
-                                    placeholder={t('KBZ Pay, AYA Bank, WavePay...')}
-                                    required
-                                />
-                                {form.errors.banking_service && <small className="field-error">{form.errors.banking_service}</small>}
-                            </label>
-                            <label className="form-field">
-                                <span>{t('Account name')}</span>
-                                <input
-                                    value={form.data.account_name}
-                                    onChange={(e) => form.setData('account_name', e.target.value)}
-                                    required
-                                />
-                                {form.errors.account_name && <small className="field-error">{form.errors.account_name}</small>}
-                            </label>
-                            <label className="form-field">
-                                <span>{t('Account no.')}</span>
-                                <input
-                                    value={form.data.account_no}
-                                    onChange={(e) => form.setData('account_no', e.target.value)}
-                                    required
-                                />
-                                {form.errors.account_no && <small className="field-error">{form.errors.account_no}</small>}
-                            </label>
-                            <label className="form-field">
-                                <span>{t('Sort order')}</span>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={form.data.sort_order}
-                                    onChange={(e) => form.setData('sort_order', e.target.value)}
-                                />
-                                {form.errors.sort_order && <small className="field-error">{form.errors.sort_order}</small>}
-                            </label>
-                            <label className="form-field span-2">
-                                <span>{t('Icon (optional)')}</span>
+                        <div className="payment-method-modal-body">
+                            <section className="payment-method-brand-panel" aria-labelledby="payment-logo-heading">
+                                <h3 id="payment-logo-heading" className="payment-logo-label">{t('Brand logo')}</h3>
+
                                 <input
                                     ref={iconInputRef}
                                     type="file"
                                     accept="image/jpeg,image/png,image/webp,image/svg+xml"
                                     onChange={handleIconChange}
-                                    style={{ display: 'none' }}
+                                    className="payment-logo-input"
                                 />
-                                <div
-                                    style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '52px 1fr auto',
-                                        gap: 12,
-                                        alignItems: 'center',
-                                        minHeight: 72,
-                                        padding: 10,
-                                        border: '1px solid var(--color-border)',
-                                        borderRadius: 8,
-                                        background: 'rgba(255,255,255,0.72)',
-                                    }}
+
+                                <button
+                                    type="button"
+                                    className={`payment-logo-uploader ${iconPreview ? 'has-logo' : ''}`}
+                                    onClick={() => iconInputRef.current?.click()}
+                                    aria-label={iconPreview ? t('Change payment method logo') : t('Choose payment method logo')}
                                 >
-                                    <button
-                                        type="button"
-                                        onClick={() => iconInputRef.current?.click()}
-                                        aria-label={t('Choose payment method icon')}
-                                        style={{
-                                            width: 52,
-                                            height: 52,
-                                            borderRadius: 8,
-                                            border: '1px solid var(--color-border)',
-                                            background: iconPreview ? '#fff' : 'rgba(8, 127, 116, 0.08)',
-                                            display: 'grid',
-                                            placeItems: 'center',
-                                            overflow: 'hidden',
-                                            color: 'var(--color-primary)',
-                                            cursor: 'pointer',
-                                        }}
-                                    >
+                                    <span className="payment-logo-preview">
                                         {iconPreview ? (
-                                            <img
-                                                src={iconPreview}
-                                                alt=""
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            />
+                                            <img src={iconPreview} alt="" />
                                         ) : (
-                                            <Icon name="image" size={20} />
+                                            <span className="payment-logo-placeholder">
+                                                <Icon name="image" size={24} />
+                                            </span>
                                         )}
-                                    </button>
-                                    <div style={{ minWidth: 0 }}>
-                                        <strong style={{ display: 'block', fontSize: 13 }}>
-                                            {iconName || t('No icon selected')}
-                                        </strong>
-                                        <small className="muted">
-                                            {t('JPG, PNG, WebP or SVG. Square icon works best.')}
-                                        </small>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                        <button type="button" className="btn secondary" onClick={() => iconInputRef.current?.click()}>
-                                            <Icon name="image" size={13} />
-                                             {t('Upload')}
-                                        </button>
-                                        {iconPreview && (
-                                            <button type="button" className="btn secondary" onClick={removeIcon}>
-                                                {t('Remove')}
-                                            </button>
-                                        )}
+                                    </span>
+                                </button>
+                                {form.errors.icon && <small className="field-error">{form.errors.icon}</small>}
+                            </section>
+
+                            <section className="payment-method-account-panel" aria-labelledby="payment-account-heading">
+                                <div className="payment-method-section-heading">
+                                    <span className="payment-section-icon" aria-hidden="true"><Icon name="card" size={14} /></span>
+                                    <div>
+                                        <h3 id="payment-account-heading">{t('Account details')}</h3>
+                                        <p>{t('Enter the receiving account exactly as customers should see it.')}</p>
                                     </div>
                                 </div>
-                                {form.errors.icon && <small className="field-error">{form.errors.icon}</small>}
-                            </label>
-                            <label className="form-field checkbox-row">
-                                <input
-                                    type="checkbox"
-                                    checked={form.data.is_active}
-                                    onChange={(e) => form.setData('is_active', e.target.checked)}
-                                />
-                                <span>{t('Active on checkout')}</span>
-                            </label>
+
+                                <div className="payment-account-grid">
+                                    <label className="form-field payment-service-field">
+                                        <span>{t('Banking service')}</span>
+                                        <input
+                                            value={form.data.banking_service}
+                                            onChange={(e) => form.setData('banking_service', e.target.value)}
+                                            placeholder={t('KBZ Pay, AYA Bank, WavePay...')}
+                                            required
+                                        />
+                                        {form.errors.banking_service && <small className="field-error">{form.errors.banking_service}</small>}
+                                    </label>
+                                    <label className="form-field payment-account-name-field">
+                                        <span>{t('Account name')}</span>
+                                        <input
+                                            value={form.data.account_name}
+                                            onChange={(e) => form.setData('account_name', e.target.value)}
+                                            placeholder={t('Account holder name')}
+                                            required
+                                        />
+                                        {form.errors.account_name && <small className="field-error">{form.errors.account_name}</small>}
+                                    </label>
+                                    <label className="form-field payment-sort-field">
+                                        <span>{t('Sort order')}</span>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={form.data.sort_order}
+                                            onChange={(e) => form.setData('sort_order', e.target.value)}
+                                        />
+                                        {form.errors.sort_order && <small className="field-error">{form.errors.sort_order}</small>}
+                                    </label>
+                                    <label className="form-field payment-account-number-field">
+                                        <span>{t('Account no.')}</span>
+                                        <input
+                                            value={form.data.account_no}
+                                            onChange={(e) => form.setData('account_no', e.target.value)}
+                                            placeholder={t('Phone number or bank account number')}
+                                            required
+                                        />
+                                        {form.errors.account_no && <small className="field-error">{form.errors.account_no}</small>}
+                                    </label>
+                                </div>
+
+                                <label className="payment-active-setting">
+                                    <span className="payment-active-icon" aria-hidden="true"><Icon name="check" size={14} /></span>
+                                    <span className="payment-active-copy">
+                                        <strong>{t('Active on checkout')}</strong>
+                                        <small>{t('Customers can select this account when placing an order.')}</small>
+                                    </span>
+                                    <input
+                                        type="checkbox"
+                                        checked={form.data.is_active}
+                                        onChange={(e) => form.setData('is_active', e.target.checked)}
+                                    />
+                                    <span className="payment-toggle" aria-hidden="true"><i /></span>
+                                </label>
+                            </section>
                         </div>
                         <div className="modal-actions">
                             <button type="button" className="btn secondary" onClick={closeModal}>{t('Cancel')}</button>

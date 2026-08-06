@@ -3,7 +3,7 @@ import { Head, Link, router, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import AdminPagination from '@/Components/Admin/AdminPagination';
-import { PanelHeading, StatusBadge } from '@/Components/Admin/shared';
+import { ColumnVisibilityControl, PanelHeading, StatusBadge } from '@/Components/Admin/shared';
 import { routeWithBase } from '@/Utils/url';
 import { orderStatusLabels, paymentLabels } from '@/constants/orderLabels';
 import { usePhraseTranslation } from '@/Utils/i18n';
@@ -15,6 +15,20 @@ const tabs = [
     { key: 'fulfillment', label: 'To ship' },
     { key: 'completed', label: 'Delivered' },
 ];
+
+const formatOrderDate = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+
+    return new Intl.DateTimeFormat(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
+};
 
 function MetricCard({ label, value, icon }) {
     const t = usePhraseTranslation();
@@ -34,7 +48,9 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
     const { app_base } = usePage().props;
     const t = usePhraseTranslation();
     const [search, setSearch] = useState(filters.q ?? '');
+    const [visibleColumns, setVisibleColumns] = useState({ items: true, payment: true, fulfillment: true });
     const activeTab = filters.tab ?? '';
+    const toggleColumn = (key) => setVisibleColumns((current) => ({ ...current, [key]: current[key] === false }));
 
     const applyFilters = (patch) => {
         router.get(routeWithBase('/admin/orders', app_base), { ...filters, ...patch }, { preserveState: true, replace: true });
@@ -49,7 +65,7 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
         <AdminLayout title={t('Order management')} eyebrow={t('Sales operations')}>
             <Head title={t('Orders')} />
 
-            <div className="metrics-grid six">
+            <div className="metrics-grid six compact-kpi-strip orders-kpi-strip">
                 <MetricCard label="Total orders" value={stats.total} icon="receipt" />
                 <MetricCard label="Awaiting payment" value={stats.pending_payment} icon="wallet" />
                 <MetricCard label="Processing" value={stats.processing} icon="box" />
@@ -62,8 +78,25 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                 />
             </div>
 
-            <section className="panel glass">
-                <PanelHeading eyebrow={t('Order queue')} title={t('All customer orders')} />
+            <section className="panel glass orders-queue-panel">
+                <PanelHeading
+                    eyebrow={t('Order queue')}
+                    title={t('All customer orders')}
+                    action={
+                        <ColumnVisibilityControl
+                            columns={[
+                                { key: 'order', label: 'Order', locked: true },
+                                { key: 'customer', label: 'Customer', locked: true },
+                                { key: 'items', label: 'Items' },
+                                { key: 'total', label: 'Total', locked: true },
+                                { key: 'payment', label: 'Payment' },
+                                { key: 'fulfillment', label: 'Fulfillment' },
+                            ]}
+                            visible={visibleColumns}
+                            onToggle={toggleColumn}
+                        />
+                    }
+                />
 
                 <div className="tab-bar">
                     {tabs.map((tab) => (
@@ -78,7 +111,7 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                     ))}
                 </div>
 
-                <form className="filter-toolbar" onSubmit={handleSearch}>
+                <form className="filter-toolbar orders-filter-toolbar" onSubmit={handleSearch}>
                     <div className="search-box">
                         <Icon name="search" size={16} />
                         <input
@@ -132,53 +165,62 @@ export default function OrdersIndex({ orders, stats, filters, canReviewPayments,
                 )}
 
                 <div className="table-wrap">
-                    <table>
+                    <table className="orders-table">
                         <thead>
                             <tr>
                                 <th>{t('Order')}</th>
                                 <th>{t('Customer')}</th>
-                                <th>{t('Items')}</th>
-                                <th>{t('Total')}</th>
-                                <th>{t('Payment')}</th>
-                                <th>{t('Fulfillment')}</th>
-                                <th />
+                                {visibleColumns.items !== false && <th className="numeric-cell">{t('Items')}</th>}
+                                <th className="numeric-cell">{t('Total')}</th>
+                                {visibleColumns.payment !== false && <th>{t('Payment')}</th>}
+                                {visibleColumns.fulfillment !== false && <th>{t('Fulfillment')}</th>}
+                                <th className="table-actions-column" />
                             </tr>
                         </thead>
                         <tbody>
                             {orders.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7}>
+                                    <td colSpan={4 + Object.values(visibleColumns).filter(Boolean).length}>
                                         <span className="muted">{t('No orders match your filters.')}</span>
                                     </td>
                                 </tr>
                             ) : (
                                 orders.data.map((order) => (
-                                    <tr key={order.id}>
+                                    <tr
+                                        key={order.id}
+                                        className="clickable"
+                                        tabIndex={0}
+                                        onClick={(event) => {
+                                            if (event.target.closest('a, button, input, select')) return;
+                                            router.visit(routeWithBase(`/admin/orders/${order.id}`, app_base));
+                                        }}
+                                        onKeyDown={(event) => event.key === 'Enter' && router.visit(routeWithBase(`/admin/orders/${order.id}`, app_base))}
+                                    >
                                         <td>
                                             <strong>{order.order_number}</strong>
-                                            <small>{order.created_at}</small>
+                                            <small title={order.created_at}>{formatOrderDate(order.created_at)}</small>
                                         </td>
                                         <td>
                                             <strong>{order.user?.name}</strong>
                                             <small>{order.user?.phone || order.user?.email}</small>
                                         </td>
-                                        <td>{order.items_count ?? order.items?.length ?? 0}</td>
-                                        <td>
+                                        {visibleColumns.items !== false && <td className="numeric-cell">{order.items_count ?? order.items?.length ?? 0}</td>}
+                                        <td className="money-cell">
                                             <strong>{formatMoney(order.final_amount)}</strong>
                                         </td>
-                                        <td>
+                                        {visibleColumns.payment !== false && <td>
                                             <StatusBadge
                                                 status={order.payment_status}
                                                 label={t(paymentLabels[order.payment_status] || order.payment_status)}
                                             />
-                                        </td>
-                                        <td>
+                                        </td>}
+                                        {visibleColumns.fulfillment !== false && <td>
                                             <StatusBadge
                                                 status={order.status}
                                                 label={t(orderStatusLabels[order.status] || order.status)}
                                             />
-                                        </td>
-                                        <td>
+                                        </td>}
+                                        <td className="table-actions-column">
                                             <Link
                                                 href={routeWithBase(`/admin/orders/${order.id}`, app_base)}
                                                 className="icon-btn small"

@@ -41,6 +41,18 @@ const croppedImageName = (sourceName, prefix) => {
     return `${base || prefix}-crop-${Date.now()}.jpg`;
 };
 
+const serializeEditorData = (value) => JSON.stringify(value, (_key, nextValue) => {
+    if (typeof File !== 'undefined' && nextValue instanceof File) {
+        return {
+            name: nextValue.name,
+            size: nextValue.size,
+            lastModified: nextValue.lastModified,
+        };
+    }
+
+    return nextValue;
+});
+
 function useObjectUrl(file) {
     const [url, setUrl] = useState(null);
 
@@ -104,8 +116,10 @@ function ImagePicker({ label, block, onChange, onFileSelect, cropHint }) {
 
 export default function StorefrontIndex({ hero, promos, sections }) {
     const t = usePhraseTranslation();
-    const { app_base, flash } = usePage().props;
+    const { app_base, app_url, flash } = usePage().props;
     const [cropper, setCropper] = useState(null);
+    const [activeBlock, setActiveBlock] = useState('hero');
+    const [previewMode, setPreviewMode] = useState('desktop');
 
     const initialPromos = useMemo(() => (
         promos.length ? promos : [
@@ -114,7 +128,7 @@ export default function StorefrontIndex({ hero, promos, sections }) {
         ]
     ), [promos]);
 
-    const form = useForm({
+    const initialData = useMemo(() => ({
         hero: normalizeBlock(hero, {
             title: 'Fresh picks for every occasion',
             subtitle: 'Discover customer favorites, seasonal gifts, and new arrivals curated for today.',
@@ -132,7 +146,9 @@ export default function StorefrontIndex({ hero, promos, sections }) {
             sort_order: section.sort_order ?? 0,
             is_active: !!section.is_active,
         })),
-    });
+    }), [hero, initialPromos, sections]);
+    const form = useForm(initialData);
+    const hasChanges = serializeEditorData(form.data) !== serializeEditorData(initialData);
 
     const updateHero = (patch) => form.setData('hero', { ...form.data.hero, ...patch });
     const updatePromo = (index, patch) => {
@@ -144,6 +160,15 @@ export default function StorefrontIndex({ hero, promos, sections }) {
         const next = [...form.data.sections];
         next[index] = { ...next[index], ...patch };
         form.setData('sections', next);
+    };
+    const moveSection = (index, direction) => {
+        const target = index + direction;
+        if (target < 0 || target >= form.data.sections.length) return;
+
+        const next = [...form.data.sections];
+        [next[index], next[target]] = [next[target], next[index]];
+        form.setData('sections', next.map((section, sectionIndex) => ({ ...section, sort_order: sectionIndex + 1 })));
+        setActiveBlock(`section:${target}`);
     };
 
     const openImageCropper = (file, target, preset) => {
@@ -185,152 +210,181 @@ export default function StorefrontIndex({ hero, promos, sections }) {
         });
     };
 
+    const activePromoIndex = activeBlock.startsWith('promo:') ? Number(activeBlock.split(':')[1]) : -1;
+    const activeSectionIndex = activeBlock.startsWith('section:') ? Number(activeBlock.split(':')[1]) : -1;
+    const activePromo = activePromoIndex >= 0 ? form.data.promos[activePromoIndex] : null;
+    const activeSection = activeSectionIndex >= 0 ? form.data.sections[activeSectionIndex] : null;
+    const activeTitle = activeBlock === 'hero'
+        ? t('Hero banner')
+        : activePromo
+            ? activePromo.title || `${t('Promo tile')} ${activePromoIndex + 1}`
+            : activeSection
+                ? t(sectionLabels[activeSection.key] || activeSection.key)
+                : t('Storefront');
+    const activeDescription = activeBlock === 'hero'
+        ? t('Manage the homepage headline, call to action, color, and banner image.')
+        : activePromo
+            ? t('Manage this promotional tile, destination, color, and image.')
+            : t('Manage the customer-facing heading, visibility, and homepage order.');
+    const activeIsVisible = activeBlock === 'hero'
+        ? form.data.hero.is_active
+        : activePromo?.is_active ?? activeSection?.is_active ?? false;
+    const setActiveVisibility = (isActive) => {
+        if (activeBlock === 'hero') updateHero({ is_active: isActive });
+        else if (activePromo) updatePromo(activePromoIndex, { is_active: isActive });
+        else if (activeSection) updateSection(activeSectionIndex, { is_active: isActive });
+    };
+
     return (
         <AdminLayout title={t('Storefront')} eyebrow={t('Client decoration')}>
             <Head title={t('Storefront')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
-            <form onSubmit={submit} className="storefront-editor">
-                <section className="panel glass">
-                    <PanelHeading eyebrow={t('Homepage hero')} title={t('Hero banner')} />
-                    <div className="storefront-hero-grid">
-                        <div className="storefront-preview-card" style={{ background: form.data.hero.accent_color || '#087f74' }}>
-                            {(!form.data.hero.remove_image && (form.data.hero.image || form.data.hero.image_url)) && (
-                                <ImagePreviewOverlay block={form.data.hero} />
-                            )}
-                            <div>
-                                <small>{t('Hero preview')}</small>
-                                <h2>{form.data.hero.title || t('Hero title')}</h2>
-                                <p>{form.data.hero.subtitle || t('Hero subtitle')}</p>
-                                <span>{form.data.hero.button_label || t('Button label')}</span>
-                            </div>
+            <form onSubmit={submit} className="storefront-workspace-form">
+                <div className="settings-workspace storefront-workspace storefront-settings-workspace">
+                    <aside className="settings-section-nav storefront-outline" aria-label={t('Homepage outline')}>
+                        <div className="storefront-outline-heading">
+                            <p className="eyebrow">{t('Page outline')}</p>
+                            <strong>{t('Homepage')}</strong>
                         </div>
-                        <div className="storefront-controls">
-                            <div className="crud-grid">
-                                <label className="form-field">
-                                    <span>{t('Hero title')}</span>
-                                    <input value={form.data.hero.title} onChange={(e) => updateHero({ title: e.target.value })} />
-                                </label>
-                                <label className="form-field">
-                                    <span>{t('Button label')}</span>
-                                    <input value={form.data.hero.button_label} onChange={(e) => updateHero({ button_label: e.target.value })} />
-                                </label>
-                                <label className="form-field span-2">
-                                    <span>{t('Subtitle')}</span>
-                                    <input value={form.data.hero.subtitle} onChange={(e) => updateHero({ subtitle: e.target.value })} />
-                                </label>
-                                <label className="form-field">
-                                    <span>{t('Button link')}</span>
-                                    <input value={form.data.hero.link_url} onChange={(e) => updateHero({ link_url: e.target.value })} placeholder="/products" />
-                                </label>
-                                <label className="form-field">
-                                    <span>{t('Accent color')}</span>
-                                    <input type="color" value={form.data.hero.accent_color} onChange={(e) => updateHero({ accent_color: e.target.value })} />
-                                </label>
-                                <div className="span-2">
-                                    <ImagePicker
-                                        label="Hero image"
-                                        block={form.data.hero}
-                                        onChange={updateHero}
-                                        onFileSelect={(file) => openImageCropper(file, { type: 'hero' }, imageCropPresets.hero)}
-                                        cropHint="Fixed crop: 16:9 banner"
-                                    />
-                                </div>
-                                <label className="form-field checkbox-row span-2">
-                                    <input type="checkbox" checked={form.data.hero.is_active} onChange={(e) => updateHero({ is_active: e.target.checked })} />
-                                    <span>{t('Show hero on homepage')}</span>
-                                </label>
-                            </div>
+                        <div className="storefront-outline-group">
+                            <small>{t('Main content')}</small>
+                            <button type="button" className={activeBlock === 'hero' ? 'active' : ''} onClick={() => setActiveBlock('hero')} aria-current={activeBlock === 'hero' ? 'page' : undefined}>
+                                <span className="settings-nav-icon"><Icon name="image" size={14} /></span>
+                                <span><strong>{t('Hero banner')}</strong><small>{t('Main content')}</small></span>
+                                <i className={form.data.hero.is_active ? 'visible' : 'hidden'} />
+                            </button>
                         </div>
-                    </div>
-                </section>
+                        <div className="storefront-outline-group">
+                            <small>{t('Promo tiles')}</small>
+                            {form.data.promos.map((promo, index) => (
+                                <button key={promo.key || index} type="button" className={activeBlock === `promo:${index}` ? 'active' : ''} onClick={() => setActiveBlock(`promo:${index}`)} aria-current={activeBlock === `promo:${index}` ? 'page' : undefined}>
+                                    <span className="settings-nav-icon"><Icon name="image" size={14} /></span>
+                                    <span><strong>{promo.title || `${t('Promo tile')} ${index + 1}`}</strong><small>{t('Promo tile')}</small></span>
+                                    <i className={promo.is_active ? 'visible' : 'hidden'} />
+                                </button>
+                            ))}
+                        </div>
+                        <div className="storefront-outline-group">
+                            <small>{t('Homepage sections')}</small>
+                            {form.data.sections.map((section, index) => (
+                                <button key={section.key} type="button" className={activeBlock === `section:${index}` ? 'active' : ''} onClick={() => setActiveBlock(`section:${index}`)} aria-current={activeBlock === `section:${index}` ? 'page' : undefined}>
+                                    <span className="settings-nav-icon"><Icon name="menu" size={14} /></span>
+                                    <span><strong>{t(sectionLabels[section.key] || section.key)}</strong><small>{t('Homepage section')}</small></span>
+                                    <i className={section.is_active ? 'visible' : 'hidden'} />
+                                </button>
+                            ))}
+                        </div>
+                    </aside>
 
-                <section className="panel glass">
-                    <PanelHeading eyebrow={t('Marketing tiles')} title={t('Promo tiles')} />
-                    <div className="storefront-promo-list">
-                        {form.data.promos.map((promo, index) => (
-                            <article key={promo.key || index} className="storefront-promo-row">
-                                <div className="storefront-promo-preview" style={{ background: promo.accent_color || '#f2f6f6' }}>
-                                    <ImagePreviewOverlay block={promo} />
-                                    <strong>{promo.title || t('Promo title')}</strong>
-                                    <small>{promo.subtitle || t('Promo subtitle')}</small>
+                    <section className="settings-work-surface storefront-settings-surface">
+                        <div className="settings-section-content storefront-settings-content">
+                            <PanelHeading
+                                eyebrow={activeBlock === 'hero' ? t('Homepage hero') : activePromo ? t('Marketing tile') : t('Homepage section')}
+                                title={activeTitle}
+                                action={(
+                                <label className="editor-visibility-toggle">
+                                    <span>{t('Visible')}</span>
+                                    <span className="switch-lite"><input type="checkbox" checked={activeIsVisible} onChange={(e) => setActiveVisibility(e.target.checked)} /><span /></span>
+                                </label>
+                                )}
+                            />
+                            <p className="settings-section-description">{activeDescription}</p>
+
+                            <div className="storefront-settings-editor-layout">
+                                <section className="storefront-block-editor">
+
+                        {activeBlock === 'hero' && (
+                            <div className="storefront-editor-fields">
+                                <div className="editor-field-section">
+                                    <div className="editor-field-section-heading"><strong>{t('Content')}</strong><small>{t('Headline and call to action')}</small></div>
+                                    <div className="storefront-field-grid">
+                                        <label className="form-field"><span>{t('Hero title')}</span><input value={form.data.hero.title} onChange={(e) => updateHero({ title: e.target.value })} /></label>
+                                        <label className="form-field"><span>{t('Button label')}</span><input value={form.data.hero.button_label} onChange={(e) => updateHero({ button_label: e.target.value })} /></label>
+                                        <label className="form-field span-2"><span>{t('Subtitle')}</span><input value={form.data.hero.subtitle} onChange={(e) => updateHero({ subtitle: e.target.value })} /></label>
+                                        <label className="form-field"><span>{t('Button link')}</span><input value={form.data.hero.link_url} onChange={(e) => updateHero({ link_url: e.target.value })} placeholder="/products" /></label>
+                                        <label className="form-field"><span>{t('Accent color')}</span><div className="editor-color-control"><input type="color" value={form.data.hero.accent_color} onChange={(e) => updateHero({ accent_color: e.target.value })} /><input value={form.data.hero.accent_color} onChange={(e) => updateHero({ accent_color: e.target.value })} maxLength={7} /></div></label>
+                                    </div>
                                 </div>
-                                <div className="storefront-promo-fields">
-                                    <div className="crud-grid">
-                                        <label className="form-field">
-                                            <span>{t('Title')}</span>
-                                            <input value={promo.title} onChange={(e) => updatePromo(index, { title: e.target.value })} />
-                                        </label>
-                                        <label className="form-field">
-                                            <span>{t('Subtitle')}</span>
-                                            <input value={promo.subtitle} onChange={(e) => updatePromo(index, { subtitle: e.target.value })} />
-                                        </label>
-                                        <label className="form-field">
-                                            <span>{t('Link')}</span>
-                                            <input value={promo.link_url} onChange={(e) => updatePromo(index, { link_url: e.target.value })} />
-                                        </label>
-                                        <label className="form-field">
-                                            <span>{t('Color')}</span>
-                                            <input type="color" value={promo.accent_color} onChange={(e) => updatePromo(index, { accent_color: e.target.value })} />
-                                        </label>
-                                        <label className="form-field">
-                                            <span>{t('Order')}</span>
-                                            <input type="number" value={promo.sort_order} onChange={(e) => updatePromo(index, { sort_order: e.target.value })} />
-                                        </label>
-                                        <label className="form-field checkbox-row">
-                                            <input type="checkbox" checked={promo.is_active} onChange={(e) => updatePromo(index, { is_active: e.target.checked })} />
-                                            <span>{t('Visible')}</span>
-                                        </label>
-                                        <div className="span-2">
-                                            <ImagePicker
-                                                label="Tile image"
-                                                block={promo}
-                                                onChange={(patch) => updatePromo(index, patch)}
-                                                onFileSelect={(file) => openImageCropper(file, { type: 'promo', index }, imageCropPresets.promo)}
-                                                cropHint="Fixed crop: 2:1 tile"
-                                            />
+                                <div className="editor-field-section">
+                                    <div className="editor-field-section-heading"><strong>{t('Media')}</strong><small>{t('Recommended ratio 16:9')}</small></div>
+                                    <ImagePicker label="Hero image" block={form.data.hero} onChange={updateHero} onFileSelect={(file) => openImageCropper(file, { type: 'hero' }, imageCropPresets.hero)} cropHint="Fixed crop: 16:9 banner" />
+                                </div>
+                            </div>
+                        )}
+
+                        {activePromo && (
+                            <div className="storefront-editor-fields">
+                                <div className="editor-field-section">
+                                    <div className="editor-field-section-heading"><strong>{t('Content')}</strong><small>{t('Tile copy and destination')}</small></div>
+                                    <div className="storefront-field-grid">
+                                        <label className="form-field"><span>{t('Title')}</span><input value={activePromo.title} onChange={(e) => updatePromo(activePromoIndex, { title: e.target.value })} /></label>
+                                        <label className="form-field"><span>{t('Button label')}</span><input value={activePromo.button_label} onChange={(e) => updatePromo(activePromoIndex, { button_label: e.target.value })} /></label>
+                                        <label className="form-field span-2"><span>{t('Subtitle')}</span><input value={activePromo.subtitle} onChange={(e) => updatePromo(activePromoIndex, { subtitle: e.target.value })} /></label>
+                                        <label className="form-field"><span>{t('Link')}</span><input value={activePromo.link_url} onChange={(e) => updatePromo(activePromoIndex, { link_url: e.target.value })} /></label>
+                                        <label className="form-field"><span>{t('Accent color')}</span><div className="editor-color-control"><input type="color" value={activePromo.accent_color} onChange={(e) => updatePromo(activePromoIndex, { accent_color: e.target.value })} /><input value={activePromo.accent_color} onChange={(e) => updatePromo(activePromoIndex, { accent_color: e.target.value })} maxLength={7} /></div></label>
+                                    </div>
+                                </div>
+                                <div className="editor-field-section">
+                                    <div className="editor-field-section-heading"><strong>{t('Media')}</strong><small>{t('Recommended ratio 2:1')}</small></div>
+                                    <ImagePicker label="Tile image" block={activePromo} onChange={(patch) => updatePromo(activePromoIndex, patch)} onFileSelect={(file) => openImageCropper(file, { type: 'promo', index: activePromoIndex }, imageCropPresets.promo)} cropHint="Fixed crop: 2:1 tile" />
+                                </div>
+                            </div>
+                        )}
+
+                        {activeSection && (
+                            <div className="storefront-editor-fields">
+                                <div className="editor-field-section">
+                                    <div className="editor-field-section-heading"><strong>{t('Section content')}</strong><small>{t('Customer-facing heading and description')}</small></div>
+                                    <div className="storefront-field-grid one-column">
+                                        <label className="form-field"><span>{t('Section title')}</span><input value={activeSection.title} onChange={(e) => updateSection(activeSectionIndex, { title: e.target.value })} /></label>
+                                        <label className="form-field"><span>{t('Subtitle')}</span><input value={activeSection.subtitle} onChange={(e) => updateSection(activeSectionIndex, { subtitle: e.target.value })} /></label>
+                                    </div>
+                                </div>
+                                <div className="editor-field-section">
+                                    <div className="editor-field-section-heading"><strong>{t('Section order')}</strong><small>{t('Move this block on the homepage')}</small></div>
+                                    <div className="section-order-control">
+                                        <span><Icon name="menu" size={15} /> {activeSectionIndex + 1} / {form.data.sections.length}</span>
+                                        <div>
+                                            <button type="button" className="btn secondary" disabled={activeSectionIndex === 0} onClick={() => moveSection(activeSectionIndex, -1)}><Icon name="chevronUp" size={14} />{t('Move up')}</button>
+                                            <button type="button" className="btn secondary" disabled={activeSectionIndex === form.data.sections.length - 1} onClick={() => moveSection(activeSectionIndex, 1)}><Icon name="chevronDown" size={14} />{t('Move down')}</button>
                                         </div>
                                     </div>
                                 </div>
-                            </article>
-                        ))}
-                    </div>
-                </section>
+                            </div>
+                        )}
+                    </section>
 
-                <section className="panel glass">
-                    <PanelHeading eyebrow={t('Homepage controls')} title={t('Sections')} />
-                    <div className="storefront-section-grid">
-                        {form.data.sections.map((section, index) => (
-                            <article key={section.key} className="storefront-section-card">
-                                <div className="stack-row">
-                                    <strong>{t(sectionLabels[section.key] || section.key)}</strong>
-                                    <label className="switch-lite">
-                                        <input type="checkbox" checked={section.is_active} onChange={(e) => updateSection(index, { is_active: e.target.checked })} />
-                                        <span />
-                                    </label>
-                                </div>
-                                <label className="form-field">
-                                    <span>{t('Section title')}</span>
-                                    <input value={section.title} onChange={(e) => updateSection(index, { title: e.target.value })} />
-                                </label>
-                                <label className="form-field">
-                                    <span>{t('Subtitle')}</span>
-                                    <input value={section.subtitle} onChange={(e) => updateSection(index, { subtitle: e.target.value })} />
-                                </label>
-                                <label className="form-field">
-                                    <span>{t('Order')}</span>
-                                    <input type="number" value={section.sort_order} onChange={(e) => updateSection(index, { sort_order: e.target.value })} />
-                                </label>
-                            </article>
-                        ))}
-                    </div>
-                </section>
+                    <aside className="storefront-live-preview-pane">
+                        <div className="storefront-preview-toolbar">
+                            <div><p className="eyebrow">{t('Live preview')}</p><strong>{activeTitle}</strong></div>
+                            <div className="preview-device-toggle" aria-label={t('Preview size')}>
+                                {[['desktop', 'desktop'], ['tablet', 'desktop'], ['mobile', 'mobile']].map(([mode, icon]) => (
+                                    <button key={mode} type="button" className={previewMode === mode ? 'active' : ''} onClick={() => setPreviewMode(mode)} aria-label={t(mode)} title={t(mode)}><Icon name={icon} size={14} /></button>
+                                ))}
+                            </div>
+                        </div>
+                        <StorefrontLivePreview hero={form.data.hero} promo={activePromo} section={activeSection} mode={previewMode} t={t} />
+                        <a className="btn secondary storefront-open-link" href={app_url || routeWithBase('/', app_base)} target="_blank" rel="noreferrer"><Icon name="external" size={14} />{t('Open storefront')}</a>
+                    </aside>
+                            </div>
+                        </div>
+                    </section>
+                </div>
 
-                <div className="sticky-toolbar">
-                    <button type="submit" className="btn primary" disabled={form.processing}>
-                        <Icon name="check" size={14} />
-                        {form.processing ? t('Saving...') : t('Save storefront')}
-                    </button>
+                <div className="editor-action-bar storefront-action-bar">
+                    <div className="editor-save-state">
+                        <span className={hasChanges ? 'is-dirty' : 'is-clean'} />
+                        <div>
+                            <strong>{form.recentlySuccessful ? t('Storefront saved') : hasChanges ? t('Unsaved changes') : t('All changes saved')}</strong>
+                            <small>{t('Changes become public after you save the storefront.')}</small>
+                        </div>
+                    </div>
+                    <div className="editor-action-buttons">
+                        <button type="button" className="btn secondary" disabled={!hasChanges || form.processing} onClick={() => { form.reset(); form.clearErrors(); setActiveBlock('hero'); }}>{t('Discard changes')}</button>
+                        <a className="btn secondary" href={app_url || routeWithBase('/', app_base)} target="_blank" rel="noreferrer"><Icon name="eye" size={14} />{t('Preview')}</a>
+                        <button type="submit" className="btn primary" disabled={form.processing || !hasChanges}><Icon name="check" size={14} />{form.processing ? t('Saving...') : t('Save storefront')}</button>
+                    </div>
                 </div>
             </form>
 
@@ -345,6 +399,54 @@ export default function StorefrontIndex({ hero, promos, sections }) {
                 outputType={cropper?.outputType || 'image/jpeg'}
             />
         </AdminLayout>
+    );
+}
+
+function StorefrontLivePreview({ hero, promo, section, mode, t }) {
+    const selectedBlock = promo || hero;
+    const accent = selectedBlock?.accent_color || '#087f74';
+
+    return (
+        <div className="storefront-device-stage" data-device={mode}>
+            <div className="storefront-device-frame">
+                <div className="storefront-mini-browser"><span /><span /><span /><i /></div>
+                {section ? (
+                    <div className="storefront-section-preview">
+                        <small>{t('Homepage section')}</small>
+                        <h3>{section.title || t(sectionLabels[section.key] || section.key)}</h3>
+                        <p>{section.subtitle || t('Section subtitle')}</p>
+                        <div className="storefront-section-skeleton"><span /><span /><span /></div>
+                        {!section.is_active && <div className="storefront-preview-hidden">{t('Hidden')}</div>}
+                    </div>
+                ) : promo ? (
+                    <div className="storefront-promo-page-preview">
+                        <div className="storefront-promo-tile-preview" style={{ background: accent }}>
+                            <ImagePreviewOverlay block={promo} />
+                            <div className="storefront-promo-copy">
+                                <small>{t('Curated set')}</small>
+                                <h3>{promo.title || t('Title')}</h3>
+                                <p>{promo.subtitle || t('Subtitle')}</p>
+                            </div>
+                            <svg className="storefront-promo-sparkles" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M10.4 2.5 12 7.4l4.9 1.8-4.9 1.7-1.6 5-1.7-5-4.9-1.7 4.9-1.8 1.7-4.9Zm7.2 10.2.8 2.3 2.3.8-2.3.8-.8 2.3-.8-2.3-2.3-.8 2.3-.8.8-2.3Zm-12.8 2 .7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z" />
+                            </svg>
+                            {!promo.is_active && <div className="storefront-preview-hidden">{t('Hidden')}</div>}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="storefront-block-preview is-hero" style={{ background: accent }}>
+                        <ImagePreviewOverlay block={selectedBlock} />
+                        <div>
+                            <small>{t('Hero banner')}</small>
+                            <h3>{selectedBlock?.title || t('Title')}</h3>
+                            <p>{selectedBlock?.subtitle || t('Subtitle')}</p>
+                            <span>{selectedBlock?.button_label || t('Shop now')}</span>
+                        </div>
+                        {!selectedBlock?.is_active && <div className="storefront-preview-hidden">{t('Hidden')}</div>}
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }
 

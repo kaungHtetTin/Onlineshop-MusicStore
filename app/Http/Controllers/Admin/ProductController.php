@@ -71,8 +71,6 @@ class ProductController extends Controller
         $filters = $request->validate([
             'q' => 'nullable|string|max:255',
             'category_id' => 'nullable|integer|exists:categories,id',
-            'product_status' => 'nullable|string|in:all,active,inactive,draft',
-            'sku_status' => 'nullable|string|in:all,active,inactive',
             'per_page' => 'nullable|integer|in:10,25,50,100',
         ]);
         $perPage = $filters['per_page'] ?? 25;
@@ -93,14 +91,6 @@ class ProductController extends Controller
 
         if (! empty($filters['category_id'])) {
             $query->whereHas('product', fn ($product) => $product->where('category_id', $filters['category_id']));
-        }
-
-        if (($filters['product_status'] ?? 'all') !== 'all') {
-            $query->whereHas('product', fn ($product) => $product->where('status', $filters['product_status']));
-        }
-
-        if (($filters['sku_status'] ?? 'all') !== 'all') {
-            $query->where('is_active', ($filters['sku_status'] ?? 'all') === 'active');
         }
 
         return Spa::render('Admin/Products/Barcodes', [
@@ -132,8 +122,6 @@ class ProductController extends Controller
             'filters' => [
                 'q' => $filters['q'] ?? '',
                 'category_id' => $filters['category_id'] ?? '',
-                'product_status' => $filters['product_status'] ?? 'all',
-                'sku_status' => $filters['sku_status'] ?? 'all',
                 'per_page' => $perPage,
             ],
         ]);

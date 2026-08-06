@@ -18,7 +18,7 @@ export default function UiShowcase() {
         <AdminLayout title={t('UI Showcase')} eyebrow={t('Design system reference')}>
             <Head title={t('Admin UI Showcase')} />
 
-            <div className="metrics-grid four">
+            <div className="metrics-grid four compact-kpi-strip">
                 {metrics.map((m) => (
                     <article key={m.label} className="metric-card glass">
                         <span className="icon-well">
@@ -30,6 +30,23 @@ export default function UiShowcase() {
                     </article>
                 ))}
             </div>
+
+            <section className="panel glass" style={{ marginTop: 10 }}>
+                <PanelHeading eyebrow={t('Density')} title={t('Compact console scale')} />
+                <div className="filter-toolbar compact showcase-density-toolbar">
+                    <div className="search-box">
+                        <Icon name="search" size={15} />
+                        <input placeholder={t('34 px compact search control')} />
+                    </div>
+                    <select defaultValue="compact" aria-label={t('Control density example')}>
+                        <option value="compact">{t('Compact')}</option>
+                        <option value="comfortable">{t('Comfortable')}</option>
+                    </select>
+                    <button type="button" className="btn primary">
+                        {t('Primary action')}
+                    </button>
+                </div>
+            </section>
 
             <div className="admin-grid">
                 <section className="panel glass">
@@ -90,7 +107,7 @@ export default function UiShowcase() {
                 </section>
             </div>
 
-            <section className="panel glass" style={{ marginTop: 14 }}>
+            <section className="panel glass" style={{ marginTop: 10 }}>
                 <PanelHeading eyebrow={t('Tables')} title={t('Recent activity')} />
                 <div className="filter-toolbar compact">
                     <div className="search-box">
@@ -110,7 +127,7 @@ export default function UiShowcase() {
                                 <th>{t('User')}</th>
                                 <th>{t('Action')}</th>
                                 <th>{t('Date')}</th>
-                                <th />
+                            <th className="table-actions-column" aria-label={t('Actions')} />
                             </tr>
                         </thead>
                         <tbody>
@@ -132,9 +149,9 @@ export default function UiShowcase() {
                                     <td>
                                         <small>{t('Jun 9, 2026')}</small>
                                     </td>
-                                    <td>
+                                    <td className="table-actions-column">
                                         <div className="inline-actions">
-                                            <button type="button" className="icon-btn small" aria-label={t('More actions')}>
+                                            <button type="button" className="icon-btn small" aria-label={t('More actions')} title={t('More actions')}>
                                                 <Icon name="edit" size={13} />
                                             </button>
                                         </div>

@@ -257,19 +257,19 @@ export default function UsersIndex({ users, filters, roles }) {
 
             {open && (
                 <div className="modal-backdrop" onClick={closeModal}>
-                    <form className="operation-modal compact glass" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Staff account')}</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>
-                                    {editUser ? t('Edit staff member') : t('New staff member')}
-                                </h2>
+                    <form className="operation-modal compact glass admin-form-modal" onSubmit={submit} onClick={(e) => e.stopPropagation()}>
+                        <div className="drawer-header admin-form-modal-header">
+                            <div className="admin-form-modal-title">
+                                <span className="admin-form-title-icon"><Icon name="users" size={16} /></span>
+                                <div>
+                                    <h2>{editUser ? t('Edit staff member') : t('New staff member')}</h2>
+                                </div>
                             </div>
                             <button type="button" className="icon-btn small" onClick={closeModal} aria-label={t('Close')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
-                        <div className="crud-grid">
+                        <div className="crud-grid admin-form-grid">
                             <label className="form-field span-2">
                                 <span>{t('Full name')}</span>
                                 <input value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required />

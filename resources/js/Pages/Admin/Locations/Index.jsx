@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Head, router, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
@@ -25,7 +25,6 @@ export default function LocationsIndex({ locations, staff, canManage }) {
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState(null);
     const form = useForm({ ...emptyLocation });
-    const activeCount = useMemo(() => locations.filter((location) => location.is_active).length, [locations]);
 
     const openCreate = () => {
         setEditing(null);
@@ -98,25 +97,6 @@ export default function LocationsIndex({ locations, staff, canManage }) {
         >
             <Head title={t('Warehouses')} />
             <AdminFlash flash={flash} errors={form.errors} />
-
-            <section className="location-summary" aria-label={t('Warehouse summary')}>
-                <div>
-                    <span>{t('Warehouses')}</span>
-                    <strong>{locations.length}</strong>
-                </div>
-                <div>
-                    <span>{t('Active')}</span>
-                    <strong>{activeCount}</strong>
-                </div>
-                <div>
-                    <span>{t('Total units')}</span>
-                    <strong>{locations.reduce((sum, item) => sum + item.on_hand_total, 0)}</strong>
-                </div>
-                <div>
-                    <span>{t('Assigned staff')}</span>
-                    <strong>{new Set(locations.flatMap((item) => item.staff_ids || [])).size}</strong>
-                </div>
-            </section>
 
             <section className="panel glass">
                 <PanelHeading eyebrow={t('Warehouse management')} title={t('Stock warehouses')} />
@@ -192,19 +172,29 @@ export default function LocationsIndex({ locations, staff, canManage }) {
 
             {open && (
                 <div className="modal-backdrop" onClick={closeModal}>
-                    <form className="operation-modal glass location-modal" onSubmit={submit} onClick={(event) => event.stopPropagation()}>
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Inventory network')}</p>
-                                <h2>{editing ? t('Edit warehouse') : t('New warehouse')}</h2>
+                    <form className="operation-modal glass location-modal admin-form-modal admin-form-modal-wide" onSubmit={submit} onClick={(event) => event.stopPropagation()}>
+                        <div className="drawer-header admin-form-modal-header">
+                            <div className="admin-form-modal-title">
+                                <span className="admin-form-title-icon"><Icon name="box" size={16} /></span>
+                                <div>
+                                    <h2>{editing ? t('Edit warehouse') : t('New warehouse')}</h2>
+                                </div>
                             </div>
                             <button type="button" className="icon-btn small" onClick={closeModal} aria-label={t('Close')}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
 
-                        <div className="location-form-section">
-                            <div className="crud-grid">
+                        <div className="admin-form-modal-body">
+                            <div className="location-form-section admin-form-section">
+                                <div className="admin-form-section-heading">
+                                    <span className="payment-section-icon"><Icon name="mapPin" size={14} /></span>
+                                    <div>
+                                        <strong>{t('Warehouse details')}</strong>
+                                        <small>{t('Identity, contact, and fulfillment address.')}</small>
+                                    </div>
+                                </div>
+                                <div className="crud-grid admin-form-grid">
                                 <label className="form-field">
                                     <span>{t('Name')}</span>
                                     <input value={form.data.name} onChange={(event) => form.setData('name', event.target.value)} required />
@@ -230,28 +220,32 @@ export default function LocationsIndex({ locations, staff, canManage }) {
                                     <span>{t('Address')}</span>
                                     <textarea rows="2" value={form.data.address} onChange={(event) => form.setData('address', event.target.value)} />
                                 </label>
+                                </div>
+                                <div className="location-switches">
+                                    <label><input type="checkbox" checked={form.data.is_active} onChange={(event) => form.setData('is_active', event.target.checked)} /> {t('Active')}</label>
+                                    <label><input type="checkbox" checked={form.data.is_default_fulfillment} onChange={(event) => form.setData('is_default_fulfillment', event.target.checked)} /> {t('Default fulfillment warehouse')}</label>
+                                </div>
                             </div>
-                            <div className="location-switches">
-                                <label><input type="checkbox" checked={form.data.is_active} onChange={(event) => form.setData('is_active', event.target.checked)} /> {t('Active')}</label>
-                                <label><input type="checkbox" checked={form.data.is_default_fulfillment} onChange={(event) => form.setData('is_default_fulfillment', event.target.checked)} /> {t('Default fulfillment warehouse')}</label>
-                            </div>
-                        </div>
 
-                        <div className="location-form-section">
-                            <div className="location-section-heading">
-                                <strong>{t('Assigned staff')}</strong>
-                                <small>{form.data.staff_ids.length} {t('selected')}</small>
-                            </div>
-                            <div className="location-staff-options">
-                                {staff.map((member) => (
-                                    <label key={member.id}>
-                                        <input type="checkbox" checked={form.data.staff_ids.includes(member.id)} onChange={() => toggleStaff(member.id)} />
-                                        <span>
-                                            <strong>{member.name}</strong>
-                                            <small>{member.role_label} / {member.email}</small>
-                                        </span>
-                                    </label>
-                                ))}
+                            <div className="location-form-section admin-form-section">
+                                <div className="location-section-heading admin-form-section-heading">
+                                    <span className="payment-section-icon"><Icon name="users" size={14} /></span>
+                                    <div>
+                                        <strong>{t('Assigned staff')}</strong>
+                                        <small>{form.data.staff_ids.length} {t('selected')}</small>
+                                    </div>
+                                </div>
+                                <div className="location-staff-options">
+                                    {staff.map((member) => (
+                                        <label key={member.id}>
+                                            <input type="checkbox" checked={form.data.staff_ids.includes(member.id)} onChange={() => toggleStaff(member.id)} />
+                                            <span>
+                                                <strong>{member.name}</strong>
+                                                <small>{member.role_label} / {member.email}</small>
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 

@@ -316,7 +316,7 @@ export default function Dashboard({ stats = {}, recentOrders = [], productCount 
         <AdminLayout title={t('Dashboard')} eyebrow={t('Operations overview')}>
             <Head title={t('Admin Dashboard')} />
 
-            <div className="metrics-grid six">
+            <div className="metrics-grid six compact-kpi-strip dashboard-kpi-strip">
                 <MetricCard
                     label="Revenue (confirmed)"
                     value={money(dashboardStats.revenue_paid)}
@@ -368,15 +368,6 @@ export default function Dashboard({ stats = {}, recentOrders = [], productCount 
 
                 <div className="stack-sm">
                     <section className="panel glass">
-                        <PanelHeading eyebrow={t('Speed')} title={t('Quick actions')} />
-                        {quickActions.length > 0 ? (
-                            <ActionGrid actions={quickActions} />
-                        ) : (
-                            <p className="muted">{t('No quick actions available for this role.')}</p>
-                        )}
-                    </section>
-
-                    <section className="panel glass">
                         <PanelHeading eyebrow={t('Priority')} title={t('Needs attention')} />
                         {attentionItems.length === 0 ? (
                             <div className="dashboard-empty-state">
@@ -402,6 +393,15 @@ export default function Dashboard({ stats = {}, recentOrders = [], productCount 
                                     </Link>
                                 ))}
                             </div>
+                        )}
+                    </section>
+
+                    <section className="panel glass">
+                        <PanelHeading eyebrow={t('Speed')} title={t('Quick actions')} />
+                        {quickActions.length > 0 ? (
+                            <ActionGrid actions={quickActions} />
+                        ) : (
+                            <p className="muted">{t('No quick actions available for this role.')}</p>
                         )}
                     </section>
                 </div>

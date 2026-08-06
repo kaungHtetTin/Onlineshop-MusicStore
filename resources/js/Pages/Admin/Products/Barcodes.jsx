@@ -90,8 +90,6 @@ export default function Barcodes({ skus, categories, filters, app_base }) {
     const [filterState, setFilterState] = useState({
         q: filters.q || '',
         category_id: filters.category_id || '',
-        product_status: filters.product_status || 'all',
-        sku_status: filters.sku_status || 'all',
         per_page: filters.per_page || 25,
     });
     const [selected, setSelected] = useState({});
@@ -110,7 +108,11 @@ export default function Barcodes({ skus, categories, filters, app_base }) {
 
     const applyFilters = (event) => {
         event.preventDefault();
-        router.get(routeWithBase('/admin/products/barcodes', app_base), filterState, { preserveState: true, replace: true });
+        router.get(routeWithBase('/admin/products/barcodes', app_base), {
+            q: filterState.q.trim() || undefined,
+            category_id: filterState.category_id || undefined,
+            per_page: filterState.per_page,
+        }, { preserveState: true, replace: true });
     };
 
     const resetFilters = () => {
@@ -155,50 +157,7 @@ export default function Barcodes({ skus, categories, filters, app_base }) {
         >
             <Head title={t('Barcode Printing')} />
 
-            <section className="panel glass no-print">
-                <PanelHeading eyebrow={t('SKU labels')} title={t('Filter barcode list')} />
-                <form className="filter-toolbar barcode-filter" onSubmit={applyFilters}>
-                    <div className="barcode-filter-search">
-                        <label className="search-box">
-                            <Icon name="search" size={14} />
-                            <input
-                                value={filterState.q}
-                                onChange={(event) => setFilterState({ ...filterState, q: event.target.value })}
-                                placeholder={t('Search product, SKU, or barcode...')}
-                            />
-                        </label>
-                    </div>
-                    <div className="barcode-filter-controls">
-                        <select value={filterState.category_id} onChange={(event) => setFilterState({ ...filterState, category_id: event.target.value })}>
-                            <option value="">{t('All categories')}</option>
-                            {categories.map((category) => (
-                                <option key={category.id} value={category.id}>{category.name}</option>
-                            ))}
-                        </select>
-                        <select value={filterState.product_status} onChange={(event) => setFilterState({ ...filterState, product_status: event.target.value })}>
-                            <option value="all">{t('All products')}</option>
-                            <option value="active">{t('Active products')}</option>
-                            <option value="inactive">{t('Inactive products')}</option>
-                            <option value="draft">{t('Draft products')}</option>
-                        </select>
-                        <select value={filterState.sku_status} onChange={(event) => setFilterState({ ...filterState, sku_status: event.target.value })}>
-                            <option value="all">{t('All SKUs')}</option>
-                            <option value="active">{t('Active SKUs')}</option>
-                            <option value="inactive">{t('Inactive SKUs')}</option>
-                        </select>
-                        <select value={filterState.per_page} onChange={(event) => setFilterState({ ...filterState, per_page: Number(event.target.value) })}>
-                            <option value="10">{t('10 per page')}</option>
-                            <option value="25">{t('25 per page')}</option>
-                            <option value="50">{t('50 per page')}</option>
-                            <option value="100">{t('100 per page')}</option>
-                        </select>
-                        <button type="submit" className="btn primary">{t('Search')}</button>
-                        <button type="button" className="btn secondary" onClick={resetFilters}>{t('Reset')}</button>
-                    </div>
-                </form>
-            </section>
-
-            <section className="panel glass no-print">
+            <section className="panel glass no-print barcode-list-panel">
                 <PanelHeading
                     eyebrow={`${selectedSkus.length} ${t('selected')}`}
                     title={t('SKU barcode list')}
@@ -209,6 +168,32 @@ export default function Barcodes({ skus, categories, filters, app_base }) {
                         </div>
                     }
                 />
+
+                <form className="filter-toolbar barcode-filter" onSubmit={applyFilters}>
+                    <label className="search-box">
+                        <Icon name="search" size={14} />
+                        <input
+                            value={filterState.q}
+                            onChange={(event) => setFilterState({ ...filterState, q: event.target.value })}
+                            placeholder={t('Search product, SKU, or barcode...')}
+                        />
+                    </label>
+                    <select value={filterState.category_id} onChange={(event) => setFilterState({ ...filterState, category_id: event.target.value })}>
+                        <option value="">{t('All categories')}</option>
+                        {categories.map((category) => (
+                            <option key={category.id} value={category.id}>{category.name}</option>
+                        ))}
+                    </select>
+                    <select value={filterState.per_page} onChange={(event) => setFilterState({ ...filterState, per_page: Number(event.target.value) })}>
+                        <option value="10">{t('10 per page')}</option>
+                        <option value="25">{t('25 per page')}</option>
+                        <option value="50">{t('50 per page')}</option>
+                        <option value="100">{t('100 per page')}</option>
+                    </select>
+                    <button type="submit" className="btn primary">{t('Search')}</button>
+                    <button type="button" className="btn secondary" onClick={resetFilters}>{t('Reset')}</button>
+                </form>
+
                 <div className="table-wrap barcode-sku-table">
                     <table>
                         <thead>

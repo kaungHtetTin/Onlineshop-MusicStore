@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { routeWithBase } from '@/Utils/url';
 import {
     Box,
+    Alert,
     Button,
     Checkbox,
     FormControlLabel,
@@ -62,16 +63,30 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
 
     const appName = app_settings?.app_name || 'the music shop';
     const adminGradient = `radial-gradient(circle at 18% 20%, ${alpha(musicColors.amber, 0.28)} 0, transparent 24%), radial-gradient(circle at 82% 10%, ${alpha(musicColors.rosin, 0.34)} 0, transparent 28%), linear-gradient(135deg, ${musicColors.coal} 0%, ${darken(musicColors.rosin, 0.45)} 52%, #11100f 100%)`;
+    const adminFieldSx = {
+        '& .MuiOutlinedInput-root': {
+            minHeight: 40,
+            bgcolor: '#fff',
+            borderRadius: 1.5,
+            transition: 'box-shadow 160ms ease, background-color 160ms ease',
+            '&.Mui-focused': {
+                boxShadow: `0 0 0 3px ${alpha(musicColors.rosin, 0.12)}`,
+            },
+        },
+        '& .MuiInputBase-input': {
+            py: 1.1,
+        },
+    };
 
     const adminForm = (
         <Box
             sx={{
-                minHeight: '100vh',
+                minHeight: '100dvh',
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
                 alignItems: 'center',
-                py: { xs: 4, md: 7 },
+                py: { xs: 2, sm: 3, md: 4 },
                 background: adminGradient,
                 color: 'white',
             }}
@@ -82,8 +97,9 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                 sx={{
                     position: 'absolute',
                     inset: 0,
-                    opacity: 0.12,
+                    opacity: 0.1,
                     backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 62px, rgba(255,255,255,0.42) 62px 63px), repeating-linear-gradient(0deg, transparent 0 34px, rgba(255,255,255,0.22) 34px 35px)',
+                    pointerEvents: 'none',
                 }}
             />
             <Piano
@@ -94,6 +110,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                     fontSize: { xs: 180, md: 250 },
                     color: alpha(musicColors.amber, 0.2),
                     transform: 'rotate(-9deg)',
+                    pointerEvents: 'none',
                 }}
             />
             <GraphicEq
@@ -103,37 +120,76 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                     top: { xs: 36, md: 74 },
                     fontSize: { xs: 96, md: 140 },
                     color: alpha('#ffffff', 0.14),
+                    pointerEvents: 'none',
                 }}
             />
 
-            <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+            <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, px: { xs: 2, sm: 3 } }}>
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', md: '0.98fr 1.02fr' },
-                        gap: { xs: 3, md: 5 },
+                        gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1.08fr) minmax(360px, 0.92fr)' },
+                        gap: { xs: 2, md: 6 },
                         alignItems: 'center',
+                        minWidth: 0,
                     }}
                 >
-                    <Box sx={{ display: { xs: 'none', md: 'block' }, maxWidth: 520 }}>
-                        <Typography sx={{ ...eyebrowSx, color: musicColors.amber, mb: 1 }}>
-                            {t('Back office')}
+                    <Box sx={{ display: { xs: 'none', md: 'block' }, maxWidth: 540 }}>
+                        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 4 }}>
+                            <Box
+                                sx={{
+                                    width: 42,
+                                    height: 42,
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                    borderRadius: 1.75,
+                                    bgcolor: alpha('#fff', 0.1),
+                                    border: `1px solid ${alpha('#fff', 0.16)}`,
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                {app_settings?.logo_url ? (
+                                    <Box component="img" src={app_settings.logo_url} alt="" sx={{ width: '100%', height: '100%', objectFit: 'contain', bgcolor: '#fff' }} />
+                                ) : (
+                                    <MusicNote sx={{ color: musicColors.amber, fontSize: 24 }} />
+                                )}
+                            </Box>
+                            <Box>
+                                <Typography sx={{ fontWeight: 800, lineHeight: 1.15 }}>{appName}</Typography>
+                                <Typography sx={{ ...eyebrowSx, color: alpha('#fff', 0.58), mt: 0.25 }}>
+                                    {t('Staff console')}
+                                </Typography>
+                            </Box>
+                        </Stack>
+
+                        <Typography sx={{ ...eyebrowSx, color: musicColors.amber, mb: 1.25 }}>
+                            {t('Store operations')}
                         </Typography>
                         <Typography
                             variant="h2"
                             sx={{
-                                fontWeight: 700,
-                                lineHeight: 0.98,
-                                fontSize: { md: '4.2rem' },
-                                mb: 2,
+                                fontWeight: 800,
+                                lineHeight: 1.02,
+                                letterSpacing: '-0.035em',
+                                fontSize: { md: '3.75rem', lg: '4.15rem' },
+                                mb: 2.25,
                             }}
                         >
                             {t('Keep the store in tune.')}
                         </Typography>
-                        <Typography sx={{ color: alpha('#fff', 0.78), fontWeight: 600, lineHeight: 1.7, maxWidth: 440 }}>
+                        <Typography sx={{ color: alpha('#fff', 0.72), fontWeight: 500, lineHeight: 1.7, maxWidth: 460 }}>
                             {t('Manage instruments, inventory, orders, and customer requests from the staff console.')}
                         </Typography>
-                        <Stack direction="row" spacing={1.25} sx={{ mt: 3 }} useFlexGap flexWrap="wrap">
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                                gap: 1,
+                                mt: 3.5,
+                                maxWidth: 430,
+                                '@media (max-height: 720px)': { display: 'none' },
+                            }}
+                        >
                             {[
                                 { label: 'Catalog', Icon: Piano },
                                 { label: 'Inventory', Icon: GraphicEq },
@@ -146,11 +202,11 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                     spacing={0.75}
                                     alignItems="center"
                                     sx={{
-                                        px: 1.35,
-                                        py: 0.9,
+                                        px: 1.5,
+                                        py: 1.1,
                                         borderRadius: 1.5,
                                         border: `1px solid ${alpha('#fff', 0.16)}`,
-                                        bgcolor: alpha('#fff', 0.08),
+                                        bgcolor: alpha('#fff', 0.07),
                                         color: alpha('#fff', 0.9),
                                     }}
                                 >
@@ -160,7 +216,7 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                     </Typography>
                                 </Stack>
                             ))}
-                        </Stack>
+                        </Box>
                     </Box>
 
                     <Paper
@@ -168,21 +224,24 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                         sx={{
                             justifySelf: { xs: 'stretch', md: 'end' },
                             width: '100%',
-                            maxWidth: 430,
-                            p: { xs: 3, sm: 4 },
-                            borderRadius: 2,
-                            bgcolor: 'rgba(255, 253, 248, 0.94)',
+                            maxWidth: { xs: '100%', sm: 410 },
+                            minWidth: 0,
+                            boxSizing: 'border-box',
+                            mx: { xs: 'auto', md: 0 },
+                            p: { xs: 2.5, sm: 3 },
+                            borderRadius: 2.5,
+                            bgcolor: 'rgba(255, 253, 248, 0.96)',
                             color: musicColors.ink,
                             border: `1px solid ${alpha(musicColors.amber, 0.32)}`,
-                            boxShadow: '0 28px 90px rgba(0,0,0,0.34)',
-                            backdropFilter: 'blur(18px)',
+                            boxShadow: '0 30px 90px rgba(0,0,0,0.36)',
+                            backdropFilter: 'blur(20px)',
                         }}
                     >
-                        <Stack alignItems="center" spacing={1.25} sx={{ textAlign: 'center', mb: 3 }}>
+                        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ textAlign: 'left', mb: 2.5 }}>
                             <Box
                                 sx={{
-                                    width: 58,
-                                    height: 58,
+                                    width: 52,
+                                    height: 52,
                                     borderRadius: 2,
                                     display: 'grid',
                                     placeItems: 'center',
@@ -191,35 +250,41 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                     border: `1px solid ${alpha(musicColors.rosin, 0.18)}`,
                                 }}
                             >
-                                <AdminPanelSettings sx={{ fontSize: 32 }} />
+                                <AdminPanelSettings sx={{ fontSize: 29 }} />
                             </Box>
                             <Box>
-                                <Typography variant="h4" sx={{ fontWeight: 700, color: musicColors.ink, lineHeight: 1.05 }}>
-                                    {t('Staff Login')}
+                                <Typography variant="h4" sx={{ fontWeight: 800, color: musicColors.ink, lineHeight: 1.1, fontSize: '1.35rem' }}>
+                                    {t('Welcome back')}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, fontWeight: 600 }}>
-                                    {t('Sign in to manage')} {appName}.
+                                    {t('Sign in with your staff account')}
                                 </Typography>
                             </Box>
                         </Stack>
 
                         {status && (
-                            <Typography color="success.main" sx={{ mb: 2.5, fontWeight: 700, textAlign: 'center' }}>
+                            <Alert severity="success" sx={{ mb: 2, py: 0.25, alignItems: 'center' }}>
                                 {status}
-                            </Typography>
+                            </Alert>
                         )}
 
                         {error && (
-                            <Typography color="error.main" sx={{ mb: 2.5, fontWeight: 700, textAlign: 'center' }}>
+                            <Alert severity="error" sx={{ mb: 2, py: 0.25, alignItems: 'center' }}>
                                 {error}
-                            </Typography>
+                            </Alert>
                         )}
 
                         <form onSubmit={submit}>
-                            <Stack spacing={2.25}>
+                            <Stack spacing={1.4}>
                                 <TextField
                                     fullWidth
+                                    size="small"
                                     label={t('Email')}
+                                    name="email"
+                                    type="email"
+                                    autoComplete="username"
+                                    autoFocus
+                                    required
                                     value={data.email}
                                     onChange={(e) => setData('email', e.target.value)}
                                     error={!!errors.email}
@@ -231,13 +296,17 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                             </InputAdornment>
                                         ),
                                     }}
-                                    sx={{ bgcolor: 'white', borderRadius: 1.5 }}
+                                    sx={adminFieldSx}
                                 />
 
                                 <TextField
                                     fullWidth
+                                    size="small"
                                     label={t('Password')}
+                                    name="password"
                                     type={showPassword ? 'text' : 'password'}
+                                    autoComplete="current-password"
+                                    required
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
                                     error={!!errors.password}
@@ -250,22 +319,29 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                         ),
                                         endAdornment: (
                                             <InputAdornment position="end">
-                                                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                                                <IconButton
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    edge="end"
+                                                    aria-label={t(showPassword ? 'Hide password' : 'Show password')}
+                                                >
                                                     {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                                                 </IconButton>
                                             </InputAdornment>
                                         ),
                                     }}
-                                    sx={{ bgcolor: 'white', borderRadius: 1.5 }}
+                                    sx={adminFieldSx}
                                 />
 
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, minHeight: 36 }}>
                                     <FormControlLabel
+                                        sx={{ mr: 0 }}
                                         control={
                                             <Checkbox
                                                 name="remember"
                                                 checked={data.remember}
                                                 onChange={(e) => setData('remember', e.target.checked)}
+                                                size="small"
                                                 sx={{ color: musicColors.rosin, '&.Mui-checked': { color: musicColors.rosin } }}
                                             />
                                         }
@@ -285,9 +361,10 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                     size="large"
                                     disabled={processing}
                                     sx={{
-                                        py: 1.45,
-                                        fontSize: '1rem',
-                                        fontWeight: 700,
+                                        minHeight: 40,
+                                        py: 1,
+                                        fontSize: '0.9rem',
+                                        fontWeight: 800,
                                         bgcolor: musicColors.rosin,
                                         color: 'white',
                                         boxShadow: `0 12px 28px ${alpha(musicColors.rosin, 0.26)}`,
@@ -298,6 +375,10 @@ export default function Login({ status, error, isAdminLogin = false, googleAuthA
                                 </Button>
                             </Stack>
                         </form>
+
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: 2, fontWeight: 600 }}>
+                            {t('Authorized staff access only')}
+                        </Typography>
                     </Paper>
                 </Box>
             </Container>

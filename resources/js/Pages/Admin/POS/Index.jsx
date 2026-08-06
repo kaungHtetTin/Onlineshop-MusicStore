@@ -43,7 +43,10 @@ import {
     ChevronRight as ChevronRightIcon,
     Close as CloseIcon,
     Delete as DeleteIcon,
+    ExpandLess as ExpandLessIcon,
+    ExpandMore as ExpandMoreIcon,
     GridView as GridViewIcon,
+    ImageOutlined as ImagePlaceholderIcon,
     List as ListViewIcon,
     PointOfSale as CheckoutIcon,
     Print as PrintIcon,
@@ -57,15 +60,14 @@ import { formatMoney } from '@/Utils/pricing';
 const makeId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const money = formatMoney;
 const POS_RESULT_PAGE_SIZE = 24;
-const POS_TABLE_ROW_HEIGHT = 54;
-const POS_GRID_ROW_HEIGHT = 126;
+const POS_TABLE_ROW_HEIGHT = 44;
 const POS_RESULT_OVERSCAN_ROWS = 6;
 
 export default function PosIndex({ locations = [], categories = [], can = {} }) {
     const { app_base, app_url, flash = {}, errors: pageErrors = {} } = usePage().props;
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+    const isCompactScreen = useMediaQuery('(max-width:620px)');
     const t = useTranslation();
     const tp = usePhraseTranslation();
     const firstLocation = locations[0];
@@ -80,6 +82,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     const [productViewportHeight, setProductViewportHeight] = useState(520);
     const [scanError, setScanError] = useState('');
     const [resultsView, setResultsView] = useState('table');
+    const [mobileAppBarExpanded, setMobileAppBarExpanded] = useState(false);
     const [cart, setCart] = useState([]);
     const [customerOptions, setCustomerOptions] = useState([]);
     const [customerSearchInput, setCustomerSearchInput] = useState('');
@@ -100,9 +103,12 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     const categoryScrollRef = useRef(null);
     const checkoutIntentRef = useRef('complete');
     const productScrollFrameRef = useRef(null);
+    const gridLoadMoreSentinelRef = useRef(null);
+    const gridLoadMoreLockRef = useRef(false);
 
     const location = locations.find((item) => Number(item.id) === Number(locationId));
     const paymentMethods = ['cash', 'card', 'mobile'];
+    const effectiveResultsView = isCompactScreen ? 'grid' : resultsView;
 
     const api = async (url, options = {}) => {
         setErrors({});
@@ -148,6 +154,22 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
             }
         }
     }, [app_base, categoryId, locationId, resultMeta.per_page, searchQuery]);
+
+    const loadMoreProducts = useCallback(async () => {
+        if (gridLoadMoreLockRef.current || searchLoading || !resultMeta.has_more) return;
+
+        gridLoadMoreLockRef.current = true;
+        try {
+            await fetchSearch({
+                append: true,
+                page: resultMeta.next_page || resultMeta.page + 1,
+            });
+        } catch {
+            // The shared request helper already exposes the error in the POS alert area.
+        } finally {
+            gridLoadMoreLockRef.current = false;
+        }
+    }, [fetchSearch, resultMeta.has_more, resultMeta.next_page, resultMeta.page, searchLoading]);
 
     const fetchCustomers = useCallback(async (query) => {
         setCustomerLoading(true);
@@ -227,9 +249,31 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     }, [productResultsElement]);
 
     useEffect(() => {
+        if (
+            effectiveResultsView !== 'grid'
+            || isMobile
+            || !productResultsElement
+            || !gridLoadMoreSentinelRef.current
+            || !resultMeta.has_more
+            || typeof IntersectionObserver === 'undefined'
+        ) return undefined;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0]?.isIntersecting) loadMoreProducts();
+        }, {
+            root: productResultsElement,
+            rootMargin: '240px 0px',
+            threshold: 0,
+        });
+
+        observer.observe(gridLoadMoreSentinelRef.current);
+        return () => observer.disconnect();
+    }, [effectiveResultsView, isMobile, loadMoreProducts, productResultsElement, resultMeta.has_more]);
+
+    useEffect(() => {
         productResultsElement?.scrollTo({ top: 0 });
         setProductScrollTop(0);
-    }, [categoryId, locationId, resultsView, searchQuery, productResultsElement]);
+    }, [categoryId, effectiveResultsView, locationId, searchQuery, productResultsElement]);
 
     useEffect(() => {
         if (isMobile && cart.length === 0 && mobileStep !== 'products') {
@@ -340,20 +384,15 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     const hasStockIssue = useMemo(() => cart.some((line) => Number(line.quantity || 0) > Number(line.available_qty || 0)), [cart]);
     const hasWholesaleCartItems = useMemo(() => cart.some((line) => line.price_type === 'wholesale'), [cart]);
     const resultHeading = resultMeta.mode === 'popular' && !searchQuery.trim() ? tp('POPULAR PRODUCTS') : tp('RESULTS');
-    const gridColumnCount = resultsView === 'grid' && !isSmallScreen ? 2 : 1;
-    const virtualRowHeight = resultsView === 'grid' ? POS_GRID_ROW_HEIGHT : POS_TABLE_ROW_HEIGHT;
-    const virtualRowCount = resultsView === 'grid'
-        ? Math.ceil(searchResults.length / gridColumnCount)
-        : searchResults.length;
-    const virtualStartRow = Math.max(0, Math.floor(productScrollTop / virtualRowHeight) - POS_RESULT_OVERSCAN_ROWS);
+    const virtualRowCount = searchResults.length;
+    const virtualStartRow = Math.max(0, Math.floor(productScrollTop / POS_TABLE_ROW_HEIGHT) - POS_RESULT_OVERSCAN_ROWS);
     const virtualEndRow = Math.min(
         virtualRowCount,
-        Math.ceil((productScrollTop + productViewportHeight) / virtualRowHeight) + POS_RESULT_OVERSCAN_ROWS,
+        Math.ceil((productScrollTop + productViewportHeight) / POS_TABLE_ROW_HEIGHT) + POS_RESULT_OVERSCAN_ROWS,
     );
-    const virtualTopSpacer = virtualStartRow * virtualRowHeight;
-    const virtualBottomSpacer = Math.max(0, (virtualRowCount - virtualEndRow) * virtualRowHeight);
+    const virtualTopSpacer = virtualStartRow * POS_TABLE_ROW_HEIGHT;
+    const virtualBottomSpacer = Math.max(0, (virtualRowCount - virtualEndRow) * POS_TABLE_ROW_HEIGHT);
     const visibleTableProducts = searchResults.slice(virtualStartRow, virtualEndRow);
-    const visibleGridProducts = searchResults.slice(virtualStartRow * gridColumnCount, virtualEndRow * gridColumnCount);
 
     const scrollCategories = (direction) => {
         categoryScrollRef.current?.scrollBy({
@@ -422,7 +461,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     };
 
     const paymentFormContent = (
-        <Stack spacing={1.5}>
+        <Stack spacing={1.25} className="pos-console__payment-form">
             <Box>
                 <Stack direction="row" justifyContent="space-between" sx={{ mb: 1, alignItems: 'center' }}>
                     <Box>
@@ -480,7 +519,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                 </Stack>
             )}
 
-            <Box sx={{ p: 1.5, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider' }}>
+            <Box className="pos-console__totals" sx={{ p: 1.5, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider' }}>
                 <Stack spacing={0.85}>
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', gap: 1 }}>
                         <Typography variant="body2" color="text.secondary">{tp('Subtotal')}</Typography>
@@ -565,6 +604,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
 
     return (
         <Box
+            className="app-root pos-console"
             sx={{
                 minHeight: '100vh',
                 background: (theme) => `
@@ -580,6 +620,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
 
             <Box
                 component="header"
+                className={`admin-topbar glass pos-console__titlebar ${mobileAppBarExpanded ? 'is-mobile-expanded' : 'is-mobile-collapsed'}`}
                 sx={{
                     minHeight: 52,
                     px: { xs: 1.5, md: 2 },
@@ -594,7 +635,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                     flexShrink: 0,
                 }}
             >
-                <Stack direction="row" spacing={1} sx={{ minWidth: 0, alignItems: 'center' }}>
+                <Stack className="pos-console__brand" direction="row" spacing={1} sx={{ minWidth: 0, alignItems: 'center' }}>
                     <CheckoutIcon color="primary" fontSize="small" />
                     <Box sx={{ minWidth: 0 }}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
@@ -602,26 +643,44 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                         </Typography>
                     </Box>
                 </Stack>
-                <TextField
-                    select
-                    size="small"
-                    label={tp('Warehouse')}
-                    value={locationId}
-                    onChange={(event) => setLocationId(event.target.value)}
-                    sx={{ width: { xs: '100%', sm: 220 }, maxWidth: '100%' }}
-                >
-                    {locations.map((item) => <MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>)}
-                </TextField>
-                <Box sx={{ flex: 1 }} />
-                <Chip size="small" color={isOnline ? 'success' : 'error'} label={isOnline ? tp('Online') : tp('Offline')} variant="outlined" />
-                <LanguageSwitcher compact className="pos-language-switcher" />
-                <Button size="small" variant="text" component={Link} href={routeWithBase('/admin/dashboard', app_base)}>
+                <Typography className="pos-console__mobile-location-summary" variant="caption" title={location?.name || tp('Warehouse')} noWrap>
+                    {location?.name || tp('Warehouse')}
+                </Typography>
+                <Stack direction="row" spacing={0.75} className="pos-console__location" sx={{ alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                        {tp('Warehouse')}
+                    </Typography>
+                    <TextField
+                        select
+                        size="small"
+                        value={locationId}
+                        onChange={(event) => setLocationId(event.target.value)}
+                        inputProps={{ 'aria-label': tp('Warehouse') }}
+                        sx={{ width: { xs: '100%', sm: 190 }, maxWidth: '100%' }}
+                    >
+                        {locations.map((item) => <MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>)}
+                    </TextField>
+                </Stack>
+                <Box className="pos-console__titlebar-spacer" sx={{ flex: 1 }} />
+                <Chip className="pos-console__online-status" size="small" color={isOnline ? 'success' : 'error'} label={isOnline ? tp('Online') : tp('Offline')} variant="outlined" />
+                <LanguageSwitcher compact className="admin-language-switcher" />
+                <Button className="pos-console__dashboard-link" size="small" variant="text" component={Link} href={routeWithBase('/admin/dashboard', app_base)}>
                     {t('admin.items.dashboard', 'Dashboard')}
                 </Button>
+                <IconButton
+                    className="pos-console__appbar-toggle"
+                    size="small"
+                    aria-label={mobileAppBarExpanded ? tp('Collapse app bar') : tp('Expand app bar')}
+                    aria-expanded={mobileAppBarExpanded}
+                    onClick={() => setMobileAppBarExpanded((expanded) => !expanded)}
+                >
+                    {mobileAppBarExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                </IconButton>
             </Box>
 
             <Box
                 component="main"
+                className="pos-console__body"
                 sx={{
                     flex: 1,
                     minHeight: 0,
@@ -644,6 +703,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                 )}
 
                 <Paper
+                    className="pos-console__mobile-tabs"
                     sx={{
                         display: { xs: 'block', md: 'none' },
                         mb: 1,
@@ -673,6 +733,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                 </Paper>
 
                 <Box
+                    className="pos-console__workspace"
                     sx={{
                         display: 'grid',
                         gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) minmax(420px, 0.9fr)' },
@@ -687,16 +748,16 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                         minHeight: 0,
                     }}
                 >
-                    <Paper sx={{ p: { xs: 1.25, md: 1.35 }, width: '100%', height: { xs: 'auto', md: '100%' }, display: { xs: mobileStep === 'products' ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden', borderTop: '2px solid', borderTopColor: 'primary.main' }}>
-                        <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <Stack direction="row" spacing={1} sx={{ minWidth: 0, alignItems: 'center' }}>
+                    <Paper className="pos-console__catalog" sx={{ p: { xs: 1.25, md: 1.35 }, width: '100%', height: { xs: 'auto', md: '100%' }, display: { xs: mobileStep === 'products' ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden', borderTop: '2px solid', borderTopColor: 'primary.main' }}>
+                        <Stack className="pos-console__catalog-header" direction="row" spacing={1} sx={{ mb: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                            <Stack className="pos-console__catalog-title" direction="row" spacing={1} sx={{ minWidth: 0, alignItems: 'center' }}>
                                 <ScanIcon color="primary" fontSize="small" />
                                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                     {tp('Product Selection')}
                                 </Typography>
                             </Stack>
                             <Box sx={{ flex: 1 }} />
-                            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+                            <Stack className="pos-console__price-mode" direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                                 <ToggleButtonGroup
                                     size="small"
                                     exclusive
@@ -708,6 +769,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 </ToggleButtonGroup>
                             </Stack>
                             <ToggleButtonGroup
+                                className="pos-console__view-mode"
                                 size="small"
                                 exclusive
                                 value={resultsView}
@@ -728,7 +790,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                             </Alert>
                         )}
 
-                        <Stack direction="row" spacing={1}>
+                        <Stack className="pos-console__catalog-search" direction="row" spacing={1}>
                             <TextField
                                 fullWidth
                                 size="small"
@@ -759,6 +821,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                         </Stack>
 
                         <Stack
+                            className="pos-console__categories"
                             direction="row"
                             spacing={0.5}
                             sx={{
@@ -772,8 +835,9 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 aria-label={tp('Scroll categories left')}
                                 onClick={() => scrollCategories(-1)}
                                 sx={{
-                                    width: 30,
-                                    height: 34,
+                                    width: 26,
+                                    height: 28,
+                                    p: 0,
                                     flexShrink: 0,
                                     border: '1px solid',
                                     borderColor: 'divider',
@@ -788,8 +852,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                     flex: 1,
                                     minWidth: 0,
                                     px: 0.5,
-                                    pt: 0.35,
-                                    pb: 0.9,
+                                    py: 0.25,
                                     overflowX: 'auto',
                                     overflowY: 'hidden',
                                     scrollbarWidth: 'none',
@@ -811,7 +874,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                             ml: 0,
                                             px: 1,
                                             pr: 1.25,
-                                            height: 34,
+                                            height: 28,
                                             minWidth: 'fit-content',
                                             flexShrink: 0,
                                             border: '1px solid',
@@ -845,8 +908,9 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 aria-label={tp('Scroll categories right')}
                                 onClick={() => scrollCategories(1)}
                                 sx={{
-                                    width: 30,
-                                    height: 34,
+                                    width: 26,
+                                    height: 28,
+                                    p: 0,
                                     flexShrink: 0,
                                     border: '1px solid',
                                     borderColor: 'divider',
@@ -858,7 +922,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                         </Stack>
 
                         {cart.length > 0 && (
-                            <Box sx={{ display: { xs: 'block', md: 'none' }, mt: 0.75 }}>
+                            <Box className="pos-console__selected-strip" sx={{ display: { xs: 'block', md: 'none' }, mt: 0.75 }}>
                                 <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ mb: 0.75, alignItems: 'center' }}>
                                     <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>
                                         {tp('Selected products')}
@@ -884,6 +948,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
 
                                         return (
                                             <Box
+                                                className="pos-console__selected-card"
                                                 key={line.id}
                                                 sx={{
                                                     width: 176,
@@ -899,6 +964,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                 }}
                                             >
                                                 <Box
+                                                    className="pos-console__selected-image"
                                                     sx={{
                                                         width: 48,
                                                         height: 48,
@@ -944,7 +1010,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
 
                         <Divider sx={{ my: 1.25 }} />
 
-                        <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ alignItems: 'center' }}>
+                        <Stack className="pos-console__results-meta" direction="row" justifyContent="space-between" spacing={1} sx={{ alignItems: 'center' }}>
                             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
                                 {resultHeading}
                             </Typography>
@@ -953,8 +1019,8 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                             </Typography>
                         </Stack>
 
-                        {resultsView === 'table' ? (
-                            <TableContainer ref={setProductResultsElement} sx={{ mt: 1, flex: 1, minHeight: 0, overflow: 'auto' }}>
+                        {effectiveResultsView === 'table' ? (
+                            <TableContainer className="pos-console__product-table" ref={setProductResultsElement} sx={{ mt: 1, flex: 1, minHeight: 0, overflow: 'auto' }}>
                                 <Table
                                     size="small"
                                     stickyHeader
@@ -966,10 +1032,10 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 >
                                     <TableHead>
                                         <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'light' ? 'grey.50' : 'rgba(255,255,255,.05)' }}>
-                                            <TableCell sx={{ fontWeight: 700, width: '47%' }}>{tp('Product')}</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, width: '28%' }}>{tp('SKU / Barcode')}</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, width: '13%' }} align="right">{tp('Stock')}</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, width: '12%' }} align="center">{tp('Add')}</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, width: '58%' }}>{tp('Product')}</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, width: '20%' }} align="right">{tp('Price')}</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, width: '12%' }} align="right">{tp('Available')}</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, width: '10%' }} align="center">{tp('Add')}</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -983,36 +1049,31 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                             return (
                                                 <TableRow key={product.id} hover sx={outOfStock ? { bgcolor: 'rgba(211, 47, 47, 0.08)' } : undefined}>
                                                     <TableCell>
-                                                        <Stack direction="row" spacing={1} sx={{ minWidth: 0, alignItems: 'center' }}>
-                                                            <Box
-                                                                sx={{
-                                                                    width: 36,
-                                                                    height: 36,
-                                                                    flexShrink: 0,
-                                                                    border: '1px solid',
-                                                                    borderColor: 'divider',
-                                                                    bgcolor: 'action.hover',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    overflow: 'hidden',
-                                                                }}
-                                                            >
+                                                        <Stack className="pos-console__product-cell" direction="row" spacing={0.75}>
+                                                            <Box className="pos-console__list-thumbnail">
                                                                 {product.image_path ? (
-                                                                    <Box component="img" src={storageUrl(product.image_path, app_url)} alt="" loading="lazy" decoding="async" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                                    <Box
+                                                                        component="img"
+                                                                        src={storageUrl(product.image_path, app_url)}
+                                                                        alt=""
+                                                                        loading="lazy"
+                                                                        decoding="async"
+                                                                    />
                                                                 ) : (
-                                                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 9, fontWeight: 700 }}>{tp('No image')}</Typography>
+                                                                    <ImagePlaceholderIcon aria-hidden="true" />
                                                                 )}
                                                             </Box>
-                                                            <Box sx={{ minWidth: 0 }}>
-                                                                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.15 }} noWrap title={getProductDisplayName(product)}>{getProductDisplayName(product)}</Typography>
-                                                                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>{money(resolveProductPrice(product))}</Typography>
+                                                            <Box className="pos-console__product-copy">
+                                                                <Typography variant="body2" noWrap title={getProductDisplayName(product)}>{getProductDisplayName(product)}</Typography>
+                                                                <Typography variant="caption" color="text.secondary" noWrap>{product.sku_code || '-'}</Typography>
+                                                                <Typography className="pos-console__mobile-product-meta" variant="caption" color="text.secondary" noWrap>
+                                                                    {money(resolveProductPrice(product))} · {product.available_qty} {tp('available')}
+                                                                </Typography>
                                                             </Box>
                                                         </Stack>
                                                     </TableCell>
-                                                    <TableCell>
-                                                        <Typography variant="caption" color="text.secondary">{product.sku_code || '-'}</Typography>
-                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{product.barcode || '-'}</Typography>
+                                                    <TableCell className="pos-console__product-price" align="right">
+                                                        <Typography variant="body2" noWrap>{money(resolveProductPrice(product))}</Typography>
                                                     </TableCell>
                                                     <TableCell align="right">
                                                         <Typography variant="body2" sx={{ fontWeight: 700, color: outOfStock ? 'error.main' : 'inherit' }}>{product.available_qty}</Typography>
@@ -1041,14 +1102,28 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 </Table>
                             </TableContainer>
                         ) : (
-                            <Box ref={setProductResultsElement} sx={{ mt: 1, flex: 1, minHeight: 0, overflow: 'auto', display: 'grid', alignContent: 'start', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 1, pr: 0.5 }}>
-                                {virtualTopSpacer > 0 && (
-                                    <Box aria-hidden="true" sx={{ height: virtualTopSpacer, gridColumn: '1 / -1' }} />
-                                )}
-                                {visibleGridProducts.map((product) => {
+                            <Box
+                                className="pos-console__product-grid"
+                                ref={setProductResultsElement}
+                                sx={{
+                                    mt: 1,
+                                    flex: 1,
+                                    minHeight: 0,
+                                    overflow: 'auto',
+                                    display: 'grid',
+                                    alignContent: 'start',
+                                    alignItems: 'stretch',
+                                    gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(auto-fill, minmax(260px, 1fr))' },
+                                    gridAutoRows: 'max-content',
+                                    gap: 1,
+                                    pr: 0.5,
+                                }}
+                            >
+                                {searchResults.map((product) => {
                                     const outOfStock = Number(product.available_qty || 0) <= 0;
                                     return (
                                         <Card
+                                            className="pos-console__product-card"
                                             key={product.id}
                                             variant="outlined"
                                             sx={{
@@ -1058,12 +1133,13 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                             }}
                                         >
                                             <CardActionArea
+                                                className="pos-console__product-card-action"
                                                 onClick={() => addProductToCart(product)}
                                                 disabled={outOfStock}
                                                 sx={{
                                                     display: 'grid',
-                                                    gridTemplateColumns: { xs: '76px minmax(0, 1fr)', sm: '86px minmax(0, 1fr)', xl: '96px minmax(0, 1fr)' },
-                                                    minHeight: { xs: 108, sm: 116, xl: 126 },
+                                                    gridTemplateColumns: '68px minmax(0, 1fr)',
+                                                    height: '100%',
                                                     alignItems: 'stretch',
                                                 }}
                                             >
@@ -1073,7 +1149,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        p: 0.5,
+                                                        p: 0.4,
                                                         overflow: 'hidden',
                                                         borderRight: '1px solid',
                                                         borderColor: 'divider',
@@ -1102,29 +1178,25 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                 <CardContent
                                                     sx={{
                                                         minWidth: 0,
-                                                        p: 1,
+                                                        p: 0.85,
                                                         display: 'flex',
                                                         flexDirection: 'column',
                                                         justifyContent: 'center',
-                                                        '&:last-child': { pb: 1 },
+                                                        '&:last-child': { pb: 0.85 },
                                                     }}
                                                 >
                                                     <Typography variant="body2" sx={{ fontWeight: 800, lineHeight: 1.18 }} noWrap title={getProductDisplayName(product)}>
                                                         {getProductDisplayName(product)}
                                                     </Typography>
                                                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.15, mt: 0.35 }} noWrap>
-                                                        {product.sku_code || product.barcode || '-'}
+                                                        {product.sku_code || '-'}
                                                     </Typography>
                                                     <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.8, alignItems: 'center', gap: 1 }}>
-                                                        <Typography variant="caption" color="text.secondary">{tp('Each')}</Typography>
                                                         <Typography variant="body2" sx={{ fontWeight: 900 }} noWrap>{money(resolveProductPrice(product))}</Typography>
-                                                    </Stack>
-                                                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.35, alignItems: 'center', gap: 1 }}>
-                                                        <Typography variant="caption" color="text.secondary">{tp('Stock')}</Typography>
                                                         {outOfStock ? (
-                                                            <Chip size="small" color="error" label={tp('Out of stock')} sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: '0.68rem', fontWeight: 600 } }} />
+                                                            <Chip className="pos-console__stock-badge" size="small" color="error" label={tp('Out of stock')} />
                                                         ) : (
-                                                            <Typography variant="caption" sx={{ fontWeight: 700 }}>{product.available_qty}</Typography>
+                                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>{product.available_qty} {tp('available')}</Typography>
                                                         )}
                                                     </Stack>
                                                 </CardContent>
@@ -1132,8 +1204,12 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                         </Card>
                                     );
                                 })}
-                                {virtualBottomSpacer > 0 && (
-                                    <Box aria-hidden="true" sx={{ height: virtualBottomSpacer, gridColumn: '1 / -1' }} />
+                                {resultMeta.has_more && (
+                                    <Box
+                                        ref={gridLoadMoreSentinelRef}
+                                        className="pos-console__grid-load-sentinel"
+                                        aria-hidden="true"
+                                    />
                                 )}
                                 {searchResults.length === 0 && (
                                     <Paper variant="outlined" sx={{ p: 2, gridColumn: '1 / -1' }}>
@@ -1144,11 +1220,11 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                         )}
 
                         {resultMeta.has_more && (
-                            <Box sx={{ pt: 1.25, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                            <Box className="pos-console__load-more" sx={{ pt: 1.25, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
                                 <Button
                                     size="small"
                                     variant="outlined"
-                                    onClick={() => fetchSearch({ append: true, page: resultMeta.next_page || resultMeta.page + 1 })}
+                                    onClick={loadMoreProducts}
                                     disabled={searchLoading}
                                 >
                                     {tp('Load more products')}
@@ -1156,18 +1232,10 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                             </Box>
                         )}
 
-                        <Box sx={{ display: { xs: 'grid', md: 'none' }, gridTemplateColumns: '1fr auto', gap: 1, pt: 1.25, flexShrink: 0 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
-                                {cart.length} {cart.length === 1 ? tp('item') : tp('items')} - {money(totals.grandTotal)}
-                            </Typography>
-                            <Button variant="contained" size="small" disabled={cart.length === 0} onClick={() => setMobileStep('cart')}>
-                                {tp('View Cart')}
-                            </Button>
-                        </Box>
                     </Paper>
 
-                    <Paper sx={{ p: { xs: 1.15, md: 1.25 }, width: '100%', height: { xs: 'auto', md: '100%' }, display: { xs: mobileStep === 'cart' ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden', borderTop: '2px solid', borderTopColor: 'success.main' }}>
-                        <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', columnGap: 1, width: '100%' }}>
+                    <Paper className="pos-console__cart" sx={{ p: { xs: 1.15, md: 1.25 }, width: '100%', height: { xs: 'auto', md: '100%' }, display: { xs: mobileStep === 'cart' ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden', borderTop: '2px solid', borderTopColor: 'success.main' }}>
+                        <Box className="pos-console__cart-header" sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'center', columnGap: 1, width: '100%' }}>
                             <Box sx={{ minWidth: 0 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{tp('Current Sale')}</Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
@@ -1191,18 +1259,19 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                             </Stack>
                         </Box>
 
-                        <Divider sx={{ my: 1 }} />
+                        <Divider className="pos-console__cart-divider" sx={{ my: 1 }} />
 
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>{tp('Cart')}</Typography>
+                        <Typography className="pos-console__cart-label" variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>{tp('Cart')}</Typography>
 
                         {isMobile ? (
-                            <Stack spacing={0.85} sx={{ flex: 1, minHeight: 140, overflow: 'visible' }}>
+                            <Stack className="pos-console__cart-cards" spacing={0.85} sx={{ flex: 1, minHeight: 140, overflow: 'visible' }}>
                                 {cart.map((line) => {
                                     const lineTotal = Number(line.quantity || 0) * Number(line.unit_price || 0);
                                     const exceedsStock = Number(line.quantity || 0) > Number(line.available_qty || 0);
 
                                     return (
                                         <Paper
+                                            className="pos-console__mobile-cart-card"
                                             key={line.id}
                                             variant="outlined"
                                             sx={{
@@ -1211,37 +1280,13 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                 bgcolor: exceedsStock ? 'rgba(211, 47, 47, 0.08)' : 'background.paper',
                                             }}
                                         >
-                                            <Stack direction="row" spacing={0.85} sx={{ alignItems: 'center', minWidth: 0 }}>
-                                                <Box
-                                                    sx={{
-                                                        width: 48,
-                                                        height: 48,
-                                                        flexShrink: 0,
-                                                        display: 'grid',
-                                                        placeItems: 'center',
-                                                        bgcolor: 'action.hover',
-                                                        border: '1px solid',
-                                                        borderColor: 'divider',
-                                                        overflow: 'hidden',
-                                                    }}
-                                                >
-                                                    {line.image_path ? (
-                                                        <Box component="img" src={storageUrl(line.image_path, app_url)} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                    ) : (
-                                                        <Typography variant="caption" color="text.secondary" sx={{ px: 0.25, fontSize: 9, fontWeight: 800, textAlign: 'center' }}>
-                                                            {line.sku_code || tp('No image')}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                                <Box sx={{ minWidth: 0, flex: 1 }}>
+                                            <Stack className="pos-console__mobile-cart-main" direction="row" spacing={0.85} sx={{ alignItems: 'center', minWidth: 0 }}>
+                                                <Box className="pos-console__cart-product" sx={{ minWidth: 0, flex: 1 }}>
                                                     <Typography variant="body2" title={line.name} sx={{ fontWeight: 800, lineHeight: 1.12 }} noWrap>
                                                         {line.name}
                                                     </Typography>
                                                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }} noWrap>
-                                                        {line.sku_code || line.barcode || '-'} - {tp('Max')} {line.available_qty}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>
-                                                        {tp('Price')}: {money(line.unit_price)}
+                                                        {line.sku_code || '-'}
                                                     </Typography>
                                                 </Box>
                                                 <IconButton
@@ -1256,6 +1301,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                             </Stack>
 
                                             <Box
+                                                className="pos-console__mobile-cart-controls"
                                                 sx={{
                                                     display: 'grid',
                                                     gridTemplateColumns: 'minmax(0, 1fr) auto',
@@ -1273,6 +1319,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                     </Typography>
                                                 </Box>
                                                 <Box
+                                                    className={`pos-console__mobile-quantity ${exceedsStock ? 'has-error' : ''}`}
                                                     sx={{
                                                         display: 'grid',
                                                         gridTemplateColumns: '34px 44px 34px',
@@ -1293,6 +1340,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                         <RemoveIcon fontSize="small" />
                                                     </IconButton>
                                                     <Typography
+                                                        className="pos-console__mobile-quantity-value"
                                                         variant="body2"
                                                         sx={{
                                                             fontWeight: 900,
@@ -1326,119 +1374,69 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 )}
                             </Stack>
                         ) : (
-                            <TableContainer sx={{ flex: 1, minHeight: 180, overflow: 'auto' }}>
-                                <Table
-                                    size="small"
-                                    stickyHeader
-                                    sx={{
-                                        tableLayout: 'fixed',
-                                        minWidth: 0,
-                                        '& .MuiTableCell-root': { px: 0.75, py: 0.7, verticalAlign: 'middle' },
-                                        '& .MuiTableCell-head': { py: 0.65, fontSize: 12, letterSpacing: '0.04em' },
-                                        '& .MuiInputBase-root': { height: 34, fontSize: 13 },
-                                        '& .MuiInputBase-input': { px: 0.75, py: 0.5 },
-                                    }}
-                                >
-                                    <TableHead>
-                                        <TableRow sx={{ bgcolor: (theme) => theme.palette.mode === 'light' ? 'grey.50' : 'rgba(255,255,255,.05)' }}>
-                                            <TableCell sx={{ fontWeight: 700, width: '36%' }}>{tp('Item')}</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, width: '16%' }}>{tp('Price')}</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, width: '24%' }} align="center">{tp('Qty')}</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, width: '16%' }} align="right">{tp('Total')}</TableCell>
-                                            <TableCell sx={{ width: '8%' }} />
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {cart.map((line) => {
-                                            const lineTotal = Number(line.quantity || 0) * Number(line.unit_price || 0);
-                                            const exceedsStock = Number(line.quantity || 0) > Number(line.available_qty || 0);
-                                            return (
-                                                <TableRow key={line.id} hover>
-                                                    <TableCell>
-                                                        <Typography variant="body2" title={line.name} sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>{line.name}</Typography>
-                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }} noWrap>
-                                                            {line.sku_code || line.barcode || '-'} - {tp('Max')} {line.available_qty}
-                                                        </Typography>
-                                                    </TableCell>
-                                                    <TableCell sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>
-                                                        {money(line.unit_price)}
-                                                    </TableCell>
-                                                    <TableCell align="center">
-                                                        <Box
-                                                            sx={{
-                                                                display: 'grid',
-                                                                gridTemplateColumns: '30px minmax(32px, 1fr) 30px',
-                                                                alignItems: 'center',
-                                                                width: '100%',
-                                                                maxWidth: 116,
-                                                                height: 34,
-                                                                mx: 'auto',
-                                                                border: '1px solid',
-                                                                borderColor: exceedsStock ? 'error.main' : 'divider',
-                                                                bgcolor: 'background.paper',
-                                                            }}
-                                                        >
-                                                            <IconButton
-                                                                size="small"
-                                                                aria-label={`${tp('Decrease quantity for')} ${line.name}`}
-                                                                disabled={Number(line.quantity || 1) <= 1}
-                                                                onClick={() => adjustCartQuantity(line.id, -1)}
-                                                                sx={{ width: 30, height: 32, borderRadius: 0 }}
-                                                            >
-                                                                <RemoveIcon fontSize="small" />
-                                                            </IconButton>
-                                                            <Typography variant="body2" sx={{ fontWeight: 800, textAlign: 'center', lineHeight: '32px', borderLeft: '1px solid', borderRight: '1px solid', borderColor: 'divider' }}>
-                                                                {line.quantity}
-                                                            </Typography>
-                                                            <IconButton
-                                                                size="small"
-                                                                aria-label={`${tp('Increase quantity for')} ${line.name}`}
-                                                                disabled={Number(line.quantity || 1) >= Number(line.available_qty || 0)}
-                                                                onClick={() => adjustCartQuantity(line.id, 1)}
-                                                                sx={{ width: 30, height: 32, borderRadius: 0 }}
-                                                            >
-                                                                <AddIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Box>
-                                                    </TableCell>
-                                                    <TableCell align="right" sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{money(lineTotal)}</TableCell>
-                                                    <TableCell align="right">
-                                                        <IconButton size="small" color="error" onClick={() => removeCartLine(line.id)} sx={{ p: 0.25 }}>
-                                                            <DeleteIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                        {cart.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={5} align="center" sx={{ py: 2 }}>
-                                                    <Typography variant="body2" color="text.secondary">{tp('Cart is empty.')}</Typography>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                            <Stack className="pos-console__cart-list" sx={{ flex: 1, minHeight: 180, overflowY: 'auto' }}>
+                                {cart.map((line) => {
+                                    const lineTotal = Number(line.quantity || 0) * Number(line.unit_price || 0);
+                                    const exceedsStock = Number(line.quantity || 0) > Number(line.available_qty || 0);
+
+                                    return (
+                                        <Box
+                                            className={`pos-console__cart-line ${exceedsStock ? 'has-error' : ''}`}
+                                            key={line.id}
+                                        >
+                                            <Box className="pos-console__cart-product">
+                                                <Typography variant="body2" title={line.name} noWrap>{line.name}</Typography>
+                                                <Typography variant="caption" color="text.secondary" noWrap>
+                                                    {line.sku_code || '-'}
+                                                </Typography>
+                                            </Box>
+                                            <Box className="pos-console__quantity-stepper">
+                                                <IconButton
+                                                    size="small"
+                                                    aria-label={`${tp('Decrease quantity for')} ${line.name}`}
+                                                    disabled={Number(line.quantity || 1) <= 1}
+                                                    onClick={() => adjustCartQuantity(line.id, -1)}
+                                                >
+                                                    <RemoveIcon fontSize="small" />
+                                                </IconButton>
+                                                <Typography variant="body2">{line.quantity}</Typography>
+                                                <IconButton
+                                                    size="small"
+                                                    aria-label={`${tp('Increase quantity for')} ${line.name}`}
+                                                    disabled={Number(line.quantity || 1) >= Number(line.available_qty || 0)}
+                                                    onClick={() => adjustCartQuantity(line.id, 1)}
+                                                >
+                                                    <AddIcon fontSize="small" />
+                                                </IconButton>
+                                            </Box>
+                                            <Box className="pos-console__line-total">
+                                                <Typography variant="caption" color="text.secondary">{tp('Total')}</Typography>
+                                                <Typography variant="body2" noWrap>{money(lineTotal)}</Typography>
+                                            </Box>
+                                            <IconButton
+                                                className="pos-console__remove-line"
+                                                size="small"
+                                                color="error"
+                                                aria-label={`${tp('Remove item')} ${line.name}`}
+                                                onClick={() => removeCartLine(line.id)}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+                                    );
+                                })}
+                                {cart.length === 0 && (
+                                    <Box className="pos-console__cart-empty">
+                                        <Typography variant="body2" color="text.secondary">{tp('Cart is empty.')}</Typography>
+                                    </Box>
+                                )}
+                            </Stack>
                         )}
 
-                        <Stack direction="row" spacing={1} sx={{ display: { xs: 'flex', md: 'none' }, pt: 1.25, flexShrink: 0 }}>
-                            <Button variant="outlined" size="small" fullWidth onClick={() => setMobileStep('products')}>
-                                {tp('Back to Products')}
-                            </Button>
-                            <Button
-                                variant="contained"
-                                size="small"
-                                fullWidth
-                                disabled={busy || !isOnline || !locationId || cart.length === 0 || hasStockIssue}
-                                onClick={openPaymentDialog}
-                            >
-                                {tp('Next: Checkout')} {money(totals.grandTotal)}
-                            </Button>
-                        </Stack>
                     </Paper>
 
                     <Paper
+                        className="pos-console__checkout-mobile"
                         component="form"
                         onSubmit={checkout}
                         sx={{
@@ -1451,7 +1449,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                             borderTopColor: 'warning.main',
                         }}
                     >
-                        <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ alignItems: 'center' }}>
+                        <Stack className="pos-console__checkout-header" direction="row" justifyContent="space-between" spacing={1} sx={{ alignItems: 'center' }}>
                             <Box>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{tp('Final Checkout')}</Typography>
                                 <Typography variant="caption" color="text.secondary">
@@ -1463,7 +1461,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
 
                         {paymentFormContent}
 
-                        <Stack spacing={1} sx={{ pt: 0.5, width: '100%', minWidth: 0 }}>
+                        <Stack className="pos-console__checkout-actions" spacing={1} sx={{ pt: 0.5, width: '100%', minWidth: 0 }}>
                             <Button
                                 type="button"
                                 variant="outlined"
@@ -1495,19 +1493,71 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                 </Box>
             </Box>
 
-            <Dialog open={paymentDialogOpen} onClose={() => !busy && setPaymentDialogOpen(false)} maxWidth="sm" fullWidth>
-                <Box component="form" onSubmit={checkout}>
-                    <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        {tp('Complete Sale')}
-                        <IconButton size="small" onClick={() => setPaymentDialogOpen(false)} disabled={busy}>
-                            <CloseIcon />
+            <Dialog
+                open={paymentDialogOpen}
+                onClose={() => !busy && setPaymentDialogOpen(false)}
+                maxWidth={false}
+                slotProps={{
+                    paper: {
+                        className: 'pos-console__payment-dialog',
+                        sx: {
+                            width: 'min(520px, calc(100vw - 24px))',
+                            maxWidth: 520,
+                            borderRadius: 1.5,
+                            border: `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                            boxShadow: '0 18px 48px rgba(10, 19, 24, 0.20), 0 3px 10px rgba(10, 19, 24, 0.08)',
+                            overflow: 'hidden',
+                        },
+                    },
+                }}
+            >
+                <Box className="pos-console__payment-window" component="form" onSubmit={checkout}>
+                    <DialogTitle
+                        className="pos-console__payment-titlebar"
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 1.25,
+                            minHeight: 44,
+                            height: 44,
+                            px: 1.25,
+                            py: 0,
+                            borderBottom: `1px solid ${theme.palette.divider}`,
+                            bgcolor: 'background.paper',
+                        }}
+                    >
+                        <Stack direction="row" spacing={1.25} sx={{ minWidth: 0 }}>
+                            <Box
+                                sx={{
+                                    width: 28,
+                                    height: 28,
+                                    flex: '0 0 auto',
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                    borderRadius: 1.25,
+                                    border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                    color: 'primary.main',
+                                }}
+                            >
+                                <CheckoutIcon sx={{ fontSize: 16 }} />
+                            </Box>
+                            <Box sx={{ minWidth: 0, display: 'flex', alignItems: 'center', minHeight: 28 }}>
+                                <Typography component="h2" sx={{ fontSize: 14, fontWeight: 800, lineHeight: 1.3 }}>
+                                    {tp('Complete Sale')}
+                                </Typography>
+                            </Box>
+                        </Stack>
+                        <IconButton size="small" sx={{ width: 28, height: 28 }} onClick={() => setPaymentDialogOpen(false)} disabled={busy}>
+                            <CloseIcon sx={{ fontSize: 18 }} />
                         </IconButton>
                     </DialogTitle>
-                    <DialogContent dividers>
+                    <DialogContent className="pos-console__payment-body" sx={{ p: 1.25, bgcolor: 'grey.50' }}>
                         {paymentFormContent}
                     </DialogContent>
-                    <DialogActions sx={{ flexWrap: 'wrap', gap: 1 }}>
-                        <Button type="button" onClick={() => setPaymentDialogOpen(false)} disabled={busy}>{tp('Cancel')}</Button>
+                    <DialogActions className="pos-console__payment-actions" sx={{ flexWrap: 'wrap', gap: 0.75, px: 1.25, py: 1, borderTop: `1px solid ${theme.palette.divider}`, bgcolor: 'background.paper' }}>
+                        <Button type="button" variant="outlined" onClick={() => setPaymentDialogOpen(false)} disabled={busy}>{tp('Cancel')}</Button>
                         {completeSaleButtons}
                     </DialogActions>
                 </Box>

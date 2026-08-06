@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useStat
 import { Head, Link, router, useForm, usePage } from '@/spa/router';
 import '@/styles/admin.css';
 import Icon from '@/Components/Admin/icons';
-import { AdminLogo } from '@/Components/Admin/shared';
+import { AdminLogo, ThemeControl } from '@/Components/Admin/shared';
 import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import { usePhraseTranslation, useTranslation } from '@/Utils/i18n';
 import { useStoredState } from '@/Utils/useStoredState';
@@ -41,7 +41,7 @@ function NavLink({ item, currentPath, appBase, onNavigate }) {
     const content = (
         <>
             <Icon name={item.icon} size={17} />
-            {item.label}
+            <span className="nav-item-label">{item.label}</span>
             {item.badge > 0 && <small className="badge">{item.badge > 99 ? '99+' : item.badge}</small>}
         </>
     );
@@ -71,6 +71,9 @@ function AdminChrome({ children, mainClassName = '' }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [theme, setTheme] = useStoredState('larlarpick.admin.theme', 'light');
+    const [density, setDensity] = useStoredState('larlarpick.admin.density', 'compact');
+    const [sidebarCollapsed, setSidebarCollapsed] = useStoredState('larlarpick.admin.sidebar.collapsed', false);
+    const [collapsedNavSections, setCollapsedNavSections] = useStoredState('larlarpick.admin.nav.collapsed', []);
     const [brand, setBrand] = useState(app_settings?.theme_color || '#087f74');
     const logoutForm = useForm({});
 
@@ -112,6 +115,25 @@ function AdminChrome({ children, mainClassName = '' }) {
         document.addEventListener('click', close);
         return () => document.removeEventListener('click', close);
     }, [profileOpen]);
+
+    useEffect(() => {
+        const closeOnEscape = (event) => {
+            if (event.key !== 'Escape') return;
+            setProfileOpen(false);
+            setMobileOpen(false);
+        };
+
+        document.addEventListener('keydown', closeOnEscape);
+        return () => document.removeEventListener('keydown', closeOnEscape);
+    }, []);
+
+    const toggleNavSection = (title) => {
+        setCollapsedNavSections((current) => (
+            current.includes(title)
+                ? current.filter((item) => item !== title)
+                : [...current, title]
+        ));
+    };
 
     const navSections = useMemo(
         () => [
@@ -393,7 +415,12 @@ function AdminChrome({ children, mainClassName = '' }) {
     );
 
     return (
-        <div className="app-root" data-theme={theme} style={{ '--color-primary': brand || app_settings?.theme_color || '#087f74' }}>
+        <div
+            className={`app-root ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}
+            data-theme={theme}
+            data-density={density}
+            style={{ '--color-primary': brand || app_settings?.theme_color || '#087f74' }}
+        >
             <div className="admin-app">
                 {mobileOpen && (
                     <button
@@ -407,10 +434,20 @@ function AdminChrome({ children, mainClassName = '' }) {
                 <aside className={`admin-sidebar glass ${mobileOpen ? 'open' : ''}`}>
                     <AdminLogo settings={app_settings} />
                     <nav aria-label={t('admin.navigation', 'Admin navigation')}>
-                        {navSections.map((section) => (
-                            <div key={section.title}>
-                                <div className="nav-section-label">{section.title}</div>
-                                {section.items.map((item) => (
+                        {navSections.map((section) => {
+                            const sectionCollapsed = collapsedNavSections.includes(section.title);
+                            return (
+                            <div key={section.title} className={`nav-section ${sectionCollapsed ? 'collapsed' : ''}`}>
+                                <button
+                                    type="button"
+                                    className="nav-section-label"
+                                    onClick={() => toggleNavSection(section.title)}
+                                    aria-expanded={!sectionCollapsed}
+                                >
+                                    <span>{section.title}</span>
+                                    <Icon name={sectionCollapsed ? 'chevronDown' : 'chevronUp'} size={11} />
+                                </button>
+                                {(sidebarCollapsed || !sectionCollapsed) && section.items.map((item) => (
                                     <NavLink
                                         key={item.label}
                                         item={item}
@@ -420,15 +457,8 @@ function AdminChrome({ children, mainClassName = '' }) {
                                     />
                                 ))}
                             </div>
-                        ))}
+                        )})}
                     </nav>
-                    <div className="admin-profile">
-                        <span>{initials}</span>
-                        <div>
-                            <strong>{authUser?.name || t('admin.admin', 'Admin')}</strong>
-                            <small className="muted">{roleLabel}</small>
-                        </div>
-                    </div>
                 </aside>
 
                 <main className={`admin-main ${mainClassName}`.trim()}>
@@ -444,6 +474,15 @@ function AdminChrome({ children, mainClassName = '' }) {
                         </button>
                         <button
                             type="button"
+                            className="icon-btn admin-sidebar-toggle"
+                            aria-label={sidebarCollapsed ? t('Expand sidebar') : t('Collapse sidebar')}
+                            title={sidebarCollapsed ? t('Expand sidebar') : t('Collapse sidebar')}
+                            onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+                        >
+                            <Icon name="menu" size={16} />
+                        </button>
+                        <button
+                            type="button"
                             className="icon-btn admin-mobile-toggle"
                             aria-label={mobileOpen ? t('admin.close_navigation', 'Close navigation') : t('admin.open_navigation', 'Open navigation')}
                             onClick={() => setMobileOpen((open) => !open)}
@@ -451,6 +490,14 @@ function AdminChrome({ children, mainClassName = '' }) {
                             <Icon name={mobileOpen ? 'close' : 'menu'} size={16} />
                         </button>
                         <div className="admin-topbar-actions">
+                            <ThemeControl
+                                theme={theme}
+                                onThemeChange={setTheme}
+                                brand={brand}
+                                onBrandChange={setBrand}
+                                density={density}
+                                onDensityChange={setDensity}
+                            />
                             <LanguageSwitcher compact className="admin-language-switcher" />
                             <Link
                                 href={routeWithBase('/admin/orders?tab=payments', app_base)}

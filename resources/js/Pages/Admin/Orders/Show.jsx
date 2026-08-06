@@ -522,17 +522,19 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
             {rejectOpen && (
                 <div className="modal-backdrop" onClick={() => setRejectOpen(false)}>
-                    <form className="operation-modal compact glass" onSubmit={handleReject} onClick={(e) => e.stopPropagation()}>
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Payment')}</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('Reject payment')}</h2>
+                    <form className="operation-modal compact glass admin-form-modal admin-form-modal-small admin-form-modal-danger" onSubmit={handleReject} onClick={(e) => e.stopPropagation()}>
+                        <div className="drawer-header admin-form-modal-header">
+                            <div className="admin-form-modal-title">
+                                <span className="admin-form-title-icon"><Icon name="wallet" size={16} /></span>
+                                <div>
+                                    <h2>{t('Reject payment')}</h2>
+                                </div>
                             </div>
                             <button type="button" className="icon-btn small" onClick={() => setRejectOpen(false)}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
-                        <div className="crud-grid">
+                        <div className="crud-grid admin-form-grid admin-form-grid-single">
                             <label className="form-field span-2">
                                 <span>{t('Message to customer (optional)')}</span>
                                 <textarea
@@ -555,18 +557,20 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
             {cancelOpen && (
                 <div className="modal-backdrop" onClick={() => setCancelOpen(false)}>
-                    <form className="operation-modal compact glass" onSubmit={handleCancel} onClick={(e) => e.stopPropagation()}>
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Order')}</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('Cancel order')}</h2>
+                    <form className="operation-modal compact glass admin-form-modal admin-form-modal-small admin-form-modal-danger" onSubmit={handleCancel} onClick={(e) => e.stopPropagation()}>
+                        <div className="drawer-header admin-form-modal-header">
+                            <div className="admin-form-modal-title">
+                                <span className="admin-form-title-icon"><Icon name="receipt" size={16} /></span>
+                                <div>
+                                    <h2>{t('Cancel order')}</h2>
+                                </div>
                             </div>
                             <button type="button" className="icon-btn small" onClick={() => setCancelOpen(false)}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
-                        <div className="crud-grid">
-                            <p className="span-2">
+                        <div className="crud-grid admin-form-grid admin-form-grid-single">
+                            <p className="admin-form-notice">
                                 {order.payment_status === 'paid'
                                     ? t('Stock will be restored to inventory. The customer will see the order as cancelled.')
                                     : t('This will cancel the order and notify the customer if applicable.')}
@@ -593,18 +597,20 @@ export default function OrdersShow({ order, voucherLinks = {}, canReviewPayments
 
             {deleteOpen && (
                 <div className="modal-backdrop" onClick={() => setDeleteOpen(false)}>
-                    <form className="operation-modal compact glass" onSubmit={handleDelete} onClick={(e) => e.stopPropagation()}>
-                        <div className="drawer-header">
-                            <div>
-                                <p className="eyebrow">{t('Order return')}</p>
-                                <h2 style={{ fontSize: 16, fontWeight: 800 }}>{t('Delete order')}</h2>
+                    <form className="operation-modal compact glass admin-form-modal admin-form-modal-small admin-form-modal-danger" onSubmit={handleDelete} onClick={(e) => e.stopPropagation()}>
+                        <div className="drawer-header admin-form-modal-header">
+                            <div className="admin-form-modal-title">
+                                <span className="admin-form-title-icon"><Icon name="trash" size={16} /></span>
+                                <div>
+                                    <h2>{t('Delete order')}</h2>
+                                </div>
                             </div>
                             <button type="button" className="icon-btn small" onClick={() => setDeleteOpen(false)}>
                                 <Icon name="close" size={14} />
                             </button>
                         </div>
-                        <div className="crud-grid">
-                            <p className="span-2">
+                        <div className="crud-grid admin-form-grid admin-form-grid-single">
+                            <p className="admin-form-notice">
                                 {t('This permanently removes the order. Paid order stock will be returned, active reservations will be released, and any POS sale finance entry will be deleted.')}
                             </p>
                             <label className="form-field span-2">

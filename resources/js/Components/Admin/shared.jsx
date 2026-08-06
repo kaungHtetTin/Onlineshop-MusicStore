@@ -67,9 +67,59 @@ export function PanelHeading({ eyebrow, title, action, actionLabel, onAction }) 
     );
 }
 
+export function ColumnVisibilityControl({ columns, visible, onToggle }) {
+    const [open, setOpen] = useState(false);
+    const wrapRef = useRef(null);
+    const t = usePhraseTranslation();
+
+    useEffect(() => {
+        const closeOutside = (event) => {
+            if (wrapRef.current && !wrapRef.current.contains(event.target)) setOpen(false);
+        };
+        const closeOnEscape = (event) => event.key === 'Escape' && setOpen(false);
+        document.addEventListener('mousedown', closeOutside);
+        document.addEventListener('keydown', closeOnEscape);
+        return () => {
+            document.removeEventListener('mousedown', closeOutside);
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, []);
+
+    return (
+        <div className="column-visibility-control" ref={wrapRef}>
+            <button
+                type="button"
+                className="btn secondary"
+                aria-expanded={open}
+                aria-haspopup="menu"
+                onClick={() => setOpen((value) => !value)}
+            >
+                <Icon name="grid" size={13} />
+                {t('Columns')}
+            </button>
+            {open && (
+                <div className="column-visibility-menu glass" role="menu">
+                    <p className="eyebrow">{t('Visible columns')}</p>
+                    {columns.map((column) => (
+                        <label key={column.key}>
+                            <input
+                                type="checkbox"
+                                checked={column.locked || visible[column.key] !== false}
+                                disabled={column.locked}
+                                onChange={() => onToggle(column.key)}
+                            />
+                            <span>{t(column.label)}</span>
+                        </label>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 const BRAND_PRESETS = ['#087f74', '#2874bc', '#7c3aed', '#e91e63', '#d17d19', '#168255'];
 
-export function ThemeControl({ theme, onThemeChange, brand, onBrandChange }) {
+export function ThemeControl({ theme, onThemeChange, brand, onBrandChange, density = 'compact', onDensityChange }) {
     const [open, setOpen] = useState(false);
     const wrapRef = useRef(null);
     const t = usePhraseTranslation();
@@ -78,8 +128,15 @@ export function ThemeControl({ theme, onThemeChange, brand, onBrandChange }) {
         const onDoc = (e) => {
             if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
         };
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') setOpen(false);
+        };
         document.addEventListener('mousedown', onDoc);
-        return () => document.removeEventListener('mousedown', onDoc);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', onDoc);
+            document.removeEventListener('keydown', onKeyDown);
+        };
     }, []);
 
     return (
@@ -112,6 +169,19 @@ export function ThemeControl({ theme, onThemeChange, brand, onBrandChange }) {
                             <Icon name="moon" size={14} /> {t('Dark')}
                         </button>
                     </div>
+                    {onDensityChange && (
+                        <>
+                            <p className="eyebrow" style={{ marginTop: 12 }}>{t('UI density')}</p>
+                            <div className="segmented" style={{ marginTop: 8 }}>
+                                <button type="button" className={density === 'compact' ? 'active' : ''} onClick={() => onDensityChange('compact')}>
+                                    <Icon name="menu" size={14} /> {t('Compact')}
+                                </button>
+                                <button type="button" className={density === 'comfortable' ? 'active' : ''} onClick={() => onDensityChange('comfortable')}>
+                                    <Icon name="grid" size={14} /> {t('Comfortable')}
+                                </button>
+                            </div>
+                        </>
+                    )}
                     <p className="eyebrow" style={{ marginTop: 12 }}>
                         {t('Brand color')}
                     </p>
