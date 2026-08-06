@@ -140,16 +140,20 @@ class InventoryOperationsTest extends TestCase
                 'wholesale_price' => 95,
                 'retail_price' => 120,
             ]],
-        ])->assertRedirect();
+        ])->assertRedirect(route('admin.inventory.receipts.index'));
 
         $sku->refresh();
         $this->assertSame('150.00', $sku->cost);
         $this->assertSame('150.00', $sku->market_price);
         $this->assertSame('95.00', $sku->wholesale_price);
         $this->assertSame('120.00', $sku->price);
+        $this->assertDatabaseHas('stock_receipts', [
+            'supplier_reference' => 'PO-PRICE-1',
+            'status' => 'posted',
+        ]);
     }
 
-    public function test_draft_receipt_can_be_edited_before_posting(): void
+    public function test_draft_receipt_edit_posts_and_updates_stock(): void
     {
         [$location, $sku, $actor] = $this->context();
         $replacementSku = Sku::create([
@@ -177,10 +181,10 @@ class InventoryOperationsTest extends TestCase
                 'unit_cost' => 44,
                 'retail_price' => 110,
             ]],
-        ])->assertRedirect(route('admin.inventory.receipts.show', $receipt));
+        ])->assertRedirect(route('admin.inventory.receipts.index'));
 
         $receipt->refresh();
-        $this->assertSame('draft', $receipt->status);
+        $this->assertSame('posted', $receipt->status);
         $this->assertSame('PO-UPDATED', $receipt->supplier_reference);
         $this->assertSame('Edited draft', $receipt->notes);
         $this->assertSame(1, $receipt->items()->count());
@@ -194,7 +198,7 @@ class InventoryOperationsTest extends TestCase
             'stock_receipt_id' => $receipt->id,
             'sku_id' => $sku->id,
         ]);
-        $this->assertSame(0, InventoryMovement::query()->where('reference_id', $receipt->id)->count());
+        $this->assertGreaterThan(0, InventoryMovement::query()->where('reference_id', $receipt->id)->count());
         $this->assertSame('44.00', $replacementSku->fresh()->cost);
         $this->assertSame('110.00', $replacementSku->fresh()->price);
     }

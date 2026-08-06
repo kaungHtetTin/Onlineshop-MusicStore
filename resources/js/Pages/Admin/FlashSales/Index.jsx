@@ -51,8 +51,15 @@ export default function FlashSalesIndex({ flashSales, filters }) {
     };
 
     const remove = (sale) => {
-        if (!confirm(t('Delete flash sale ":name"?', { name: sale.name }))) return;
-        router.delete(routeWithBase(`/admin/flash-sales/${sale.id}`, app_base), { preserveScroll: true });
+        const unitsSold = sale.items.reduce((sum, item) => sum + Number(item.sold_count || 0), 0);
+        const prompt = unitsSold > 0
+            ? t('Deactivate flash sale ":name"? Sales history will be preserved.', { name: sale.name })
+            : t('Delete flash sale ":name"?', { name: sale.name });
+        if (!confirm(prompt)) return;
+
+        router.delete(routeWithBase(`/admin/flash-sales/${sale.id}`, app_base), {
+            preserveScroll: true,
+        });
     };
 
     return (

@@ -329,10 +329,28 @@ export const router = {
                 return null;
             }
 
-            const page = await parseSpaResponse(response, options);
+            const page = await parseSpaResponse(response, {
+                ...options,
+                // Defer success until the follow-up GET when a mutation redirected.
+                onSuccess: (!isGet && response.redirected && response.url) ? undefined : options.onSuccess,
+            });
 
             if (response.redirected && response.url) {
-                window.history.replaceState({}, '', new URL(response.url).pathname + new URL(response.url).search);
+                const redirectedUrl = new URL(response.url);
+                window.history.replaceState({}, '', redirectedUrl.pathname + redirectedUrl.search + redirectedUrl.hash);
+
+                // Mutations that redirect can leave stale props; refresh with an explicit GET.
+                if (!isGet && page?.component) {
+                    return this.visit(redirectedUrl.pathname + redirectedUrl.search, {
+                        method: 'get',
+                        replace: true,
+                        preserveScroll: options.preserveScroll,
+                        showSkeleton: false,
+                        onSuccess: options.onSuccess,
+                        onError: options.onError,
+                        onFinish: options.onFinish,
+                    });
+                }
             } else if (isGet && !page?.component && visitId === latestGetVisitId) {
                 window.history.replaceState({}, '', previousUrl);
             }

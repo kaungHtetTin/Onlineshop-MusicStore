@@ -12,6 +12,7 @@ import {
     CardActionArea,
     CardContent,
     Chip,
+    CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
@@ -103,8 +104,8 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     const categoryScrollRef = useRef(null);
     const checkoutIntentRef = useRef('complete');
     const productScrollFrameRef = useRef(null);
-    const gridLoadMoreSentinelRef = useRef(null);
-    const gridLoadMoreLockRef = useRef(false);
+    const productLoadMoreSentinelRef = useRef(null);
+    const productLoadMoreLockRef = useRef(false);
 
     const location = locations.find((item) => Number(item.id) === Number(locationId));
     const paymentMethods = ['cash', 'card', 'mobile'];
@@ -156,9 +157,9 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     }, [app_base, categoryId, locationId, resultMeta.per_page, searchQuery]);
 
     const loadMoreProducts = useCallback(async () => {
-        if (gridLoadMoreLockRef.current || searchLoading || !resultMeta.has_more) return;
+        if (productLoadMoreLockRef.current || searchLoading || !resultMeta.has_more) return;
 
-        gridLoadMoreLockRef.current = true;
+        productLoadMoreLockRef.current = true;
         try {
             await fetchSearch({
                 append: true,
@@ -167,7 +168,7 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
         } catch {
             // The shared request helper already exposes the error in the POS alert area.
         } finally {
-            gridLoadMoreLockRef.current = false;
+            productLoadMoreLockRef.current = false;
         }
     }, [fetchSearch, resultMeta.has_more, resultMeta.next_page, resultMeta.page, searchLoading]);
 
@@ -220,6 +221,15 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
         const updateMetrics = () => {
             setProductScrollTop(productResultsElement.scrollTop);
             setProductViewportHeight(productResultsElement.clientHeight || 520);
+
+            const remainingScroll = productResultsElement.scrollHeight
+                - productResultsElement.scrollTop
+                - productResultsElement.clientHeight;
+            const preloadDistance = Math.max(220, productResultsElement.clientHeight * 0.35);
+            const hasInternalScroll = productResultsElement.scrollHeight > productResultsElement.clientHeight + 1;
+            if (hasInternalScroll && remainingScroll <= preloadDistance) {
+                loadMoreProducts();
+            }
         };
         const onScroll = () => {
             if (productScrollFrameRef.current) return;
@@ -246,29 +256,28 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                 productScrollFrameRef.current = null;
             }
         };
-    }, [productResultsElement]);
+    }, [loadMoreProducts, productResultsElement]);
 
     useEffect(() => {
         if (
-            effectiveResultsView !== 'grid'
-            || isMobile
-            || !productResultsElement
-            || !gridLoadMoreSentinelRef.current
+            !productResultsElement
+            || !productLoadMoreSentinelRef.current
             || !resultMeta.has_more
             || typeof IntersectionObserver === 'undefined'
         ) return undefined;
 
+        const hasInternalScroll = productResultsElement.scrollHeight > productResultsElement.clientHeight + 1;
         const observer = new IntersectionObserver((entries) => {
             if (entries[0]?.isIntersecting) loadMoreProducts();
         }, {
-            root: productResultsElement,
-            rootMargin: '240px 0px',
+            root: hasInternalScroll ? productResultsElement : null,
+            rootMargin: '300px 0px',
             threshold: 0,
         });
 
-        observer.observe(gridLoadMoreSentinelRef.current);
+        observer.observe(productLoadMoreSentinelRef.current);
         return () => observer.disconnect();
-    }, [effectiveResultsView, isMobile, loadMoreProducts, productResultsElement, resultMeta.has_more]);
+    }, [effectiveResultsView, loadMoreProducts, productResultsElement, resultMeta.has_more, searchResults.length]);
 
     useEffect(() => {
         productResultsElement?.scrollTo({ top: 0 });
@@ -605,6 +614,15 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
     return (
         <Box
             className="app-root pos-console"
+            style={{
+                '--color-primary': theme.palette.primary.main,
+                '--color-primary-dark': theme.palette.primary.dark,
+                '--color-primary-soft': alpha(theme.palette.primary.main, 0.11),
+                '--pos-primary': theme.palette.primary.main,
+                '--pos-primary-strong': theme.palette.primary.dark,
+                '--pos-primary-soft': alpha(theme.palette.primary.main, 0.11),
+                '--pos-bg': alpha(theme.palette.primary.main, 0.055),
+            }}
             sx={{
                 minHeight: '100vh',
                 background: (theme) => `
@@ -1091,6 +1109,11 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                                 <TableCell colSpan={4} sx={{ p: 0, height: virtualBottomSpacer, border: 0 }} />
                                             </TableRow>
                                         )}
+                                        {resultMeta.has_more && (
+                                            <TableRow ref={productLoadMoreSentinelRef} className="pos-console__load-sentinel" aria-hidden="true">
+                                                <TableCell colSpan={4} sx={{ p: 0, height: 1, border: 0 }} />
+                                            </TableRow>
+                                        )}
                                         {searchResults.length === 0 && (
                                             <TableRow>
                                                 <TableCell colSpan={4} align="center" sx={{ py: 2 }}>
@@ -1206,8 +1229,8 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                                 })}
                                 {resultMeta.has_more && (
                                     <Box
-                                        ref={gridLoadMoreSentinelRef}
-                                        className="pos-console__grid-load-sentinel"
+                                        ref={productLoadMoreSentinelRef}
+                                        className="pos-console__load-sentinel"
                                         aria-hidden="true"
                                     />
                                 )}
@@ -1219,17 +1242,17 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                             </Box>
                         )}
 
-                        {resultMeta.has_more && (
-                            <Box className="pos-console__load-more" sx={{ pt: 1.25, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    onClick={loadMoreProducts}
-                                    disabled={searchLoading}
-                                >
-                                    {tp('Load more products')}
-                                </Button>
-                            </Box>
+                        {searchLoading && searchResults.length > 0 && (
+                            <Stack
+                                className="pos-console__infinite-status"
+                                direction="row"
+                                spacing={0.75}
+                                role="status"
+                                aria-live="polite"
+                            >
+                                <CircularProgress size={13} thickness={5} />
+                                <Typography variant="caption">{tp('Loading products...')}</Typography>
+                            </Stack>
                         )}
 
                     </Paper>
@@ -1500,6 +1523,11 @@ export default function PosIndex({ locations = [], categories = [], can = {} }) 
                 slotProps={{
                     paper: {
                         className: 'pos-console__payment-dialog',
+                        style: {
+                            '--pos-primary': theme.palette.primary.main,
+                            '--pos-primary-strong': theme.palette.primary.dark,
+                            '--pos-primary-soft': alpha(theme.palette.primary.main, 0.11),
+                        },
                         sx: {
                             width: 'min(520px, calc(100vw - 24px))',
                             maxWidth: 520,

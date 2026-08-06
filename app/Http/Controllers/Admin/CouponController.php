@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use App\Services\AuditLogService;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use App\Support\Spa;
 
 class CouponController extends Controller
@@ -20,7 +22,29 @@ class CouponController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('is_active', $request->status === 'active');
+            match ($request->status) {
+                'active' => $query
+                    ->where('is_active', true)
+                    ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                    ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
+                    ->where(fn ($query) => $query->whereNull('usage_limit')->orWhereColumn('used_count', '<', 'usage_limit')),
+                'scheduled' => $query
+                    ->where('is_active', true)
+                    ->where('starts_at', '>', now())
+                    ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
+                    ->where(fn ($query) => $query->whereNull('usage_limit')->orWhereColumn('used_count', '<', 'usage_limit')),
+                'expired' => $query
+                    ->where('is_active', true)
+                    ->whereNotNull('expires_at')
+                    ->where('expires_at', '<', now()),
+                'exhausted' => $query
+                    ->where('is_active', true)
+                    ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
+                    ->whereNotNull('usage_limit')
+                    ->whereColumn('used_count', '>=', 'usage_limit'),
+                'inactive' => $query->where('is_active', false),
+                default => null,
+            };
         }
 
         return Spa::render('Admin/Coupons/Index', [
@@ -78,7 +102,30 @@ class CouponController extends Controller
 
         $validated['code'] = strtoupper(trim($validated['code']));
         $validated['min_order_amount'] = $validated['min_order_amount'] ?? 0;
+        $validated['starts_at'] = $this->normalizedBoundary($validated['starts_at'] ?? null, false);
+        $validated['expires_at'] = $this->normalizedBoundary($validated['expires_at'] ?? null, true);
+
+        if ($validated['type'] === 'percentage' && (float) $validated['value'] > 100) {
+            throw ValidationException::withMessages([
+                'value' => 'Percentage discounts cannot exceed 100%.',
+            ]);
+        }
 
         return $validated;
+    }
+
+    private function normalizedBoundary(?string $value, bool $endOfDay): ?Carbon
+    {
+        if (! $value) {
+            return null;
+        }
+
+        $date = Carbon::parse($value);
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            $date = $endOfDay ? $date->endOfDay() : $date->startOfDay();
+        }
+
+        return $date->utc();
     }
 }

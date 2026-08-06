@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@/spa/router';
+import { Head, Link, router, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import AdminPagination from '@/Components/Admin/AdminPagination';
 import Icon from '@/Components/Admin/icons';
@@ -9,6 +9,11 @@ import { usePhraseTranslation } from '@/Utils/i18n';
 export default function ReceiptsIndex({ receipts }) {
     const { app_base } = usePage().props;
     const t = usePhraseTranslation();
+
+    const destroy = (receipt) => {
+        if (!confirm(t('Delete :number? This will reduce stock quantities and delete the financial ledger entry.', { number: receipt.receipt_number }))) return;
+        router.delete(routeWithBase(`/admin/inventory/receipts/${receipt.id}`, app_base));
+    };
 
     return (
         <AdminLayout
@@ -54,9 +59,14 @@ export default function ReceiptsIndex({ receipts }) {
                                                     <Icon name="edit" size={13} />
                                                 </Link>
                                             )}
-                                            <Link className="icon-btn small" href={routeWithBase(`/admin/inventory/receipts/${receipt.id}`, app_base)} aria-label={t('Open receipt')}>
-                                                <Icon name="external" size={13} />
-                                            </Link>
+                                            <button
+                                                type="button"
+                                                className="icon-btn small danger"
+                                                onClick={() => destroy(receipt)}
+                                                aria-label={t('Delete receipt')}
+                                            >
+                                                <Icon name="trash" size={13} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

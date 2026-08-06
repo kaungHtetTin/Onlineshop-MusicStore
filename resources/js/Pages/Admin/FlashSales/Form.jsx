@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Icon from '@/Components/Admin/icons';
 import { AdminFlash } from '@/Components/Admin/AdminFlash';
 import { PanelHeading } from '@/Components/Admin/shared';
+import WizardSkuCatalog, { ProductIdentity } from '@/Components/Admin/WizardSkuCatalog';
 import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 import { formatMoney } from '@/Utils/pricing';
+import { formatErrorMessage } from '@/Utils/formatErrorMessage';
 
 const emptyForm = {
     name: '',
@@ -23,11 +25,20 @@ const steps = [
     { key: 'review', label: 'Review' },
 ];
 
-const toDateTimeInput = (value) => {
+const toDateInput = (value) => {
     if (!value) return '';
     const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
     const offset = date.getTimezoneOffset() * 60000;
-    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+    return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+};
+
+/** Date-only fields default to 12:00 AM local — no clock picker. */
+const dateToIsoMidnight = (value) => {
+    if (!value) return null;
+    const datePart = String(value).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return null;
+    return new Date(`${datePart}T00:00:00`).toISOString();
 };
 
 const skuLabel = (sku) => {
@@ -41,14 +52,15 @@ const buildInitialData = (flashSale) => {
 
     return {
         name: flashSale.name || '',
-        starts_at: toDateTimeInput(flashSale.starts_at),
-        ends_at: toDateTimeInput(flashSale.ends_at),
+        starts_at: toDateInput(flashSale.starts_at),
+        ends_at: toDateInput(flashSale.ends_at),
         is_active: Boolean(flashSale.is_active),
         items: (flashSale.items || []).map((item) => ({
             sku_id: item.sku_id,
             discount_type: item.discount_type,
             discount_value: item.discount_value,
             quantity_limit: item.quantity_limit ?? '',
+            sold_count: Number(item.sold_count || 0),
         })),
     };
 };
@@ -57,37 +69,41 @@ const salePriceFor = (sku, item) => {
     if (!sku || !item?.discount_value) return null;
     const original = Number(sku.price || 0);
     const value = Number(item.discount_value || 0);
+    if (item.discount_type === 'percentage' && value >= 100) return null;
+    if (item.discount_type === 'fixed_price' && value >= original) return null;
     const price = item.discount_type === 'percentage' ? original * (1 - value / 100) : value;
 
     return Math.max(0.01, Math.min(original, price));
 };
 
-const formatDateTime = (value) => {
+function FieldError({ message, id }) {
+    if (!message) return null;
+    return <small id={id} className="flash-sale-conflict-message" role="alert">{formatErrorMessage(message)}</small>;
+}
+
+const formatDateLabel = (value) => {
     if (!value) return '-';
-    return new Date(value).toLocaleString([], {
+    const datePart = String(value).slice(0, 10);
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+        ? new Date(`${datePart}T00:00:00`)
+        : new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString([], {
         month: 'short',
         day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+        year: 'numeric',
     });
 };
 
 const campaignDuration = (startsAt, endsAt) => {
     if (!startsAt || !endsAt) return '-';
-    const diffMs = new Date(endsAt).getTime() - new Date(startsAt).getTime();
-    if (!Number.isFinite(diffMs) || diffMs <= 0) return '-';
+    const start = new Date(`${String(startsAt).slice(0, 10)}T00:00:00`);
+    const end = new Date(`${String(endsAt).slice(0, 10)}T00:00:00`);
+    const diffMs = end.getTime() - start.getTime();
+    if (!Number.isFinite(diffMs) || diffMs < 0) return '-';
 
-    const totalMinutes = Math.round(diffMs / 60000);
-    const days = Math.floor(totalMinutes / 1440);
-    const hours = Math.floor((totalMinutes % 1440) / 60);
-    const minutes = totalMinutes % 60;
-    const parts = [];
-
-    if (days) parts.push(`${days}d`);
-    if (hours) parts.push(`${hours}h`);
-    if (minutes || parts.length === 0) parts.push(`${minutes}m`);
-
-    return parts.join(' ');
+    const days = Math.round(diffMs / 86400000);
+    return days === 0 ? 'Same day' : `${days}d`;
 };
 
 function Stat({ label, value }) {
@@ -105,8 +121,8 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
     const { app_base, flash } = usePage().props;
     const t = usePhraseTranslation();
     const [tab, setTab] = useState(0);
-    const [productSearch, setProductSearch] = useState('');
     const form = useForm(buildInitialData(flashSale));
+    const campaignNameRef = useRef(null);
 
     const skuMap = useMemo(() => {
         const map = new Map();
@@ -118,23 +134,61 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
         return map;
     }, [productOptions]);
 
+    const catalogSkus = useMemo(() => (
+        productOptions.flatMap((product) => product.skus.map((sku) => ({
+            id: sku.id,
+            sku_code: sku.sku_code,
+            barcode: null,
+            product_name: product.name,
+            title: sku.title,
+            price: sku.price,
+            retail_price: sku.price,
+            available_qty: sku.available_qty,
+            category: product.category || '',
+            attributes: sku.attributes || {},
+        })))
+    ), [productOptions]);
+
     const selectedSkuIds = useMemo(
-        () => new Set(form.data.items.map((item) => Number(item.sku_id)).filter(Boolean)),
+        () => form.data.items.map((item) => Number(item.sku_id)).filter(Boolean),
         [form.data.items],
     );
 
+    const selectedSkuIdSet = useMemo(() => new Set(selectedSkuIds), [selectedSkuIds]);
+
     const selectedProductIds = useMemo(() => {
         const ids = new Set();
-        selectedSkuIds.forEach((skuId) => {
+        selectedSkuIdSet.forEach((skuId) => {
             const sku = skuMap.get(Number(skuId));
             if (sku?.product?.id) ids.add(Number(sku.product.id));
         });
         return ids;
-    }, [selectedSkuIds, skuMap]);
+    }, [selectedSkuIdSet, skuMap]);
 
     const selectedProducts = useMemo(
         () => productOptions.filter((product) => selectedProductIds.has(Number(product.id))),
         [productOptions, selectedProductIds],
+    );
+
+    const selectedSkus = useMemo(
+        () => form.data.items
+            .map((item) => {
+                const sku = skuMap.get(Number(item.sku_id));
+                if (!sku) return null;
+                return {
+                    id: sku.id,
+                    sku_code: sku.sku_code,
+                    barcode: null,
+                    product_name: sku.product?.name,
+                    title: sku.title,
+                    price: sku.price,
+                    retail_price: sku.price,
+                    available_qty: sku.available_qty,
+                    category: sku.product?.category || '',
+                };
+            })
+            .filter(Boolean),
+        [form.data.items, skuMap],
     );
 
     const selectedItems = useMemo(
@@ -144,101 +198,200 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
         [form.data.items, skuMap],
     );
 
-    const filteredProducts = useMemo(() => {
-        const q = productSearch.trim().toLowerCase();
-        if (!q) return productOptions;
-
-        return productOptions.filter((product) => {
-            const haystack = [
-                product.name,
-                product.category,
-                ...product.skus.map((sku) => `${sku.sku_code} ${sku.title || ''} ${Object.values(sku.attributes || {}).join(' ')}`),
-            ].join(' ').toLowerCase();
-
-            return haystack.includes(q);
+    const categoryOptions = useMemo(() => {
+        const names = new Set();
+        productOptions.forEach((product) => {
+            if (product.category) names.add(product.category);
         });
-    }, [productOptions, productSearch]);
+        return Array.from(names).sort((a, b) => a.localeCompare(b)).map((name) => ({ id: name, name }));
+    }, [productOptions]);
 
-    const selectedCountForProduct = (product) =>
-        product.skus.filter((sku) => selectedSkuIds.has(Number(sku.id))).length;
+    const fetchCatalogPage = useCallback(async ({ q, categoryId, page, perPage }) => {
+        const term = String(q || '').trim().toLowerCase();
+        const filtered = catalogSkus.filter((sku) => {
+            if (categoryId !== 'all' && (sku.category || '') !== categoryId) return false;
+            if (!term) return true;
+            const haystack = [
+                sku.product_name,
+                sku.category,
+                sku.sku_code,
+                sku.title,
+                Object.values(sku.attributes || {}).join(' '),
+            ].join(' ').toLowerCase();
+            return haystack.includes(term);
+        });
+        const lastPage = Math.max(1, Math.ceil(filtered.length / perPage));
+        const start = (page - 1) * perPage;
+        return {
+            data: filtered.slice(start, start + perPage),
+            current_page: page,
+            last_page: lastPage,
+            total: filtered.length,
+        };
+    }, [catalogSkus]);
 
-    const isProductSelected = (product) => selectedCountForProduct(product) === product.skus.length && product.skus.length > 0;
+    const removeSku = (skuId) => {
+        const item = form.data.items.find((candidate) => Number(candidate.sku_id) === Number(skuId));
+        if (Number(item?.sold_count || 0) > 0) return;
+        form.clearErrors(...Object.keys(form.errors).filter((key) => key === 'items' || key.startsWith('items.')));
+        form.setData('items', form.data.items.filter((item) => Number(item.sku_id) !== Number(skuId)));
+    };
 
-    const toggleProduct = (product) => {
-        const allSelected = isProductSelected(product);
-        const skuIds = new Set(product.skus.map((sku) => Number(sku.id)));
-
-        if (allSelected) {
-            form.setData('items', form.data.items.filter((item) => !skuIds.has(Number(item.sku_id))));
+    const toggleSku = (sku, nextSelected) => {
+        if (!nextSelected) {
+            removeSku(sku.id);
             return;
         }
-
-        const existing = new Set(form.data.items.map((item) => Number(item.sku_id)));
-        const additions = product.skus
-            .filter((sku) => !existing.has(Number(sku.id)))
-            .map((sku) => ({
+        if (selectedSkuIdSet.has(Number(sku.id))) return;
+        form.clearErrors(...Object.keys(form.errors).filter((key) => key === 'items' || key.startsWith('items.')));
+        form.setData('items', [
+            ...form.data.items,
+            {
                 sku_id: sku.id,
                 discount_type: 'percentage',
                 discount_value: '',
                 quantity_limit: '',
-            }));
-
-        form.setData('items', [...form.data.items, ...additions]);
+            },
+        ]);
     };
 
     const updateItem = (skuId, patch) => {
+        const index = form.data.items.findIndex((item) => Number(item.sku_id) === Number(skuId));
         form.setData(
             'items',
             form.data.items.map((item) => (Number(item.sku_id) === Number(skuId) ? { ...item, ...patch } : item)),
         );
-    };
-
-    const removeSku = (skuId) => {
-        form.clearErrors();
-        form.setData('items', form.data.items.filter((item) => Number(item.sku_id) !== Number(skuId)));
-    };
-
-    const itemErrorFor = (index) => form.errors[`items.${index}.sku_id`] || form.errors[`items.${index}`];
-
-    const canGoNext =
-        tab === 0
-            ? form.data.name.trim() && form.data.starts_at && form.data.ends_at
-            : tab === 1
-                ? form.data.items.length > 0
-                : tab === 2
-                    ? form.data.items.length > 0 && form.data.items.every((item) => item.discount_value && Number(item.discount_value) > 0)
-                    : true;
-    const canSubmit =
-        form.data.name.trim()
-        && form.data.starts_at
-        && form.data.ends_at
-        && form.data.items.length > 0
-        && form.data.items.every((item) => item.discount_value && Number(item.discount_value) > 0);
-
-    const submitFlashSale = () => {
-        if (mode === 'edit') {
-            form.patch(routeWithBase(`/admin/flash-sales/${flashSale.id}`, app_base), { preserveScroll: true });
-        } else {
-            form.post(routeWithBase('/admin/flash-sales', app_base), { preserveScroll: true });
+        if (index >= 0) {
+            form.clearErrors(
+                `items.${index}.discount_type`,
+                `items.${index}.discount_value`,
+                `items.${index}.quantity_limit`,
+            );
         }
     };
 
-    const goNext = () => {
+    const itemErrorFor = (index, field = null) => (
+        (field ? form.errors[`items.${index}.${field}`] : null)
+        || form.errors[`items.${index}.sku_id`]
+        || form.errors[`items.${index}`]
+    );
+
+    const basicErrors = useMemo(() => {
+        const errors = {};
+        if (form.data.starts_at && form.data.ends_at) {
+            const start = new Date(`${String(form.data.starts_at).slice(0, 10)}T00:00:00`);
+            const end = new Date(`${String(form.data.ends_at).slice(0, 10)}T00:00:00`);
+            if (end <= start) {
+                errors.ends_at = t('End date must be after the start date.');
+            }
+        }
+        return errors;
+    }, [form.data.starts_at, form.data.ends_at, t]);
+
+    const pricingErrors = useMemo(() => {
+        const errors = {};
+        form.data.items.forEach((item, index) => {
+            const sku = skuMap.get(Number(item.sku_id));
+            const value = Number(item.discount_value);
+            const limit = item.quantity_limit === '' || item.quantity_limit === null ? null : Number(item.quantity_limit);
+
+            if (!Number.isFinite(value) || value <= 0) {
+                errors[`items.${index}.discount_value`] = t('Enter a discount greater than zero.');
+            } else if (item.discount_type === 'percentage' && value >= 100) {
+                errors[`items.${index}.discount_value`] = t('Percentage discount must be less than 100%.');
+            } else if (item.discount_type === 'fixed_price' && sku && value >= Number(sku.price)) {
+                errors[`items.${index}.discount_value`] = t('Fixed sale price must be lower than the SKU price.');
+            }
+
+            if (limit !== null && (!Number.isInteger(limit) || limit < 1)) {
+                errors[`items.${index}.quantity_limit`] = t('Quantity limit must be a whole number of at least 1.');
+            } else if (limit !== null && limit < Number(item.sold_count || 0)) {
+                errors[`items.${index}.quantity_limit`] = t('Quantity limit cannot be lower than units already sold.');
+            }
+        });
+        return errors;
+    }, [form.data.items, skuMap, t]);
+
+    const basicComplete = Boolean(
+        form.data.name.trim()
+        && form.data.starts_at
+        && form.data.ends_at
+        && Object.keys(basicErrors).length === 0
+    );
+    const productsComplete = basicComplete && form.data.items.length > 0;
+    const pricingComplete = productsComplete && Object.keys(pricingErrors).length === 0;
+
+    const canAccessStep = (index) => (
+        index === 0
+        || (index === 1 && basicComplete)
+        || (index === 2 && productsComplete)
+        || (index === 3 && pricingComplete)
+    );
+
+    const canGoNext =
+        tab === 0
+            ? basicComplete
+            : tab === 1
+                ? productsComplete
+                : tab === 2
+                    ? pricingComplete
+                    : true;
+    const canSubmit = pricingComplete;
+
+    const handleServerErrors = (errors) => {
+        const keys = Object.keys(errors);
+        const firstKey = keys[0] || '';
+        if (firstKey === 'name' || firstKey === 'starts_at' || firstKey === 'ends_at') setTab(0);
+        else if (firstKey === 'items') setTab(1);
+        else if (firstKey.startsWith('items.')) setTab(2);
+
+        window.requestAnimationFrame(() => {
+            const target = document.querySelector(`[name="${firstKey}"]`);
+            (target || campaignNameRef.current)?.focus();
+        });
+    };
+
+    const submitFlashSale = () => {
+        if (!canSubmit || form.processing) return;
+
+        form.transform((data) => ({
+            ...data,
+            starts_at: dateToIsoMidnight(data.starts_at),
+            ends_at: dateToIsoMidnight(data.ends_at),
+            items: data.items.map(({ sold_count, ...item }) => item),
+        }));
+        const options = { preserveScroll: true, onError: handleServerErrors };
+        if (mode === 'edit') {
+            form.patch(routeWithBase(`/admin/flash-sales/${flashSale.id}`, app_base), options);
+        } else {
+            form.post(routeWithBase('/admin/flash-sales', app_base), options);
+        }
+    };
+
+    const goNext = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
         if (!canGoNext) return;
         setTab((value) => Math.min(steps.length - 1, value + 1));
     };
 
-    const submit = (e) => {
-        e.preventDefault();
+    const goPrevious = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        setTab((value) => Math.max(0, value - 1));
+    };
 
+    const handleFormSubmit = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Only the review step (tab 3) may submit. Earlier steps only advance.
         if (tab < steps.length - 1) {
             goNext();
             return;
         }
 
-        if (canSubmit && !form.processing) {
-            submitFlashSale();
-        }
+        submitFlashSale();
     };
 
     return (
@@ -255,19 +408,41 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
             <Head title={mode === 'edit' ? t('Edit Flash Sale') : t('Create Flash Sale')} />
             <AdminFlash flash={flash} errors={form.errors} />
 
-            <form onSubmit={submit}>
+            <form onSubmit={handleFormSubmit} noValidate>
                 <section className="panel glass">
-                    <div className="tab-bar" style={{ marginBottom: 16 }}>
-                        {steps.map((step, index) => (
-                            <button
-                                key={step.key}
-                                type="button"
-                                className={tab === index ? 'active' : ''}
-                                onClick={() => setTab(index)}
-                            >
-                                {index + 1}. {t(step.label)}
+                    <div className="wizard-toolbar">
+                        <div className="tab-bar" role="tablist">
+                            {steps.map((step, index) => (
+                                <button
+                                    key={step.key}
+                                    type="button"
+                                    className={tab === index ? 'active' : ''}
+                                    disabled={!canAccessStep(index)}
+                                    onClick={() => canAccessStep(index) && setTab(index)}
+                                >
+                                    {index + 1}. {t(step.label)}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="wizard-toolbar-actions">
+                            <button type="button" className="btn secondary" disabled={tab === 0} onClick={goPrevious}>
+                                {t('Previous')}
                             </button>
-                        ))}
+                            {tab < steps.length - 1 ? (
+                                <button type="button" className="btn primary" disabled={!canGoNext} onClick={goNext}>
+                                    {t('Next')}
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="btn primary"
+                                    disabled={form.processing || !canSubmit}
+                                    onClick={submitFlashSale}
+                                >
+                                    {mode === 'edit' ? t('Save flash sale') : t('Create flash sale')}
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {tab === 0 && (
@@ -276,18 +451,51 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                             <div className="crud-grid">
                                 <label className="form-field span-2">
                                     <span>{t('Campaign name')}</span>
-                                    <input value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required />
+                                    <input
+                                        ref={campaignNameRef}
+                                        name="name"
+                                        value={form.data.name}
+                                        onChange={(e) => {
+                                            form.setData('name', e.target.value);
+                                            form.clearErrors('name');
+                                        }}
+                                        aria-invalid={Boolean(form.errors.name)}
+                                    />
+                                    <FieldError id="flash-sale-name-error" message={form.errors.name} />
                                 </label>
                                 <label className="form-field">
                                     <span>{t('Starts')}</span>
-                                    <input type="datetime-local" value={form.data.starts_at} onChange={(e) => form.setData('starts_at', e.target.value)} required />
+                                    <input
+                                        name="starts_at"
+                                        type="date"
+                                        value={form.data.starts_at}
+                                        onChange={(e) => {
+                                            form.setData('starts_at', e.target.value);
+                                            form.clearErrors('starts_at', 'ends_at');
+                                        }}
+                                        aria-invalid={Boolean(form.errors.starts_at)}
+                                    />
+                                    <small className="muted">{t('Defaults to 12:00 AM')}</small>
+                                    <FieldError id="flash-sale-start-error" message={form.errors.starts_at} />
                                 </label>
                                 <label className="form-field">
                                     <span>{t('Ends')}</span>
-                                    <input type="datetime-local" value={form.data.ends_at} onChange={(e) => form.setData('ends_at', e.target.value)} required />
+                                    <input
+                                        name="ends_at"
+                                        type="date"
+                                        min={form.data.starts_at || undefined}
+                                        value={form.data.ends_at}
+                                        onChange={(e) => {
+                                            form.setData('ends_at', e.target.value);
+                                            form.clearErrors('ends_at');
+                                        }}
+                                        aria-invalid={Boolean(form.errors.ends_at || basicErrors.ends_at)}
+                                    />
+                                    <small className="muted">{t('Defaults to 12:00 AM')}</small>
+                                    <FieldError id="flash-sale-end-error" message={form.errors.ends_at || basicErrors.ends_at} />
                                 </label>
                                 <label className="form-field checkbox-row">
-                                    <input type="checkbox" checked={form.data.is_active} onChange={(e) => form.setData('is_active', e.target.checked)} />
+                                    <input name="is_active" type="checkbox" checked={form.data.is_active} onChange={(e) => form.setData('is_active', e.target.checked)} />
                                     <span>{t('Active campaign')}</span>
                                 </label>
                             </div>
@@ -296,145 +504,158 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
 
                     {tab === 1 && (
                         <>
-                            <PanelHeading eyebrow={t('Step 2')} title={t('Select products')} />
-                            <div className="filter-toolbar compact" style={{ marginBottom: 12 }}>
-                                <div className="search-box">
-                                    <Icon name="search" size={16} />
-                                    <input
-                                        type="search"
-                                        placeholder={t('Search products, categories, SKU codes...')}
-                                        value={productSearch}
-                                        onChange={(e) => setProductSearch(e.target.value)}
-                                    />
-                                </div>
-                                <span className="muted">{form.data.items.length} {t('SKUs selected')}</span>
-                            </div>
-
-                            <div className="table-wrap flash-sale-product-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th style={{ width: 44 }} />
-                                            <th>{t('Product')}</th>
-                                            <th>{t('Category')}</th>
-                                            <th>{t('SKUs')}</th>
-                                            <th>{t('Selected')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredProducts.length === 0 ? (
-                                            <tr><td colSpan={5}><span className="muted">{t('No products match your search.')}</span></td></tr>
-                                        ) : filteredProducts.map((product) => {
-                                            const selected = selectedCountForProduct(product);
-                                            return (
-                                                <tr key={product.id}>
-                                                    <td>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isProductSelected(product)}
-                                                            onChange={() => toggleProduct(product)}
-                                                        />
-                                                    </td>
-                                                    <td><strong>{product.name}</strong></td>
-                                                    <td><span className="muted">{product.category || t('Uncategorized')}</span></td>
-                                                    <td>{product.skus.length}</td>
-                                                    <td>{selected} / {product.skus.length}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <PanelHeading
+                                eyebrow={t('Step 2')}
+                                title={t('Select products')}
+                                action={<small className="muted">{form.data.items.length} {t('SKUs selected')}</small>}
+                            />
+                            <FieldError id="flash-sale-items-error" message={form.errors.items} />
+                            <WizardSkuCatalog
+                                categories={categoryOptions}
+                                selectedSkus={selectedSkus}
+                                selectedSkuIds={selectedSkuIds}
+                                onToggle={toggleSku}
+                                isDisabled={(sku) => {
+                                    const item = form.data.items.find((candidate) => Number(candidate.sku_id) === Number(sku.id));
+                                    return Number(item?.sold_count || 0) > 0;
+                                }}
+                                fetchPage={fetchCatalogPage}
+                                enabled={tab === 1}
+                                searchPlaceholder="Search products, categories, SKU codes..."
+                                columns={[
+                                    {
+                                        key: 'price',
+                                        label: 'Price',
+                                        render: (sku) => (<><strong>{formatMoney(sku.price)}</strong><small>{t('retail')}</small></>),
+                                    },
+                                    {
+                                        key: 'available',
+                                        label: 'Available',
+                                        render: (sku) => (<><strong>{sku.available_qty ?? 0}</strong><small>{t('available')}</small></>),
+                                    },
+                                ]}
+                            />
                         </>
                     )}
 
                     {tab === 2 && (
                         <>
-                            <PanelHeading eyebrow={t('Step 3')} title={t('Sale data by SKU')} />
-                            <div className="table-wrap flash-sale-pricing-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>{t('Product / SKU')}</th>
-                                            <th>{t('Original')}</th>
-                                            <th>{t('Discount')}</th>
-                                            <th>{t('Value')}</th>
-                                            <th>{t('Limit')}</th>
-                                            <th>{t('Sale price')}</th>
-                                            <th />
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {selectedItems.length === 0 ? (
-                                            <tr><td colSpan={7}><span className="muted">{t('Select products first.')}</span></td></tr>
-                                        ) : selectedItems.map(({ item, sku }) => {
-                                            const salePrice = salePriceFor(sku, item);
-                                            return (
-                                                <tr key={sku.id}>
-                                                    <td>
-                                                        <strong>{sku.product.name}</strong>
-                                                        <small className="muted" style={{ display: 'block' }}>{skuLabel(sku)} - {t('available')} {sku.available_qty}</small>
-                                                    </td>
-                                                    <td>
-                                                        <span className="price-pill">{formatMoney(sku.price)}</span>
-                                                    </td>
-                                                    <td>
-                                                        <div className="sale-control select-control">
-                                                            <select
-                                                                value={item.discount_type}
-                                                                onChange={(e) => updateItem(sku.id, { discount_type: e.target.value, discount_value: '' })}
-                                                                aria-label={t('Discount type')}
-                                                            >
-                                                                <option value="percentage">{t('Percentage')}</option>
-                                                                <option value="fixed_price">{t('Fixed price')}</option>
-                                                            </select>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div className="sale-control input-control">
-                                                            <span>{item.discount_type === 'percentage' ? '%' : ''}</span>
-                                                            <input
-                                                                type="number"
-                                                                min="0.01"
-                                                                step="0.01"
-                                                                value={item.discount_value}
-                                                                onChange={(e) => updateItem(sku.id, { discount_value: e.target.value })}
-                                                                placeholder={item.discount_type === 'percentage' ? '20' : '9.99'}
-                                                                required
-                                                                aria-label={t('Discount value')}
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div className="sale-control input-control">
-                                                            <span>{t('Qty')}</span>
-                                                            <input
-                                                                type="number"
-                                                                min="1"
-                                                                value={item.quantity_limit}
-                                                                onChange={(e) => updateItem(sku.id, { quantity_limit: e.target.value })}
-                                                                placeholder={t('No limit')}
-                                                                aria-label={t('Quantity limit')}
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        {salePrice ? (
-                                                            <span className="sale-price-preview">{formatMoney(salePrice)}</span>
-                                                        ) : (
-                                                            <span className="muted">-</span>
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        <button type="button" className="icon-btn small danger" onClick={() => removeSku(sku.id)} aria-label={t('Remove SKU')}>
-                                                            <Icon name="trash" size={13} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                            <PanelHeading
+                                eyebrow={t('Step 3')}
+                                title={t('Sale data by SKU')}
+                                action={<small className="muted">{t('Discount and quantity limit per SKU.')}</small>}
+                            />
+                            <div className="receipt-price-lines">
+                                {selectedItems.length === 0 ? (
+                                    <div className="empty-document-lines">{t('Select products first.')}</div>
+                                ) : selectedItems.map(({ item, index, sku }) => {
+                                    const salePrice = salePriceFor(sku, item);
+                                    const locked = Number(item.sold_count || 0) > 0;
+                                    const discountError = form.errors[`items.${index}.discount_type`]
+                                        || form.errors[`items.${index}.discount_value`]
+                                        || pricingErrors[`items.${index}.discount_value`];
+                                    const quantityError = form.errors[`items.${index}.quantity_limit`]
+                                        || pricingErrors[`items.${index}.quantity_limit`];
+                                    const identitySku = {
+                                        id: sku.id,
+                                        product_name: sku.product?.name,
+                                        sku_code: sku.sku_code,
+                                        barcode: null,
+                                        title: sku.title,
+                                    };
+
+                                    const skuError = itemErrorFor(index);
+                                    const rowInvalid = Boolean(discountError || quantityError || skuError);
+
+                                    return (
+                                        <div
+                                            className={rowInvalid ? 'receipt-price-line has-remove is-invalid' : 'receipt-price-line has-remove'}
+                                            style={{ '--wizard-qty-fields': 5, '--wizard-qty-unit': '108px' }}
+                                            key={sku.id}
+                                        >
+                                            <div>
+                                                <ProductIdentity sku={identitySku} showBarcode={false} />
+                                                <small className="muted wizard-qty-hint">
+                                                    {skuLabel(sku)} · {t('available')} {sku.available_qty}
+                                                </small>
+                                                {locked && (
+                                                    <small className="muted wizard-qty-hint">
+                                                        {t(':count units sold — discount is locked', { count: item.sold_count })}
+                                                    </small>
+                                                )}
+                                            </div>
+                                            <label className="form-field">
+                                                <span>{t('Original')}</span>
+                                                <input type="text" value={formatMoney(sku.price)} readOnly tabIndex={-1} />
+                                            </label>
+                                            <label className={form.errors[`items.${index}.discount_type`] ? 'form-field is-invalid' : 'form-field'}>
+                                                <span>{t('Discount')}</span>
+                                                <select
+                                                    name={`items.${index}.discount_type`}
+                                                    value={item.discount_type}
+                                                    onChange={(e) => updateItem(sku.id, { discount_type: e.target.value, discount_value: '' })}
+                                                    aria-label={t('Discount type')}
+                                                    aria-invalid={Boolean(form.errors[`items.${index}.discount_type`])}
+                                                    title={form.errors[`items.${index}.discount_type`] || undefined}
+                                                    disabled={locked}
+                                                >
+                                                    <option value="percentage">{t('Percentage')}</option>
+                                                    <option value="fixed_price">{t('Fixed price')}</option>
+                                                </select>
+                                            </label>
+                                            <label className={discountError ? 'form-field is-invalid' : 'form-field'}>
+                                                <span>{item.discount_type === 'percentage' ? t('Value %') : t('Value')}</span>
+                                                <input
+                                                    name={`items.${index}.discount_value`}
+                                                    type="number"
+                                                    min="0.01"
+                                                    step="0.01"
+                                                    value={item.discount_value}
+                                                    onChange={(e) => updateItem(sku.id, { discount_value: e.target.value })}
+                                                    placeholder={item.discount_type === 'percentage' ? '20' : '9.99'}
+                                                    aria-label={t('Discount value')}
+                                                    aria-invalid={Boolean(discountError)}
+                                                    title={discountError || undefined}
+                                                    disabled={locked}
+                                                />
+                                            </label>
+                                            <label className={quantityError ? 'form-field is-invalid' : 'form-field'}>
+                                                <span>{t('Limit')}</span>
+                                                <input
+                                                    name={`items.${index}.quantity_limit`}
+                                                    type="number"
+                                                    min={Math.max(1, Number(item.sold_count || 0))}
+                                                    step="1"
+                                                    value={item.quantity_limit}
+                                                    onChange={(e) => updateItem(sku.id, { quantity_limit: e.target.value })}
+                                                    placeholder={t('No limit')}
+                                                    aria-label={t('Quantity limit')}
+                                                    aria-invalid={Boolean(quantityError)}
+                                                    title={quantityError || undefined}
+                                                />
+                                            </label>
+                                            <label className="form-field">
+                                                <span>{t('Sale price')}</span>
+                                                <input
+                                                    type="text"
+                                                    value={salePrice ? formatMoney(salePrice) : '-'}
+                                                    readOnly
+                                                    tabIndex={-1}
+                                                />
+                                            </label>
+                                            <button
+                                                type="button"
+                                                className="icon-btn small danger wizard-qty-remove"
+                                                onClick={() => removeSku(sku.id)}
+                                                aria-label={locked ? t('SKU cannot be removed after sales') : t('Remove SKU')}
+                                                title={locked ? t('SKUs with recorded sales cannot be removed.') : t('Remove SKU')}
+                                                disabled={locked}
+                                            >
+                                                <Icon name="trash" size={13} />
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </>
                     )}
@@ -444,8 +665,8 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                             <PanelHeading eyebrow={t('Step 4')} title={t('Review and submit')} />
                             <div className="metrics-grid compact" style={{ marginBottom: 14 }}>
                                 <Stat label="Campaign" value={form.data.name || '-'} />
-                                <Stat label="Starts" value={formatDateTime(form.data.starts_at)} />
-                                <Stat label="Ends" value={formatDateTime(form.data.ends_at)} />
+                                <Stat label="Starts" value={formatDateLabel(form.data.starts_at)} />
+                                <Stat label="Ends" value={formatDateLabel(form.data.ends_at)} />
                                 <Stat label="Duration" value={campaignDuration(form.data.starts_at, form.data.ends_at)} />
                                 <Stat label="Products" value={selectedProducts.length} />
                                 <Stat label="SKUs" value={selectedItems.length} />
@@ -465,7 +686,10 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                     <tbody>
                                         {selectedItems.map(({ item, index, sku }) => {
                                             const salePrice = salePriceFor(sku, item);
-                                            const itemError = itemErrorFor(index);
+                                            const itemError = itemErrorFor(index)
+                                                || form.errors[`items.${index}.discount_value`]
+                                                || form.errors[`items.${index}.quantity_limit`];
+                                            const locked = Number(item.sold_count || 0) > 0;
                                             return (
                                                 <tr key={sku.id} className={itemError ? 'flash-sale-conflict-row' : ''}>
                                                     <td>
@@ -481,7 +705,13 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                     <td>{item.quantity_limit || t('No limit')}</td>
                                                     <td>{salePrice ? formatMoney(salePrice) : '-'}</td>
                                                     <td>
-                                                        <button type="button" className="icon-btn small danger" onClick={() => removeSku(sku.id)} aria-label={t('Remove overlapping SKU')}>
+                                                        <button
+                                                            type="button"
+                                                            className="icon-btn small danger"
+                                                            onClick={() => removeSku(sku.id)}
+                                                            aria-label={locked ? t('SKU cannot be removed after sales') : t('Remove SKU')}
+                                                            disabled={locked}
+                                                        >
                                                             <Icon name="trash" size={13} />
                                                         </button>
                                                     </td>
@@ -493,21 +723,6 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                             </div>
                         </>
                     )}
-
-                    <div className="modal-actions">
-                        <button type="button" className="btn secondary" disabled={tab === 0} onClick={() => setTab((value) => Math.max(0, value - 1))}>
-                            {t('Previous')}
-                        </button>
-                        {tab < steps.length - 1 ? (
-                            <button type="button" className="btn primary" disabled={!canGoNext} onClick={goNext}>
-                                {t('Next')}
-                            </button>
-                        ) : (
-                            <button type="submit" className="btn primary" disabled={form.processing || !canSubmit}>
-                                {mode === 'edit' ? t('Save flash sale') : t('Create flash sale')}
-                            </button>
-                        )}
-                    </div>
                 </section>
             </form>
         </AdminLayout>

@@ -37,7 +37,7 @@ class FlashSaleController extends Controller
             match ($request->status) {
                 'live' => $query->activeNow(),
                 'scheduled' => $query->where('is_active', true)->where('starts_at', '>', now()),
-                'ended' => $query->where('ends_at', '<', now()),
+                'ended' => $query->where('is_active', true)->where('ends_at', '<', now()),
                 'inactive' => $query->where('is_active', false),
                 default => null,
             };
@@ -91,6 +91,7 @@ class FlashSaleController extends Controller
     public function update(Request $request, FlashSale $flashSale, AuditLogService $auditLogService)
     {
         $validated = $this->validated($request);
+        $this->ensureSoldItemIntegrity($flashSale, $validated['items']);
         $this->ensureNoCatalogOverlap($validated, $flashSale);
 
         DB::transaction(function () use ($flashSale, $validated) {
@@ -107,10 +108,23 @@ class FlashSaleController extends Controller
 
     public function destroy(Request $request, FlashSale $flashSale, AuditLogService $auditLogService)
     {
+        $query = $request->only(['q', 'status']);
+
+        if ($flashSale->items()->where('sold_count', '>', 0)->exists()) {
+            $flashSale->update(['is_active' => false]);
+            $auditLogService->record('flash_sale.deactivated', $flashSale, ['name' => $flashSale->name], $request);
+
+            return redirect()
+                ->route('admin.flash-sales.index', $query, 303)
+                ->with('success', 'Flash sale has sales history, so it was deactivated.');
+        }
+
         $auditLogService->record('flash_sale.deleted', $flashSale, ['name' => $flashSale->name], $request);
         $flashSale->delete();
 
-        return back()->with('success', 'Flash sale deleted.');
+        return redirect()
+            ->route('admin.flash-sales.index', $query, 303)
+            ->with('success', 'Flash sale deleted.');
     }
 
     private function validated(Request $request): array
@@ -161,8 +175,8 @@ class FlashSaleController extends Controller
     {
         return [
             'name' => trim($validated['name']),
-            'starts_at' => Carbon::parse($validated['starts_at']),
-            'ends_at' => Carbon::parse($validated['ends_at']),
+            'starts_at' => Carbon::parse($validated['starts_at'])->utc(),
+            'ends_at' => Carbon::parse($validated['ends_at'])->utc(),
             'is_active' => (bool) $validated['is_active'],
         ];
     }
@@ -253,6 +267,50 @@ class FlashSaleController extends Controller
         }
     }
 
+    private function ensureSoldItemIntegrity(FlashSale $flashSale, array $items): void
+    {
+        $soldItems = $flashSale->items()
+            ->where('sold_count', '>', 0)
+            ->get()
+            ->keyBy('sku_id');
+
+        if ($soldItems->isEmpty()) {
+            return;
+        }
+
+        $incoming = collect($items)
+            ->values()
+            ->mapWithKeys(fn (array $item, int $index) => [(int) $item['sku_id'] => compact('item', 'index')]);
+        $messages = [];
+
+        foreach ($soldItems as $skuId => $existing) {
+            $candidate = $incoming->get((int) $skuId);
+
+            if (! $candidate) {
+                $messages['items'] = 'SKUs with recorded sales cannot be removed. Deactivate the campaign to stop it.';
+                continue;
+            }
+
+            $item = $candidate['item'];
+            $index = $candidate['index'];
+
+            if (
+                $item['discount_type'] !== $existing->discount_type
+                || abs((float) $item['discount_value'] - (float) $existing->discount_value) > 0.0001
+            ) {
+                $messages["items.{$index}.discount_value"] = 'Discounts with recorded sales cannot be changed.';
+            }
+
+            if ($item['quantity_limit'] !== null && (int) $item['quantity_limit'] < $existing->sold_count) {
+                $messages["items.{$index}.quantity_limit"] = "Quantity limit cannot be lower than {$existing->sold_count} units already sold.";
+            }
+        }
+
+        if ($messages) {
+            throw ValidationException::withMessages($messages);
+        }
+    }
+
     private function syncItems(FlashSale $flashSale, array $items): void
     {
         $incomingIds = collect($items)->pluck('sku_id')->map(fn ($id) => (int) $id)->all();
@@ -260,6 +318,7 @@ class FlashSaleController extends Controller
 
         $flashSale->items()
             ->whereNotIn('sku_id', $incomingIds)
+            ->where('sold_count', 0)
             ->delete();
 
         foreach ($items as $item) {

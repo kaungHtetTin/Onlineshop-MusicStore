@@ -1,25 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useForm, usePage } from '@/spa/router';
 import Icon from '@/Components/Admin/icons';
 import { PanelHeading } from '@/Components/Admin/shared';
-import { routeWithBase, storageUrl } from '@/Utils/url';
+import WizardSkuCatalog, { ProductIdentity } from '@/Components/Admin/WizardSkuCatalog';
+import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
+import { formatMoney } from '@/Utils/pricing';
 
-const cleanPaginationLabel = (label = '') =>
-    label.includes('&laquo;')
-        ? 'Previous'
-        : label.includes('&raquo;')
-            ? 'Next'
-            : label.replace(/&amp;/g, '&');
+function Stat({ label, value }) {
+    const t = usePhraseTranslation();
+
+    return (
+        <div className="metric-card" style={{ padding: 12 }}>
+            <span>{t(label)}</span>
+            <strong>{value}</strong>
+        </div>
+    );
+}
 
 export default function InventoryDocumentForm({ type, locations, categories = [], reasons = [], initialData = null, submitUrl = null, submitMethod = 'post', submitLabel = 'Save draft' }) {
-    const { app_base, app_url } = usePage().props;
+    const { app_base } = usePage().props;
     const t = usePhraseTranslation();
     const [query, setQuery] = useState('');
-    const [categoryId, setCategoryId] = useState('all');
     const [results, setResults] = useState([]);
-    const [skuPage, setSkuPage] = useState({ data: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, links: [] });
     const [searching, setSearching] = useState(false);
     const isReceipt = type === 'receipt';
     const form = useForm({
@@ -31,39 +35,40 @@ export default function InventoryDocumentForm({ type, locations, categories = []
     });
 
     const receiptSteps = [
-        { key: 'basic', eyebrow: 'Tab 1', title: 'Basic information' },
-        { key: 'products', eyebrow: 'Tab 2', title: 'Select products' },
-        { key: 'details', eyebrow: 'Tab 3', title: 'Quantities & prices' },
+        { key: 'basic', label: 'Basic' },
+        { key: 'products', label: 'Products' },
+        { key: 'details', label: 'Quantities' },
+        { key: 'review', label: 'Review' },
     ];
     const [receiptStep, setReceiptStep] = useState('basic');
 
-    const search = async (page = 1) => {
+    const search = async () => {
         if (!form.data.location_id) return;
         setSearching(true);
         try {
             const params = { q: query, location_id: form.data.location_id };
-            if (isReceipt) {
-                params.paginated = 1;
-                params.page = page;
-                params.per_page = 8;
-                if (categoryId !== 'all') params.category_id = categoryId;
-            }
             const response = await axios.get(routeWithBase('/admin/inventory/skus/search', app_base), { params });
-            if (isReceipt) {
-                setSkuPage(response.data);
-            } else {
-                setResults(response.data);
-            }
+            setResults(response.data);
         } finally {
             setSearching(false);
         }
     };
 
-    useEffect(() => {
-        if (isReceipt && receiptStep === 'products') {
-            search(1);
+    const fetchCatalogPage = useCallback(async ({ q, categoryId, page, perPage }) => {
+        if (!form.data.location_id) {
+            return { data: [], current_page: 1, last_page: 1, total: 0 };
         }
-    }, [isReceipt, receiptStep, categoryId, form.data.location_id]);
+        const params = {
+            q,
+            location_id: form.data.location_id,
+            paginated: 1,
+            page,
+            per_page: perPage,
+        };
+        if (categoryId !== 'all') params.category_id = categoryId;
+        const response = await axios.get(routeWithBase('/admin/inventory/skus/search', app_base), { params });
+        return response.data;
+    }, [app_base, form.data.location_id]);
 
     const addSku = (sku) => {
         if (form.data.items.some((item) => item.sku_id === sku.id)) return;
@@ -91,7 +96,7 @@ export default function InventoryDocumentForm({ type, locations, categories = []
     };
 
     const submit = (event) => {
-        event.preventDefault();
+        event?.preventDefault?.();
         form.transform((data) => ({ ...data, items: data.items.map(({ sku, system_quantity, ...item }) => item) }));
         const url = submitUrl || routeWithBase(isReceipt ? '/admin/inventory/receipts' : '/admin/inventory/adjustments', app_base);
         if (submitMethod.toLowerCase() === 'put') {
@@ -102,24 +107,33 @@ export default function InventoryDocumentForm({ type, locations, categories = []
     };
 
     const lineCount = form.data.items.length;
-    const totalReceived = form.data.items.reduce((sum, item) => sum + Number(item.received_quantity || 0), 0);
     const receiptStepIndex = receiptSteps.findIndex((step) => step.key === receiptStep);
     const selectedSkuIds = form.data.items.map((item) => item.sku_id);
+    const selectedSkus = form.data.items.map((item) => item.sku).filter(Boolean);
     const selectedLocation = locations.find((location) => String(location.id) === String(form.data.location_id));
-    const receiptCatalogSkus = isReceipt
-        ? [
-            ...form.data.items.map((item) => item.sku).filter(Boolean),
-            ...skuPage.data.filter((sku) => !selectedSkuIds.includes(sku.id)),
-        ]
-        : [];
+    const totalUnits = useMemo(
+        () => form.data.items.reduce((sum, item) => sum + Number(item.received_quantity || 0), 0),
+        [form.data.items],
+    );
+    const detailsComplete = lineCount > 0 && form.data.items.every((item) => Number(item.received_quantity) >= 1);
+    const basicComplete = Boolean(form.data.location_id);
+    const productsComplete = basicComplete && lineCount > 0;
+    const canAccessReceiptStep = (index) => (
+        index === 0
+        || (index === 1 && basicComplete)
+        || (index === 2 && productsComplete)
+        || (index === 3 && detailsComplete)
+    );
     const goReceiptStep = (offset) => {
-        const next = receiptSteps[Math.min(Math.max(receiptStepIndex + offset, 0), receiptSteps.length - 1)]?.key;
+        const nextIndex = Math.min(Math.max(receiptStepIndex + offset, 0), receiptSteps.length - 1);
+        if (!canAccessReceiptStep(nextIndex) && offset > 0) return;
+        const next = receiptSteps[nextIndex]?.key;
         if (next) setReceiptStep(next);
     };
 
     const handleReceiptSubmit = (event) => {
         event.preventDefault();
-        if (receiptStep === 'details') {
+        if (receiptStep === 'review') {
             submit(event);
         }
     };
@@ -134,6 +148,10 @@ export default function InventoryDocumentForm({ type, locations, categories = []
             setReceiptStep('details');
             return;
         }
+        if (receiptStep === 'details') {
+            setReceiptStep('review');
+            return;
+        }
         submit(event);
     };
 
@@ -141,167 +159,183 @@ export default function InventoryDocumentForm({ type, locations, categories = []
         form.setData('items', form.data.items.filter((line) => line.sku_id !== skuId));
     };
 
-    const SkuThumbnail = ({ sku }) => {
-        const imagePath = sku?.image_path || sku?.product_image_path;
-
-        return (
-            <span className="receipt-product-thumb" aria-hidden="true">
-                {imagePath ? <img src={storageUrl(imagePath, app_url)} alt="" /> : <Icon name="box" size={16} />}
-            </span>
-        );
+    const toggleSku = (sku, nextSelected) => {
+        if (nextSelected) addSku(sku);
+        else removeSku(sku.id);
     };
 
-    const ProductIdentity = ({ sku, showBarcode = true }) => (
-        <div className="line-product-identity">
-            <SkuThumbnail sku={sku} />
-            <span>
-                <strong>{sku.product_name}</strong>
-                <small>{sku.sku_code}{showBarcode ? ` / ${sku.barcode || t('no barcode')}` : ''}</small>
-            </span>
-        </div>
-    );
-
     if (isReceipt) {
+        const stepMeta = {
+            basic: { eyebrow: 'Step 1', title: 'Basic information' },
+            products: { eyebrow: 'Step 2', title: 'Select products' },
+            details: { eyebrow: 'Step 3', title: 'Quantities & prices' },
+            review: { eyebrow: 'Step 4', title: 'Review and submit' },
+        }[receiptStep];
+        const canGoNext = receiptStep === 'basic'
+            ? basicComplete
+            : receiptStep === 'products'
+                ? productsComplete
+                : receiptStep === 'details'
+                    ? detailsComplete
+                    : detailsComplete;
+
         return (
-            <form onSubmit={handleReceiptSubmit} className="receipt-wizard">
-                {Object.keys(form.errors).length > 0 && <div className="flash error">{Object.values(form.errors).map((error) => <div key={error}>{error}</div>)}</div>}
+            <form onSubmit={handleReceiptSubmit} className="admin-wizard">
+                {Object.keys(form.errors).length > 0 && (
+                    <div className="flash error">{Object.values(form.errors).map((error) => <div key={error}>{error}</div>)}</div>
+                )}
 
-                <nav className="receipt-wizard-tabs" aria-label={t('Receipt form steps')}>
-                    {receiptSteps.map((step, index) => {
-                        const active = receiptStep === step.key;
-                        const complete = index < receiptStepIndex;
-                        return (
-                            <button type="button" key={step.key} className={active ? 'active' : complete ? 'complete' : ''} onClick={() => setReceiptStep(step.key)}>
-                                <span className="receipt-step-circle">{index + 1}</span>
-                                <strong>{t(step.title)}</strong>
+                <section className="panel glass">
+                    <div className="wizard-toolbar">
+                        <div className="tab-bar" role="tablist" aria-label={t('Receipt form steps')}>
+                            {receiptSteps.map((step, index) => (
+                                <button
+                                    type="button"
+                                    key={step.key}
+                                    className={receiptStep === step.key ? 'active' : ''}
+                                    disabled={!canAccessReceiptStep(index)}
+                                    onClick={() => canAccessReceiptStep(index) && setReceiptStep(step.key)}
+                                >
+                                    {index + 1}. {t(step.label)}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="wizard-toolbar-actions">
+                            <button type="button" className="btn secondary" onClick={() => goReceiptStep(-1)} disabled={receiptStepIndex === 0}>
+                                {t('Previous')}
                             </button>
-                        );
-                    })}
-                </nav>
-
-                <div className="receipt-wizard-topbar">
-                    <div className="receipt-summary-strip" aria-label={t('Receipt summary')}>
-                        <span><small>{t('Warehouse')}</small><strong>{selectedLocation?.code || '-'}</strong></span>
-                        <span><small>{t('Lines')}</small><strong>{lineCount}</strong></span>
-                        <span><small>{t('Units')}</small><strong>{totalReceived}</strong></span>
-                        <span><small>{t('Reference')}</small><strong>{form.data.supplier_reference || '-'}</strong></span>
+                            <button
+                                type="button"
+                                className="btn primary"
+                                onClick={handleReceiptNext}
+                                disabled={!canGoNext || form.processing}
+                            >
+                                {t(receiptStep === 'review' ? submitLabel : 'Next')}
+                            </button>
+                        </div>
                     </div>
-                    <div className="receipt-wizard-actions">
-                        <button type="button" className="btn secondary" onClick={() => goReceiptStep(-1)} disabled={receiptStepIndex === 0}>{t('Back')}</button>
-                        <button
-                            type="button"
-                            className="btn primary"
-                            onClick={handleReceiptNext}
-                            disabled={(receiptStep === 'products' || receiptStep === 'details') && lineCount === 0}
-                        >
-                            {t('Next')}
-                        </button>
-                    </div>
-                </div>
 
-                <div className="receipt-wizard-shell">
-                    <section className="panel glass receipt-wizard-panel">
-                        {receiptStep === 'basic' && (
-                            <>
-                                <PanelHeading eyebrow="Receiving document" title="Basic information" action={<small className="muted">{t('Choose where this stock is arriving.')}</small>} />
-                                <div className="receipt-basic-grid">
-                                    <label className="form-field">
-                                        <span>{t('Warehouse')}</span>
-                                        <select value={form.data.location_id} onChange={(event) => { form.setData({ ...form.data, location_id: event.target.value, items: [] }); setResults([]); }} required>
-                                            {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-                                        </select>
-                                    </label>
-                                    <label className="form-field">
-                                        <span>{t('Supplier / reference')}</span>
-                                        <input value={form.data.supplier_reference} onChange={(event) => form.setData('supplier_reference', event.target.value)} placeholder={t('Invoice, PO, or supplier name')} />
-                                    </label>
-                                    <label className="form-field receipt-wide-field">
-                                        <span>{t('Document note')}</span>
-                                        <textarea rows="5" value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} placeholder={t('Receiving notes, delivery condition, or internal comments')} />
-                                    </label>
-                                </div>
-                            </>
-                        )}
+                    {receiptStep === 'basic' && (
+                        <>
+                            <PanelHeading eyebrow={t(stepMeta.eyebrow)} title={t(stepMeta.title)} />
+                            <div className="receipt-basic-grid">
+                                <label className="form-field">
+                                    <span>{t('Warehouse')}</span>
+                                    <select value={form.data.location_id} onChange={(event) => { form.setData({ ...form.data, location_id: event.target.value, items: [] }); setResults([]); }} required>
+                                        {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+                                    </select>
+                                </label>
+                                <label className="form-field">
+                                    <span>{t('Supplier / reference')}</span>
+                                    <input value={form.data.supplier_reference} onChange={(event) => form.setData('supplier_reference', event.target.value)} placeholder={t('Invoice, PO, or supplier name')} />
+                                </label>
+                                <label className="form-field receipt-wide-field">
+                                    <span>{t('Document note')}</span>
+                                    <textarea rows="5" value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} placeholder={t('Receiving notes, delivery condition, or internal comments')} />
+                                </label>
+                            </div>
+                        </>
+                    )}
 
-                        {receiptStep === 'products' && (
-                            <>
-                                <PanelHeading eyebrow="Product selection" title="Select the products" action={<small className="muted">{lineCount} {t('selected')}</small>} />
-                                <div className="receipt-product-toolbar">
-                                    <div className="search-box"><Icon name="search" size={15} /><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); search(1); } }} placeholder={t('Search product, SKU, or barcode')} /></div>
-                                    <label className="receipt-category-select" aria-label={t('Category filter')}>
-                                        <Icon name="tag" size={14} />
-                                        <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
-                                            <option value="all">{t('All categories')}</option>
-                                            {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                                        </select>
-                                    </label>
-                                    <button className="btn secondary" type="button" onClick={() => search(1)} disabled={searching || !form.data.location_id}>{t(searching ? 'Searching...' : 'Search')}</button>
-                                </div>
-                                <div className="receipt-product-catalog" aria-busy={searching}>
-                                    {searching ? (
-                                        <div className="spa-inline-list-skeleton" role="status" aria-label={t('Loading products')}>
-                                            {Array.from({ length: 6 }, (_, index) => (
-                                                <div className="spa-inline-list-skeleton-row" key={index}>
-                                                    <span className="spa-skeleton-block media" />
-                                                    <span className="spa-skeleton-block line" />
-                                                    <span className="spa-skeleton-block line short" />
-                                                    <span className="spa-skeleton-block button" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : receiptCatalogSkus.length === 0 ? <div className="empty-document-lines">{t('No products match these filters.')}</div> : receiptCatalogSkus.map((sku) => {
-                                        const selected = selectedSkuIds.includes(sku.id);
-                                        return (
-                                            <div key={sku.id} className={selected ? 'receipt-product-row selected' : 'receipt-product-row'}>
-                                                <ProductIdentity sku={sku} />
-                                                <span><strong>{sku.on_hand_qty}</strong><small>{t('on hand')}</small></span>
-                                                <span><strong>{sku.retail_price ?? sku.price ?? '-'}</strong><small>{t('retail')}</small></span>
-                                                <button type="button" className={selected ? 'receipt-product-action remove' : 'receipt-product-action'} onClick={() => selected ? removeSku(sku.id) : addSku(sku)}>
-                                                    {selected ? <><Icon name="trash" size={13} /> {t('Remove')}</> : t('Add')}
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                {!searching && skuPage.last_page > 1 && (
-                                    <div className="receipt-product-pagination">
-                                        <small>{t('Showing')} {skuPage.from || 0}-{skuPage.to || 0} {t('of')} {skuPage.total || 0}</small>
-                                        <div>
-                                            {skuPage.links.map((link, index) => (
-                                                <button
-                                                    type="button"
-                                                    key={`${link.label}-${index}`}
-                                                    className={link.active ? 'active' : ''}
-                                                    disabled={!link.url}
-                                                    onClick={() => link.url && search(Number(new URL(link.url, window.location.origin).searchParams.get('page') || 1))}
-                                                >
-                                                    {t(cleanPaginationLabel(link.label))}
-                                                </button>
-                                            ))}
-                                        </div>
+                    {receiptStep === 'products' && (
+                        <>
+                            <PanelHeading eyebrow={t(stepMeta.eyebrow)} title={t(stepMeta.title)} action={<small className="muted">{lineCount} {t('selected')}</small>} />
+                            <WizardSkuCatalog
+                                categories={categories}
+                                selectedSkus={selectedSkus}
+                                selectedSkuIds={selectedSkuIds}
+                                onToggle={toggleSku}
+                                fetchPage={fetchCatalogPage}
+                                enabled={receiptStep === 'products'}
+                                resetKey={String(form.data.location_id || '')}
+                                searchDisabled={!form.data.location_id}
+                                columns={[
+                                    {
+                                        key: 'on_hand',
+                                        label: 'On hand',
+                                        render: (sku) => (<><strong>{sku.on_hand_qty}</strong><small>{t('on hand')}</small></>),
+                                    },
+                                    {
+                                        key: 'retail',
+                                        label: 'Retail',
+                                        render: (sku) => (<><strong>{sku.retail_price ?? sku.price ?? '-'}</strong><small>{t('retail')}</small></>),
+                                    },
+                                ]}
+                            />
+                        </>
+                    )}
+
+                    {receiptStep === 'details' && (
+                        <>
+                            <PanelHeading eyebrow={t(stepMeta.eyebrow)} title={t(stepMeta.title)} action={<small className="muted">{t('Original, wholesale, and retail prices update the SKU.')}</small>} />
+                            <div className="receipt-price-lines">
+                                {lineCount === 0 ? <div className="empty-document-lines">{t('Select products before entering quantities.')}</div> : form.data.items.map((item, index) => (
+                                    <div className="receipt-price-line" style={{ '--wizard-qty-fields': 4, '--wizard-qty-unit': '120px' }} key={item.sku_id}>
+                                        <ProductIdentity sku={item.sku} showBarcode={false} />
+                                        <label className="form-field"><span>{t('Received')}</span><input type="number" min="1" value={item.received_quantity} onChange={(event) => updateItem(index, { received_quantity: event.target.value })} required /></label>
+                                        <label className="form-field"><span>{t('Original price')}</span><input type="number" min="0" step="0.01" value={item.unit_cost} onChange={(event) => updateItem(index, { unit_cost: event.target.value })} /></label>
+                                        <label className="form-field"><span>{t('Wholesale price')}</span><input type="number" min="0" step="0.01" value={item.wholesale_price} onChange={(event) => updateItem(index, { wholesale_price: event.target.value })} /></label>
+                                        <label className="form-field"><span>{t('Retail price')}</span><input type="number" min="0" step="0.01" value={item.retail_price} onChange={(event) => updateItem(index, { retail_price: event.target.value })} /></label>
                                     </div>
-                                )}
-                            </>
-                        )}
+                                ))}
+                            </div>
+                        </>
+                    )}
 
-                        {receiptStep === 'details' && (
-                            <>
-                                <PanelHeading eyebrow="Receiving lines" title="Fill quantities and prices" action={<small className="muted">{t('Original, wholesale, and retail prices update the SKU.')}</small>} />
-                                <div className="receipt-price-lines">
-                                    {lineCount === 0 ? <div className="empty-document-lines">{t('Select products before entering quantities.')}</div> : form.data.items.map((item, index) => (
-                                        <div className="receipt-price-line" key={item.sku_id}>
-                                            <ProductIdentity sku={item.sku} showBarcode={false} />
-                                            <label className="form-field"><span>{t('Received')}</span><input type="number" min="1" value={item.received_quantity} onChange={(event) => updateItem(index, { received_quantity: event.target.value })} required /></label>
-                                            <label className="form-field"><span>{t('Original price')}</span><input type="number" min="0" step="0.01" value={item.unit_cost} onChange={(event) => updateItem(index, { unit_cost: event.target.value })} /></label>
-                                            <label className="form-field"><span>{t('Wholesale price')}</span><input type="number" min="0" step="0.01" value={item.wholesale_price} onChange={(event) => updateItem(index, { wholesale_price: event.target.value })} /></label>
-                                            <label className="form-field"><span>{t('Retail price')}</span><input type="number" min="0" step="0.01" value={item.retail_price} onChange={(event) => updateItem(index, { retail_price: event.target.value })} /></label>
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </section>
-                </div>
+                    {receiptStep === 'review' && (
+                        <>
+                            <PanelHeading eyebrow={t(stepMeta.eyebrow)} title={t(stepMeta.title)} />
+                            <div className="metrics-grid compact" style={{ marginBottom: 14 }}>
+                                <Stat label="Warehouse" value={selectedLocation?.name || '-'} />
+                                <Stat label="Supplier / reference" value={form.data.supplier_reference?.trim() || t('None')} />
+                                <Stat label="Lines" value={lineCount} />
+                                <Stat label="Units" value={totalUnits} />
+                                <Stat label="Note" value={form.data.notes?.trim() || t('None')} />
+                            </div>
+                            <div className="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>{t('SKU')}</th>
+                                            <th>{t('Received')}</th>
+                                            <th>{t('Original')}</th>
+                                            <th>{t('Wholesale')}</th>
+                                            <th>{t('Retail')}</th>
+                                            <th />
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {form.data.items.map((item) => (
+                                            <tr key={item.sku_id}>
+                                                <td>
+                                                    <strong>{item.sku?.product_name}</strong>
+                                                    <small className="muted" style={{ display: 'block' }}>
+                                                        {item.sku?.sku_code}
+                                                        {item.sku?.barcode ? ` / ${item.sku.barcode}` : ''}
+                                                    </small>
+                                                </td>
+                                                <td>{item.received_quantity}</td>
+                                                <td>{item.unit_cost !== '' && item.unit_cost != null ? formatMoney(item.unit_cost) : '-'}</td>
+                                                <td>{item.wholesale_price !== '' && item.wholesale_price != null ? formatMoney(item.wholesale_price) : '-'}</td>
+                                                <td>{item.retail_price !== '' && item.retail_price != null ? formatMoney(item.retail_price) : '-'}</td>
+                                                <td>
+                                                    <button
+                                                        type="button"
+                                                        className="icon-btn small danger"
+                                                        onClick={() => removeSku(item.sku_id)}
+                                                        aria-label={t('Remove item')}
+                                                    >
+                                                        <Icon name="trash" size={13} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
+                </section>
             </form>
         );
     }

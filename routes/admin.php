@@ -251,10 +251,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->middleware('admin.permission:inventory.receive')->name('inventory.receipts.edit');
     Route::put('/inventory/receipts/{receipt}', [StockReceiptController::class, 'update'])
         ->middleware('admin.permission:inventory.receive')->name('inventory.receipts.update');
-    Route::get('/inventory/receipts/{receipt}', [StockReceiptController::class, 'show'])
-        ->middleware('admin.permission:inventory.receive')->name('inventory.receipts.show');
-    Route::post('/inventory/receipts/{receipt}/post', [StockReceiptController::class, 'post'])
-        ->middleware('admin.permission:inventory.receive')->name('inventory.receipts.post');
     Route::delete('/inventory/receipts/{receipt}', [StockReceiptController::class, 'destroy'])
         ->middleware('admin.permission:inventory.receive')->name('inventory.receipts.destroy');
 

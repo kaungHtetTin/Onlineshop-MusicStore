@@ -440,11 +440,10 @@ class InventoryController extends Controller
         }
 
         return match ($movement->reference_type) {
-            StockReceipt::class => $this->documentLink(
-                StockReceipt::query()->find($movement->reference_id),
-                'receipt_number',
-                'admin.inventory.receipts.show'
-            ),
+            StockReceipt::class => ($receipt = StockReceipt::query()->find($movement->reference_id)) ? [
+                'label' => $receipt->receipt_number,
+                'href' => route('admin.inventory.receipts.index'),
+            ] : null,
             StockAdjustment::class => ($adjustment = StockAdjustment::query()->find($movement->reference_id)) ? [
                 'label' => $adjustment->adjustment_number,
                 'href' => route('admin.inventory.adjustments.index'),

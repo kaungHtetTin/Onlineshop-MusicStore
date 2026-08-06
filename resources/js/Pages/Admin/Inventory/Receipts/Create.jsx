@@ -17,7 +17,12 @@ export default function ReceiptCreate({ locations, categories = [] }) {
                     <Icon name="navigation" size={14} style={{ transform: 'rotate(180deg)' }} /> {t('Back to receipts')}
                 </Link>
             </div>
-            <InventoryDocumentForm type="receipt" locations={locations} categories={categories} />
+            <InventoryDocumentForm
+                type="receipt"
+                locations={locations}
+                categories={categories}
+                submitLabel="Post receipt"
+            />
         </AdminLayout>
     );
 }

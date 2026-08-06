@@ -30,6 +30,31 @@ class Coupon extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = [
+        'status',
+    ];
+
+    public function getStatusAttribute(): string
+    {
+        if (! $this->is_active) {
+            return 'inactive';
+        }
+
+        if ($this->expires_at && now()->gt($this->expires_at)) {
+            return 'expired';
+        }
+
+        if ($this->usage_limit !== null && $this->used_count >= $this->usage_limit) {
+            return 'exhausted';
+        }
+
+        if ($this->starts_at && now()->lt($this->starts_at)) {
+            return 'scheduled';
+        }
+
+        return 'active';
+    }
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);

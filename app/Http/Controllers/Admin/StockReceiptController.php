@@ -45,12 +45,16 @@ class StockReceiptController extends Controller
         $receipt = $service->createDraft($location, $validated['items'], $request->user(), $validated['supplier_reference'] ?? null, $validated['notes'] ?? null);
         $audit->record('inventory.receipt.created', $receipt, ['location_id' => $location->id], $request);
 
-        return redirect()->route('admin.inventory.receipts.show', $receipt)->with('success', 'Receipt draft created.');
+        $receipt = $service->post($receipt, $request->user());
+        $audit->record('inventory.receipt.posted', $receipt, ['location_id' => $receipt->location_id], $request);
+
+        return redirect()->route('admin.inventory.receipts.index')->with('success', 'Receipt posted and stock updated.');
     }
 
     public function edit(Request $request, StockReceipt $receipt)
     {
         $this->authorize('update', $receipt);
+        abort_unless($receipt->status === 'draft', 404);
         $receipt->load([
             'items.sku.product:id,name',
             'items.sku.inventoryBalances' => fn ($query) => $query->where('location_id', $receipt->location_id),
@@ -88,26 +92,10 @@ class StockReceiptController extends Controller
         $receipt = $service->updateDraft($receipt, $location, $validated['items'], $validated['supplier_reference'] ?? null, $validated['notes'] ?? null);
         $audit->record('inventory.receipt.updated', $receipt, ['location_id' => $location->id], $request);
 
-        return redirect()->route('admin.inventory.receipts.show', $receipt)->with('success', 'Receipt draft updated.');
-    }
-
-    public function show(Request $request, StockReceipt $receipt)
-    {
-        $this->authorize('view', $receipt);
-        return Spa::render('Admin/Inventory/Receipts/Show', [
-            'receipt' => $receipt->load(['location:id,code,name,type', 'items.sku.product:id,name']),
-            'canEdit' => $request->user()->can('update', $receipt),
-            'canPost' => $request->user()->hasAdminPermission('inventory.receive') && $receipt->status === 'draft',
-            'canDelete' => $request->user()->can('delete', $receipt),
-        ]);
-    }
-
-    public function post(Request $request, StockReceipt $receipt, StockReceiptService $service, AuditLogService $audit)
-    {
-        $this->authorize('update', $receipt);
-        $service->post($receipt, $request->user());
+        $receipt = $service->post($receipt, $request->user());
         $audit->record('inventory.receipt.posted', $receipt, ['location_id' => $receipt->location_id], $request);
-        return back()->with('success', 'Receipt posted and stock updated.');
+
+        return redirect()->route('admin.inventory.receipts.index')->with('success', 'Receipt posted and stock updated.');
     }
 
     public function destroy(Request $request, StockReceipt $receipt, StockReceiptService $service, AuditLogService $audit)

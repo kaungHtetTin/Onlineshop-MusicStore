@@ -1,27 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useForm, usePage } from '@/spa/router';
 import Icon from '@/Components/Admin/icons';
 import { PanelHeading } from '@/Components/Admin/shared';
-import { routeWithBase, storageUrl } from '@/Utils/url';
+import WizardSkuCatalog, { ProductIdentity } from '@/Components/Admin/WizardSkuCatalog';
+import { routeWithBase } from '@/Utils/url';
 import { usePhraseTranslation } from '@/Utils/i18n';
 
-const cleanPaginationLabel = (label = '') =>
-    label.includes('&laquo;')
-        ? 'Previous'
-        : label.includes('&raquo;')
-            ? 'Next'
-            : label.replace(/&amp;/g, '&');
+function Stat({ label, value }) {
+    const t = usePhraseTranslation();
+
+    return (
+        <div className="metric-card" style={{ padding: 12 }}>
+            <span>{t(label)}</span>
+            <strong>{value}</strong>
+        </div>
+    );
+}
 
 export default function TransferDocumentForm({ locations, categories = [] }) {
-    const { app_base, app_url } = usePage().props;
+    const { app_base } = usePage().props;
     const t = usePhraseTranslation();
     const firstSource = locations[0]?.id || '';
     const firstDestination = locations.find((location) => String(location.id) !== String(firstSource))?.id || '';
-    const [query, setQuery] = useState('');
-    const [categoryId, setCategoryId] = useState('all');
-    const [searching, setSearching] = useState(false);
-    const [skuPage, setSkuPage] = useState({ data: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, links: [] });
     const [step, setStep] = useState('route');
     const form = useForm({
         source_location_id: firstSource,
@@ -30,51 +31,58 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
     });
 
     const steps = [
-        { key: 'route', title: 'Transfer route' },
-        { key: 'products', title: 'Select products' },
-        { key: 'details', title: 'Quantities & review' },
+        { key: 'route', label: 'Route' },
+        { key: 'products', label: 'Products' },
+        { key: 'details', label: 'Quantities' },
+        { key: 'review', label: 'Review' },
     ];
     const stepIndex = steps.findIndex((item) => item.key === step);
-    const source = locations.find((location) => String(location.id) === String(form.data.source_location_id));
-    const destination = locations.find((location) => String(location.id) === String(form.data.destination_location_id));
     const destinationOptions = locations.filter((location) => String(location.id) !== String(form.data.source_location_id));
     const selectedSkuIds = form.data.items.map((item) => item.sku_id);
-    const catalogSkus = [
-        ...form.data.items.map((item) => item.sku).filter(Boolean),
-        ...skuPage.data.filter((sku) => !selectedSkuIds.includes(sku.id)),
-    ];
+    const selectedSkus = form.data.items.map((item) => item.sku).filter(Boolean);
     const lineCount = form.data.items.length;
-    const totalUnits = form.data.items.reduce((sum, item) => sum + Number(item.requested_quantity || 0), 0);
+    const sourceLocation = locations.find((location) => String(location.id) === String(form.data.source_location_id));
+    const destinationLocation = locations.find((location) => String(location.id) === String(form.data.destination_location_id));
+    const totalUnits = useMemo(
+        () => form.data.items.reduce((sum, item) => sum + Number(item.requested_quantity || 0), 0),
+        [form.data.items],
+    );
+    const routeComplete = Boolean(form.data.source_location_id && form.data.destination_location_id);
+    const productsComplete = routeComplete && lineCount > 0;
+    const detailsComplete = lineCount > 0 && form.data.items.every((item) => {
+        const qty = Number(item.requested_quantity);
+        const available = Number(item.sku?.available_qty || 0);
+        return Number.isFinite(qty) && qty >= 1 && qty <= Math.max(1, available);
+    });
+    const canAccessStep = (index) => (
+        index === 0
+        || (index === 1 && routeComplete)
+        || (index === 2 && productsComplete)
+        || (index === 3 && detailsComplete)
+    );
     const canContinue = step === 'route'
-        ? form.data.source_location_id && form.data.destination_location_id
+        ? routeComplete
         : step === 'products'
-            ? lineCount > 0
-            : lineCount > 0 && form.data.destination_location_id;
+            ? productsComplete
+            : step === 'details'
+                ? detailsComplete
+                : detailsComplete && form.data.destination_location_id;
 
-    const search = async (page = 1) => {
-        if (!form.data.source_location_id) return;
-        setSearching(true);
-        try {
-            const params = {
-                q: query,
-                location_id: form.data.source_location_id,
-                paginated: 1,
-                page,
-                per_page: 8,
-            };
-            if (categoryId !== 'all') params.category_id = categoryId;
-            const response = await axios.get(routeWithBase('/admin/inventory/skus/search', app_base), { params });
-            setSkuPage(response.data);
-        } finally {
-            setSearching(false);
+    const fetchCatalogPage = useCallback(async ({ q, categoryId, page, perPage }) => {
+        if (!form.data.source_location_id) {
+            return { data: [], current_page: 1, last_page: 1, total: 0 };
         }
-    };
-
-    useEffect(() => {
-        if (step === 'products') {
-            search(1);
-        }
-    }, [step, categoryId, form.data.source_location_id]);
+        const params = {
+            q,
+            location_id: form.data.source_location_id,
+            paginated: 1,
+            page,
+            per_page: perPage,
+        };
+        if (categoryId !== 'all') params.category_id = categoryId;
+        const response = await axios.get(routeWithBase('/admin/inventory/skus/search', app_base), { params });
+        return response.data;
+    }, [app_base, form.data.source_location_id]);
 
     const addSku = (sku) => {
         if (form.data.items.some((item) => item.sku_id === sku.id)) return;
@@ -109,6 +117,11 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
         form.setData('items', form.data.items.filter((line) => line.sku_id !== skuId));
     };
 
+    const toggleSku = (sku, nextSelected) => {
+        if (nextSelected) addSku(sku);
+        else removeSku(sku.id);
+    };
+
     const setSource = (sourceId) => {
         const nextDestination = locations.find((location) => String(location.id) !== String(sourceId));
         form.setData({
@@ -117,19 +130,20 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
             destination_location_id: nextDestination?.id || '',
             items: [],
         });
-        setSkuPage({ data: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, links: [] });
     };
 
     const goStep = (offset) => {
-        const next = steps[Math.min(Math.max(stepIndex + offset, 0), steps.length - 1)]?.key;
+        const nextIndex = Math.min(Math.max(stepIndex + offset, 0), steps.length - 1);
+        if (!canAccessStep(nextIndex) && offset > 0) return;
+        const next = steps[nextIndex]?.key;
         if (next) setStep(next);
     };
 
     const submit = (event) => {
-        event.preventDefault();
+        event?.preventDefault?.();
         form.transform((data) => ({
-                            ...data,
-                            items: data.items.map(({ sku, ...item }) => item),
+            ...data,
+            items: data.items.map(({ sku, ...item }) => item),
         }));
         form.post(routeWithBase('/admin/inventory/transfers', app_base));
     };
@@ -144,218 +158,181 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
             setStep('details');
             return;
         }
+        if (step === 'details') {
+            setStep('review');
+            return;
+        }
         submit(event);
     };
 
-    const SkuThumbnail = ({ sku }) => {
-        const imagePath = sku?.image_path || sku?.product_image_path;
-
-        return (
-            <span className="receipt-product-thumb" aria-hidden="true">
-                {imagePath ? <img src={storageUrl(imagePath, app_url)} alt="" /> : <Icon name="box" size={16} />}
-            </span>
-        );
-    };
-
-    const ProductIdentity = ({ sku }) => (
-        <div className="line-product-identity">
-            <SkuThumbnail sku={sku} />
-            <span>
-                <strong>{sku.product_name}</strong>
-                <small>{sku.sku_code}{sku.barcode ? ` / ${sku.barcode}` : ` / ${t('no barcode')}`}</small>
-            </span>
-        </div>
-    );
-
     return (
-        <form onSubmit={(event) => { event.preventDefault(); if (step === 'details') submit(event); }} className="receipt-wizard transfer-wizard">
+        <form onSubmit={(event) => { event.preventDefault(); if (step === 'review') submit(event); }} className="admin-wizard transfer-wizard">
             {Object.keys(form.errors).length > 0 && (
                 <div className="flash error">
                     {Object.values(form.errors).map((error) => <div key={error}>{error}</div>)}
                 </div>
             )}
 
-            <nav className="receipt-wizard-tabs" aria-label={t('Transfer form steps')}>
-                {steps.map((item, index) => {
-                    const active = step === item.key;
-                    const complete = index < stepIndex;
-                    return (
-                        <button type="button" key={item.key} className={active ? 'active' : complete ? 'complete' : ''} onClick={() => setStep(item.key)}>
-                            <span className="receipt-step-circle">{index + 1}</span>
-                            <strong>{t(item.title)}</strong>
+            <section className="panel glass">
+                <div className="wizard-toolbar">
+                    <div className="tab-bar" role="tablist" aria-label={t('Transfer form steps')}>
+                        {steps.map((item, index) => (
+                            <button
+                                type="button"
+                                key={item.key}
+                                className={step === item.key ? 'active' : ''}
+                                disabled={!canAccessStep(index)}
+                                onClick={() => canAccessStep(index) && setStep(item.key)}
+                            >
+                                {index + 1}. {t(item.label)}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="wizard-toolbar-actions">
+                        <button type="button" className="btn secondary" onClick={() => goStep(-1)} disabled={stepIndex === 0}>
+                            {t('Previous')}
                         </button>
-                    );
-                })}
-            </nav>
-
-            <div className="receipt-wizard-topbar transfer-wizard-commandbar">
-                <div className="receipt-summary-strip" aria-label={t('Transfer summary')}>
-                    <span><small>{t('Source')}</small><strong>{source?.code || '-'}</strong></span>
-                    <span><small>{t('Destination')}</small><strong>{destination?.code || '-'}</strong></span>
-                    <span><small>{t('Lines')}</small><strong>{lineCount}</strong></span>
-                    <span><small>{t('Units')}</small><strong>{totalUnits}</strong></span>
+                        <button type="button" className="btn primary" onClick={next} disabled={!canContinue || form.processing}>
+                            {t(step === 'review' ? 'Transfer stock' : 'Next')}
+                        </button>
+                    </div>
                 </div>
-                <div className="receipt-wizard-actions">
-                    <button type="button" className="btn secondary" onClick={() => goStep(-1)} disabled={stepIndex === 0}>{t('Back')}</button>
-                    <button type="button" className="btn primary" onClick={next} disabled={!canContinue || form.processing}>
-                        {t(step === 'details' ? 'Transfer stock' : 'Next')}
-                    </button>
-                </div>
-            </div>
 
-            <div className="receipt-wizard-shell">
-                <section className="panel glass receipt-wizard-panel">
-                    {step === 'route' && (
-                        <>
-                                <PanelHeading eyebrow="Transfer route" title="Choose the warehouses" action={<small className="muted">{t('Stock moves immediately when submitted.')}</small>} />
-                                <div className="receipt-basic-grid transfer-route-grid">
+                {step === 'route' && (
+                    <>
+                        <PanelHeading eyebrow={t('Step 1')} title={t('Choose the warehouses')} />
+                        <div className="receipt-basic-grid transfer-route-grid">
+                            <label className="form-field">
+                                <span>{t('Source warehouse')}</span>
+                                <select value={form.data.source_location_id} onChange={(event) => setSource(event.target.value)} required>
+                                    {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+                                </select>
+                            </label>
+                            <div className="transfer-route-direction" aria-hidden="true">
+                                <span><Icon name="truck" size={16} /></span>
+                                <i />
+                                <Icon name="navigation" size={13} />
+                            </div>
+                            <label className="form-field">
+                                <span>{t('Destination warehouse')}</span>
+                                <select value={form.data.destination_location_id} onChange={(event) => form.setData('destination_location_id', event.target.value)} required>
+                                    {destinationOptions.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+                                </select>
+                            </label>
+                        </div>
+                    </>
+                )}
+
+                {step === 'products' && (
+                    <>
+                        <PanelHeading eyebrow={t('Step 2')} title={t('Select products')} action={<small className="muted">{lineCount} {t('selected')}</small>} />
+                        <WizardSkuCatalog
+                            categories={categories}
+                            selectedSkus={selectedSkus}
+                            selectedSkuIds={selectedSkuIds}
+                            onToggle={toggleSku}
+                            fetchPage={fetchCatalogPage}
+                            enabled={step === 'products'}
+                            resetKey={String(form.data.source_location_id || '')}
+                            searchDisabled={!form.data.source_location_id}
+                            columns={[
+                                {
+                                    key: 'on_hand',
+                                    label: 'On hand',
+                                    render: (sku) => (<><strong>{sku.on_hand_qty}</strong><small>{t('on hand')}</small></>),
+                                },
+                                {
+                                    key: 'available',
+                                    label: 'Available',
+                                    render: (sku) => (<><strong>{sku.available_qty}</strong><small>{t('available')}</small></>),
+                                },
+                            ]}
+                        />
+                    </>
+                )}
+
+                {step === 'details' && (
+                    <>
+                        <PanelHeading eyebrow={t('Step 3')} title={t('Quantities')} action={<small className="muted">{t('Requested quantity cannot exceed source availability.')}</small>} />
+                        <div className="receipt-price-lines">
+                            {lineCount === 0 ? <div className="empty-document-lines">{t('Select products before entering quantities.')}</div> : form.data.items.map((item, index) => (
+                                <div className="receipt-price-line" style={{ '--wizard-qty-fields': 2, '--wizard-qty-unit': '96px' }} key={item.sku_id}>
+                                    <ProductIdentity sku={item.sku} />
                                     <label className="form-field">
-                                        <span>{t('Source warehouse')}</span>
-                                        <select value={form.data.source_location_id} onChange={(event) => setSource(event.target.value)} required>
-                                            {locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-                                        </select>
+                                        <span>{t('Available')}</span>
+                                        <input type="number" value={item.sku.available_qty} readOnly tabIndex={-1} />
                                     </label>
-                                    <div className="transfer-route-direction" aria-hidden="true">
-                                        <span><Icon name="truck" size={16} /></span>
-                                        <i />
-                                        <Icon name="navigation" size={13} />
-                                    </div>
                                     <label className="form-field">
-                                        <span>{t('Destination warehouse')}</span>
-                                        <select value={form.data.destination_location_id} onChange={(event) => form.setData('destination_location_id', event.target.value)} required>
-                                            {destinationOptions.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
-                                        </select>
+                                        <span>{t('Requested')}</span>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max={item.sku.available_qty}
+                                            step="1"
+                                            inputMode="numeric"
+                                            value={item.requested_quantity}
+                                            onChange={(event) => updateRequestedQuantity(index, event.target.value, item.sku.available_qty)}
+                                            onBlur={() => {
+                                                if (item.requested_quantity === '') updateRequestedQuantity(index, '1', item.sku.available_qty);
+                                            }}
+                                            required
+                                        />
                                     </label>
                                 </div>
-                            </>
-                        )}
+                            ))}
+                        </div>
+                    </>
+                )}
 
-                    {step === 'products' && (
-                        <>
-                            <PanelHeading eyebrow="Product selection" title="Select products from source" action={<small className="muted">{lineCount} {t('selected')}</small>} />
-                            <div className="receipt-product-toolbar">
-                                <div className="search-box">
-                                    <Icon name="search" size={15} />
-                                    <input
-                                        value={query}
-                                        onChange={(event) => setQuery(event.target.value)}
-                                        onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); search(1); } }}
-                                        placeholder={t('Search product, SKU, or barcode')}
-                                    />
-                                </div>
-                                <label className="receipt-category-select" aria-label={t('Category filter')}>
-                                    <Icon name="tag" size={14} />
-                                    <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
-                                        <option value="all">{t('All categories')}</option>
-                                        {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                                    </select>
-                                </label>
-                                <button className="btn secondary" type="button" onClick={() => search(1)} disabled={searching || !form.data.source_location_id}>
-                                    {t(searching ? 'Searching...' : 'Search')}
-                                </button>
-                            </div>
-
-                            {!searching && catalogSkus.length > 0 && (
-                                <div className="transfer-product-list-head" aria-hidden="true">
-                                    <span>{t('Product / SKU')}</span>
-                                    <span>{t('On hand')}</span>
-                                    <span>{t('Available')}</span>
-                                    <span>{t('Action')}</span>
-                                </div>
-                            )}
-                            <div className="receipt-product-catalog" aria-busy={searching}>
-                                {searching ? (
-                                    <div className="spa-inline-list-skeleton" role="status" aria-label={t('Loading products')}>
-                                        {Array.from({ length: 6 }, (_, index) => (
-                                            <div className="spa-inline-list-skeleton-row" key={index}>
-                                                <span className="spa-skeleton-block media" />
-                                                <span className="spa-skeleton-block line" />
-                                                <span className="spa-skeleton-block line short" />
-                                                <span className="spa-skeleton-block button" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : catalogSkus.length === 0 ? <div className="empty-document-lines">{t('No products match these filters.')}</div> : catalogSkus.map((sku) => {
-                                    const selected = selectedSkuIds.includes(sku.id);
-                                    return (
-                                        <div key={sku.id} className={selected ? 'receipt-product-row selected' : 'receipt-product-row'}>
-                                            <ProductIdentity sku={sku} />
-                                            <span><strong>{sku.on_hand_qty}</strong><small>{t('on hand')}</small></span>
-                                            <span><strong>{sku.available_qty}</strong><small>{t('available')}</small></span>
-                                            <button
-                                                type="button"
-                                                className={selected ? 'receipt-product-action remove transfer-remove-action' : 'receipt-product-action'}
-                                                onClick={() => selected ? removeSku(sku.id) : addSku(sku)}
-                                                aria-label={selected ? `${t('Remove')} ${sku.product_name}` : undefined}
-                                                title={selected ? t('Remove') : undefined}
-                                            >
-                                                {selected ? <span className="transfer-remove-icon"><Icon name="trash" size={15} /></span> : t('Add')}
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            {!searching && skuPage.last_page > 1 && (
-                                <div className="receipt-product-pagination">
-                                    <small>{t('Showing')} {skuPage.from || 0}-{skuPage.to || 0} {t('of')} {skuPage.total || 0}</small>
-                                    <div>
-                                        {skuPage.links.map((link, index) => (
-                                            <button
-                                                type="button"
-                                                key={`${link.label}-${index}`}
-                                                className={link.active ? 'active' : ''}
-                                                disabled={!link.url}
-                                                onClick={() => link.url && search(Number(new URL(link.url, window.location.origin).searchParams.get('page') || 1))}
-                                            >
-                                                {t(cleanPaginationLabel(link.label))}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
-
-                    {step === 'details' && (
-                        <>
-                            <PanelHeading eyebrow="Transfer lines" title="Fill quantities and review" action={<small className="muted">{t('Requested quantity cannot exceed source availability.')}</small>} />
-                            <div className="receipt-price-lines">
-                                {lineCount === 0 ? <div className="empty-document-lines">{t('Select products before entering quantities.')}</div> : form.data.items.map((item, index) => (
-                                    <div className="receipt-price-line transfer-price-line" key={item.sku_id}>
-                                        <ProductIdentity sku={item.sku} />
-                                        <div className="transfer-line-actions">
-                                            <div className="transfer-line-control transfer-available-pill">
-                                                <span>{t('Available')}</span>
-                                                <strong>{item.sku.available_qty}</strong>
-                                            </div>
-                                            <label className="transfer-line-control transfer-qty-control">
-                                                <span>{t('Requested')}</span>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    max={item.sku.available_qty}
-                                                    step="1"
-                                                    inputMode="numeric"
-                                                    value={item.requested_quantity}
-                                                    onChange={(event) => updateRequestedQuantity(index, event.target.value, item.sku.available_qty)}
-                                                    onBlur={() => {
-                                                        if (item.requested_quantity === '') updateRequestedQuantity(index, '1', item.sku.available_qty);
-                                                    }}
-                                                    required
-                                                />
-                                            </label>
-                                            <button type="button" className="transfer-line-remove" onClick={() => removeSku(item.sku_id)} aria-label={t('Remove item')} title={t('Remove item')}>
-                                                <Icon name="trash" size={15} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </section>
-            </div>
+                {step === 'review' && (
+                    <>
+                        <PanelHeading eyebrow={t('Step 4')} title={t('Review and submit')} />
+                        <div className="metrics-grid compact" style={{ marginBottom: 14 }}>
+                            <Stat label="Source warehouse" value={sourceLocation?.name || '-'} />
+                            <Stat label="Destination warehouse" value={destinationLocation?.name || '-'} />
+                            <Stat label="Lines" value={lineCount} />
+                            <Stat label="Units" value={totalUnits} />
+                        </div>
+                        <div className="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>{t('SKU')}</th>
+                                        <th>{t('Available')}</th>
+                                        <th>{t('Requested')}</th>
+                                        <th />
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {form.data.items.map((item) => (
+                                        <tr key={item.sku_id}>
+                                            <td>
+                                                <strong>{item.sku?.product_name}</strong>
+                                                <small className="muted" style={{ display: 'block' }}>
+                                                    {item.sku?.sku_code}
+                                                    {item.sku?.barcode ? ` / ${item.sku.barcode}` : ''}
+                                                </small>
+                                            </td>
+                                            <td>{item.sku?.available_qty ?? '-'}</td>
+                                            <td>{item.requested_quantity}</td>
+                                            <td>
+                                                <button
+                                                    type="button"
+                                                    className="icon-btn small danger"
+                                                    onClick={() => removeSku(item.sku_id)}
+                                                    aria-label={t('Remove item')}
+                                                >
+                                                    <Icon name="trash" size={13} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                )}
+            </section>
         </form>
     );
 }

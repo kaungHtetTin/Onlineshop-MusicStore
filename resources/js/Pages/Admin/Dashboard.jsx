@@ -494,12 +494,12 @@ export default function Dashboard({ stats = {}, recentOrders = [], productCount 
                         </div>
                     </section>
 
-                    <section className="panel glass">
+                    <section className="panel glass dashboard-compact-list-panel dashboard-top-products-panel">
                         <PanelHeading eyebrow={t('Catalog')} title={t('Top products')} />
                         <RankedProducts products={dashboardData.topProducts} />
                     </section>
 
-                    <section className="panel glass">
+                    <section className="panel glass dashboard-compact-list-panel dashboard-low-stock-panel">
                         <PanelHeading
                             eyebrow={t('Inventory')}
                             title={t('Low stock watch')}
