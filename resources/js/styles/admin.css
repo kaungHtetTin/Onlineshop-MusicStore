@@ -2177,6 +2177,134 @@
   margin-bottom: 0;
 }
 
+.app-root .wizard-toolbar .wizard-stepper {
+  width: min(100%, 620px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(86px, 1fr));
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.app-root .wizard-toolbar .wizard-stepper button {
+  position: relative;
+  z-index: 0;
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  grid-template-rows: 28px auto;
+  justify-items: center;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-muted);
+  box-shadow: none;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.app-root .wizard-toolbar .wizard-stepper button:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 13px;
+  left: calc(50% + 14px);
+  width: calc(100% - 28px);
+  height: 2px;
+  background: var(--color-border);
+}
+
+.app-root .wizard-toolbar .wizard-stepper button.is-complete:not(:last-child)::after {
+  background: var(--color-primary);
+}
+
+.app-root .wizard-step-number {
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  box-shadow: 0 0 0 4px var(--color-surface);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  transition: border-color .15s ease, background .15s ease, color .15s ease, transform .15s ease;
+}
+
+.app-root .wizard-step-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .wizard-toolbar .wizard-stepper button.is-complete .wizard-step-number {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.app-root .wizard-toolbar .wizard-stepper button.is-complete .wizard-step-label {
+  color: color-mix(in srgb, var(--color-primary) 76%, var(--color-text));
+}
+
+.app-root .wizard-toolbar .wizard-stepper button.active,
+.app-root .wizard-toolbar .wizard-stepper button.active:hover {
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  box-shadow: none;
+}
+
+.app-root .wizard-toolbar .wizard-stepper button.active .wizard-step-number {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-surface), 0 0 0 6px var(--color-primary-soft);
+  transform: scale(1.06);
+}
+
+.app-root .wizard-toolbar .wizard-stepper button.active .wizard-step-label {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.app-root .wizard-toolbar .wizard-stepper button:not(:disabled):not(.active):hover .wizard-step-number {
+  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
+  color: var(--color-primary);
+}
+
+.app-root .wizard-toolbar .wizard-stepper button:focus-visible {
+  outline: 0;
+}
+
+.app-root .wizard-toolbar .wizard-stepper button:focus-visible .wizard-step-number {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.app-root .wizard-toolbar .wizard-stepper button:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.app-root .wizard-toolbar .wizard-stepper button:disabled .wizard-step-number,
+.app-root .wizard-toolbar .wizard-stepper button:disabled .wizard-step-label {
+  opacity: .55;
+}
+
 .app-root .wizard-toolbar-actions {
   display: flex;
   justify-content: flex-end;
@@ -2201,6 +2329,17 @@
 
   .app-root .wizard-toolbar-actions .btn {
     flex: 1;
+  }
+
+  .app-root .wizard-toolbar .wizard-stepper {
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .app-root .wizard-toolbar .wizard-stepper button {
+    min-height: 46px;
+    padding-inline: 3px;
+    font-size: 9px;
   }
 }
 
@@ -3314,6 +3453,471 @@
   }
 }
 
+/* Shared Windows-console product rows for receipt, transfer, and flash-sale wizards. */
+.app-root .wizard-sku-catalog {
+  --wizard-console-bg: var(--color-surface);
+  --wizard-console-row: var(--color-surface);
+  --wizard-console-row-hover: var(--color-soft);
+  --wizard-console-border: var(--color-border);
+  --wizard-console-text: var(--color-text);
+  --wizard-console-muted: var(--color-muted);
+  --wizard-console-accent: var(--color-primary);
+  --wizard-console-code: color-mix(in srgb, var(--color-primary) 82%, var(--color-text));
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-list-head {
+  min-height: 34px;
+  align-items: center;
+  padding-inline: 12px;
+  border-color: var(--wizard-console-border);
+  background: var(--color-soft);
+  color: var(--wizard-console-muted);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-list-head > span:first-child {
+  padding-left: 0;
+}
+
+.app-root .wizard-sku-catalog .wizard-console-frame {
+  border-color: var(--wizard-console-border);
+  background: var(--wizard-console-bg);
+  scrollbar-color: var(--color-muted) var(--wizard-console-bg);
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row {
+  position: relative;
+  min-height: 58px;
+  padding: 7px 11px 7px 30px;
+  border-color: var(--wizard-console-border);
+  border-left: 0;
+  background: var(--wizard-console-row);
+  color: var(--wizard-console-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row::before {
+  content: ">";
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  color: var(--wizard-console-muted);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 800;
+  transform: translateY(-50%);
+  transition: color .15s ease;
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row:hover {
+  border-color: var(--wizard-console-border);
+  background: var(--wizard-console-row-hover);
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row:hover::before {
+  color: var(--wizard-console-code);
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row.selected,
+.app-root .wizard-sku-catalog .wizard-sku-row.selected:hover {
+  border-color: var(--wizard-console-border);
+  border-left: 3px solid var(--wizard-console-accent);
+  background: var(--color-primary-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row.selected::before {
+  left: 8px;
+  color: var(--wizard-console-accent);
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row:focus-within {
+  outline: 1px solid var(--wizard-console-code);
+  outline-offset: -2px;
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row .line-product-identity strong {
+  color: var(--wizard-console-text);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row .line-product-identity small,
+.app-root .wizard-sku-catalog .wizard-sku-row > span small {
+  color: var(--wizard-console-muted);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 10px;
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row > span strong {
+  color: var(--wizard-console-code);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 12px;
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-row .receipt-product-thumb {
+  border: 1px solid var(--color-border);
+  background: var(--color-soft);
+  color: var(--wizard-console-muted);
+  box-shadow: none;
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-check input {
+  width: 19px;
+  height: 19px;
+  accent-color: var(--wizard-console-accent);
+}
+
+.app-root .wizard-sku-catalog .wizard-sku-loading-more,
+.app-root .wizard-sku-catalog .wizard-sku-count,
+.app-root .wizard-sku-catalog .empty-document-lines {
+  border-color: var(--wizard-console-border);
+  background: var(--wizard-console-bg);
+  color: var(--wizard-console-muted);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+}
+
+.app-root .wizard-qty-table {
+  --wizard-console-bg: var(--color-surface);
+  --wizard-console-row: var(--color-surface);
+  --wizard-console-border: var(--color-border);
+  --wizard-console-text: var(--color-text);
+  --wizard-console-muted: var(--color-muted);
+  --wizard-console-accent: var(--color-primary);
+  --wizard-console-code: color-mix(in srgb, var(--color-primary) 82%, var(--color-text));
+}
+
+.app-root .wizard-qty-list-head {
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) repeat(var(--wizard-qty-fields, 4), var(--wizard-qty-unit, 112px)) 40px;
+  gap: 10px;
+  min-height: 34px;
+  align-items: center;
+  padding: 5px 10px 5px 28px;
+  border: 1px solid var(--wizard-console-border);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--color-soft);
+  color: var(--wizard-console-muted);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.app-root .wizard-qty-list-head > span:not(:first-child) {
+  text-align: right;
+}
+
+.app-root .wizard-qty-list-head > span:last-child {
+  text-align: center;
+}
+
+.app-root .wizard-console-lines {
+  --wizard-console-bg: var(--color-surface);
+  --wizard-console-row: var(--color-surface);
+  --wizard-console-border: var(--color-border);
+  --wizard-console-text: var(--color-text);
+  --wizard-console-muted: var(--color-muted);
+  --wizard-console-accent: var(--color-primary);
+  --wizard-console-code: color-mix(in srgb, var(--color-primary) 82%, var(--color-text));
+  position: relative;
+  display: grid;
+  gap: 0;
+  max-height: min(52vh, 520px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--wizard-console-border);
+  border-radius: var(--radius-sm);
+  background: var(--wizard-console-bg);
+  box-shadow: none;
+  scrollbar-color: var(--color-muted) var(--wizard-console-bg);
+}
+
+.app-root .wizard-qty-list-head + .wizard-console-lines {
+  border-top: 0;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.app-root .wizard-console-lines .wizard-console-line {
+  position: relative;
+  align-items: center;
+  padding: 10px 10px 10px 28px;
+  border: 0;
+  border-bottom: 1px solid var(--wizard-console-border);
+  border-radius: 0;
+  background: var(--wizard-console-row);
+  color: var(--wizard-console-text);
+  box-shadow: none;
+}
+
+.app-root .wizard-console-lines .wizard-console-line:first-of-type {
+  border-radius: 0;
+}
+
+.app-root .wizard-console-lines .wizard-console-line:last-of-type {
+  border-bottom: 0;
+  border-radius: 0;
+}
+
+.app-root .wizard-console-lines .wizard-console-line:only-of-type {
+  border-radius: 0;
+}
+
+.app-root .wizard-console-lines .wizard-console-line::before {
+  content: ">";
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  color: var(--wizard-console-accent);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 800;
+  transform: translateY(-50%);
+}
+
+.app-root .wizard-console-line .line-product-identity strong {
+  color: var(--wizard-console-text);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.app-root .wizard-console-line .line-product-identity small,
+.app-root .wizard-console-line .wizard-qty-hint {
+  color: var(--wizard-console-muted) !important;
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 10px;
+}
+
+.app-root .wizard-console-line .receipt-product-thumb {
+  border: 1px solid var(--color-border);
+  background: var(--color-soft);
+  color: var(--wizard-console-muted);
+  box-shadow: none;
+}
+
+.app-root .wizard-console-line .form-field > span {
+  margin-bottom: 5px;
+  color: var(--wizard-console-muted);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.app-root .wizard-console-line .wizard-qty-value {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding-inline: 6px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-root .wizard-console-line .wizard-qty-value > span {
+  color: var(--wizard-console-muted);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.app-root .wizard-console-line .wizard-qty-value > strong {
+  overflow: hidden;
+  color: var(--wizard-console-text);
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .wizard-console-line .form-field input,
+.app-root .wizard-console-line .form-field select,
+.app-root .wizard-console-line .form-field input[readonly],
+.app-root .wizard-console-line .form-field input:disabled {
+  min-height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--wizard-console-text);
+  box-shadow: none;
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-root .wizard-console-line .form-field input {
+  text-align: right;
+}
+
+.app-root .wizard-console-line .form-field input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.app-root .wizard-console-line .form-field input[type="number"]::-webkit-inner-spin-button,
+.app-root .wizard-console-line .form-field input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.app-root .wizard-console-line .form-field input[readonly],
+.app-root .wizard-console-line .form-field input:disabled {
+  color: var(--wizard-console-code);
+  background: var(--color-soft);
+  opacity: 1;
+}
+
+.app-root .wizard-console-line .form-field input:hover:not(:disabled),
+.app-root .wizard-console-line .form-field select:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+}
+
+.app-root .wizard-console-line .form-field input:focus,
+.app-root .wizard-console-line .form-field input:focus-visible,
+.app-root .wizard-console-line .form-field select:focus,
+.app-root .wizard-console-line .form-field select:focus-visible {
+  border-color: var(--wizard-console-accent);
+  outline: 0;
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+.app-root .wizard-console-line .form-field.is-invalid > span {
+  color: var(--color-danger);
+}
+
+.app-root .wizard-console-line .form-field.is-invalid input,
+.app-root .wizard-console-line .form-field.is-invalid select,
+.app-root .wizard-console-line .form-field input[aria-invalid="true"],
+.app-root .wizard-console-line .form-field select[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 7%, var(--color-surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+
+.app-root .wizard-console-lines .wizard-console-line.is-invalid {
+  border-color: color-mix(in srgb, var(--color-danger) 55%, var(--color-border));
+  box-shadow: inset 3px 0 0 var(--color-danger);
+}
+
+.app-root .wizard-console-line .wizard-qty-remove {
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 28%, var(--color-border));
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-danger) 6%, var(--color-surface));
+  color: var(--color-danger);
+  box-shadow: none;
+}
+
+.app-root .wizard-console-line .wizard-qty-remove:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+  color: var(--color-danger);
+}
+
+.app-root .wizard-console-line .wizard-qty-remove:disabled {
+  opacity: .42;
+}
+
+.app-root .wizard-console-lines .empty-document-lines {
+  min-height: 76px;
+  display: grid;
+  place-items: center;
+  border-color: var(--wizard-console-border);
+  background: var(--wizard-console-row);
+  color: var(--wizard-console-muted);
+  font-family: "Cascadia Code", Consolas, "Courier New", monospace;
+}
+
+@media (min-width: 1051px) {
+  .app-root .wizard-console-line .form-field > span,
+  .app-root .wizard-console-line .wizard-qty-value > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@media (max-width: 1050px) {
+  .app-root .wizard-qty-list-head {
+    display: none;
+  }
+
+  .app-root .wizard-qty-list-head + .wizard-console-lines {
+    border-top: 1px solid var(--wizard-console-border);
+    border-radius: var(--radius-sm);
+  }
+
+  .app-root .wizard-console-lines .wizard-console-line,
+  .app-root .wizard-console-lines .wizard-console-line.has-remove {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-root .wizard-console-lines .wizard-console-line .wizard-qty-remove {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-root .wizard-sku-catalog .wizard-sku-list-head {
+    display: none;
+  }
+
+  .app-root .wizard-sku-catalog .wizard-console-frame,
+  .app-root .wizard-sku-catalog .wizard-sku-list-head + .wizard-console-frame {
+    border-top: 1px solid var(--wizard-console-border);
+    border-radius: 6px;
+  }
+
+  .app-root .wizard-sku-catalog .wizard-sku-row,
+  .app-root .wizard-sku-catalog .wizard-sku-row.selected {
+    grid-template-columns: minmax(0, 1fr) 42px;
+    padding-left: 28px;
+  }
+
+  .app-root .wizard-sku-catalog .wizard-sku-row > span:not(.wizard-sku-check) {
+    display: none;
+  }
+
+  .app-root .wizard-console-lines .wizard-console-line,
+  .app-root .wizard-console-lines .wizard-console-line.has-remove {
+    grid-template-columns: minmax(0, 1fr);
+    padding-left: 28px;
+  }
+
+  .app-root .wizard-console-lines .wizard-console-line > :first-child,
+  .app-root .wizard-console-lines .wizard-console-line .line-product-identity,
+  .app-root .wizard-console-lines .wizard-console-line .wizard-qty-remove {
+    grid-column: auto;
+  }
+
+  .app-root .wizard-console-lines .wizard-console-line .wizard-qty-remove {
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    justify-self: end;
+  }
+}
+
 /* Dashboard compact catalog and inventory summaries ---------------------- */
 .app-root .dashboard-compact-list-panel {
   padding: 9px;
@@ -3566,7 +4170,7 @@
   .wizard-sku-row {
     grid-template-columns: minmax(0, 1fr) 44px;
     gap: 7px;
-    padding: 8px;
+    padding: 8px 11px 8px 28px;
   }
 
   .app-root .transfer-wizard .receipt-product-row .line-product-identity,
@@ -8914,6 +9518,249 @@
     width: 40px;
     min-width: 40px;
     min-height: 40px;
+  }
+}
+
+/* Shared record detail pages */
+.app-root .record-detail-page {
+  display: grid;
+  align-content: start;
+  gap: var(--admin-section-gap);
+}
+
+.app-root .record-detail-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.app-root .record-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-root .record-detail-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.app-root .record-detail-icon {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.app-root .record-detail-title h2,
+.app-root .record-detail-lines-heading h3 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.app-root .record-detail-title h2 {
+  font-size: 18px;
+}
+
+.app-root .record-detail-title p:last-child {
+  margin: 3px 0 0;
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.app-root .record-detail-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-soft);
+}
+
+.app-root .record-detail-facts > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-right: 1px solid var(--color-border);
+}
+
+.app-root .record-detail-facts > div:last-child {
+  border-right: 0;
+}
+
+.app-root .record-detail-facts small,
+.app-root .record-detail-meta small {
+  color: var(--color-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.app-root .record-detail-facts strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-root .record-detail-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.app-root .record-detail-meta > div {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  padding: 10px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.app-root .record-detail-meta > div.wide {
+  grid-column: 1 / -1;
+}
+
+.app-root .record-detail-meta strong {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+
+.app-root .record-detail-meta span {
+  color: var(--color-muted);
+  font-size: 10px;
+}
+
+.app-root .record-detail-lines-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 2px;
+}
+
+.app-root .record-detail-lines-heading h3 {
+  font-size: 14px;
+}
+
+.app-root .record-detail-lines-heading > small {
+  max-width: 460px;
+  color: var(--color-muted);
+  text-align: right;
+}
+
+.app-root .record-detail-lines {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.app-root .record-line-number {
+  width: 42px;
+  color: var(--color-muted);
+  font-family: "Cascadia Code", Consolas, monospace;
+  text-align: center;
+}
+
+.app-root .record-detail-product {
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-root .record-detail-product > span {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-soft);
+  color: var(--color-muted);
+}
+
+.app-root .record-detail-product > div {
+  min-width: 0;
+}
+
+.app-root .record-detail-product strong,
+.app-root .record-detail-product small {
+  display: block;
+}
+
+.app-root .table-primary-link {
+  color: var(--color-text);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.app-root .table-primary-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .app-root .record-detail-facts,
+  .app-root .record-detail-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-root .record-detail-facts > div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .app-root .record-detail-facts > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+@media (max-width: 560px) {
+  .app-root .record-detail-card {
+    padding: 11px;
+  }
+
+  .app-root .record-detail-header,
+  .app-root .record-detail-lines-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .app-root .record-detail-lines-heading > small {
+    text-align: left;
+  }
+
+  .app-root .record-detail-facts,
+  .app-root .record-detail-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-root .record-detail-facts > div,
+  .app-root .record-detail-facts > div:nth-child(2) {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .app-root .record-detail-facts > div:last-child {
+    border-bottom: 0;
   }
 }
 

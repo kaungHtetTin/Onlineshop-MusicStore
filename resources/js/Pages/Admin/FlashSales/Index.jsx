@@ -126,7 +126,9 @@ export default function FlashSalesIndex({ flashSales, filters }) {
                             ) : flashSales.data.map((sale) => (
                                 <tr key={sale.id}>
                                     <td>
-                                        <strong>{sale.name}</strong>
+                                        <Link className="table-primary-link" href={routeWithBase(`/admin/flash-sales/${sale.id}`, app_base)}>
+                                            {sale.name}
+                                        </Link>
                                         <small className="muted" style={{ display: 'block' }}>
                                             {sale.items.slice(0, 2).map((item) => item.sku?.product?.name).filter(Boolean).join(', ')}
                                             {sale.items.length > 2 ? ` ${t('+:count more', { count: sale.items.length - 2 })}` : ''}
@@ -150,6 +152,13 @@ export default function FlashSalesIndex({ flashSales, filters }) {
                                     </td>
                                     <td>
                                         <div className="inline-actions">
+                                            <Link
+                                                className="icon-btn small"
+                                                href={routeWithBase(`/admin/flash-sales/${sale.id}`, app_base)}
+                                                aria-label={t('View flash sale')}
+                                            >
+                                                <Icon name="eye" size={13} />
+                                            </Link>
                                             <Link
                                                 className="icon-btn small"
                                                 href={routeWithBase(`/admin/flash-sales/${sale.id}/edit`, app_base)}

@@ -59,6 +59,43 @@ class FlashSaleController extends Controller
         ]);
     }
 
+    public function show(FlashSale $flashSale)
+    {
+        $flashSale->load(['items.sku.product:id,name']);
+
+        return Spa::render('Admin/FlashSales/Show', [
+            'flashSale' => [
+                'id' => $flashSale->id,
+                'name' => $flashSale->name,
+                'status' => $flashSale->status,
+                'is_active' => $flashSale->is_active,
+                'starts_at' => $flashSale->starts_at,
+                'ends_at' => $flashSale->ends_at,
+                'created_at' => $flashSale->created_at,
+                'updated_at' => $flashSale->updated_at,
+                'items' => $flashSale->items->map(fn (FlashSaleItem $item) => [
+                    'id' => $item->id,
+                    'discount_type' => $item->discount_type,
+                    'discount_value' => (float) $item->discount_value,
+                    'quantity_limit' => $item->quantity_limit,
+                    'sold_count' => $item->sold_count,
+                    'remaining_quantity' => $item->remainingQuantity(),
+                    'original_price' => (float) $item->sku->price,
+                    'sale_price' => $item->salePrice((float) $item->sku->price),
+                    'sku' => [
+                        'id' => $item->sku->id,
+                        'sku_code' => $item->sku->sku_code,
+                        'title' => $item->sku->title,
+                        'product' => [
+                            'id' => $item->sku->product->id,
+                            'name' => $item->sku->product->name,
+                        ],
+                    ],
+                ])->values(),
+            ],
+        ]);
+    }
+
     public function edit(FlashSale $flashSale)
     {
         $flashSale->load(['items.sku.product']);

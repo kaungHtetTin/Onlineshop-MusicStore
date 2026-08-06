@@ -51,6 +51,28 @@ class InventoryOperationsTest extends TestCase
         ]);
     }
 
+    public function test_stock_receipt_detail_page_includes_its_lines(): void
+    {
+        [$location, $sku, $actor] = $this->context();
+        $receipt = app(StockReceiptService::class)->createDraft($location, [[
+            'sku_id' => $sku->id,
+            'expected_quantity' => 4,
+            'received_quantity' => 3,
+            'unit_cost' => 25,
+            'notes' => 'One unit was missing.',
+        ]], $actor, 'PO-DETAIL');
+
+        $this->actingAs($actor)
+            ->withHeader('X-SPA', 'true')
+            ->get("/admin/inventory/receipts/{$receipt->id}")
+            ->assertOk()
+            ->assertJsonPath('component', 'Admin/Inventory/Receipts/Show')
+            ->assertJsonPath('props.receipt.id', $receipt->id)
+            ->assertJsonPath('props.receipt.supplier_reference', 'PO-DETAIL')
+            ->assertJsonPath('props.receipt.items.0.sku.id', $sku->id)
+            ->assertJsonPath('props.receipt.items.0.received_quantity', 3);
+    }
+
     public function test_stock_receipt_finance_category_is_seeded_as_system_data(): void
     {
         $this->seed(FinancialCategorySeeder::class);
@@ -270,6 +292,7 @@ class InventoryOperationsTest extends TestCase
 
         $this->actingAs($actor)
             ->delete("/admin/inventory/receipts/{$receipt->id}")
+            ->assertStatus(303)
             ->assertRedirect(route('admin.inventory.receipts.index'));
 
         $this->assertDatabaseMissing('stock_receipts', ['id' => $receipt->id]);

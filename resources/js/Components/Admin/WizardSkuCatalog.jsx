@@ -70,8 +70,9 @@ export default function WizardSkuCatalog({
 
     const selectedIdSet = new Set(selectedSkuIds.map(Number));
     const pinnedSkus = selectedSkus.filter(Boolean);
-    const catalogSkus = catalog.filter((sku) => !selectedIdSet.has(Number(sku.id)));
-    const visibleSkus = [...pinnedSkus, ...catalogSkus];
+    const catalogIdSet = new Set(catalog.map((sku) => Number(sku.id)));
+    const pinnedSkusOutsideCatalog = pinnedSkus.filter((sku) => !catalogIdSet.has(Number(sku.id)));
+    const visibleSkus = [...pinnedSkusOutsideCatalog, ...catalog];
     const hasMore = page < lastPage;
 
     const runFetch = useCallback(async (nextPage, { append, q, categoryId: cat }) => {
@@ -190,7 +191,7 @@ export default function WizardSkuCatalog({
             )}
 
             <div
-                className="receipt-product-catalog wizard-sku-catalog-scroll"
+                className="receipt-product-catalog wizard-sku-catalog-scroll wizard-console-frame"
                 aria-busy={searching}
             >
                 {searching && catalog.length === 0 ? (

@@ -114,6 +114,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/flash-sales', [FlashSaleController::class, 'index'])->name('flash-sales.index');
         Route::get('/flash-sales/create', [FlashSaleController::class, 'create'])->name('flash-sales.create');
         Route::post('/flash-sales', [FlashSaleController::class, 'store'])->name('flash-sales.store');
+        Route::get('/flash-sales/{flashSale}', [FlashSaleController::class, 'show'])->name('flash-sales.show');
         Route::get('/flash-sales/{flashSale}/edit', [FlashSaleController::class, 'edit'])->name('flash-sales.edit');
         Route::patch('/flash-sales/{flashSale}', [FlashSaleController::class, 'update'])->name('flash-sales.update');
         Route::delete('/flash-sales/{flashSale}', [FlashSaleController::class, 'destroy'])->name('flash-sales.destroy');
@@ -247,6 +248,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
         ->middleware('admin.permission:inventory.receive')->name('inventory.receipts.create');
     Route::post('/inventory/receipts', [StockReceiptController::class, 'store'])
         ->middleware('admin.permission:inventory.receive')->name('inventory.receipts.store');
+    Route::get('/inventory/receipts/{receipt}', [StockReceiptController::class, 'show'])
+        ->middleware('admin.permission:inventory.receive')->name('inventory.receipts.show');
     Route::get('/inventory/receipts/{receipt}/edit', [StockReceiptController::class, 'edit'])
         ->middleware('admin.permission:inventory.receive')->name('inventory.receipts.edit');
     Route::put('/inventory/receipts/{receipt}', [StockReceiptController::class, 'update'])

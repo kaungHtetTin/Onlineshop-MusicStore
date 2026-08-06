@@ -411,16 +411,20 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
             <form onSubmit={handleFormSubmit} noValidate>
                 <section className="panel glass">
                     <div className="wizard-toolbar">
-                        <div className="tab-bar" role="tablist">
+                        <div className="tab-bar wizard-stepper" role="tablist" aria-label={t('Flash sale form steps')}>
                             {steps.map((step, index) => (
                                 <button
                                     key={step.key}
                                     type="button"
-                                    className={tab === index ? 'active' : ''}
+                                    className={tab === index ? 'active' : index < tab ? 'is-complete' : ''}
                                     disabled={!canAccessStep(index)}
                                     onClick={() => canAccessStep(index) && setTab(index)}
+                                    aria-current={tab === index ? 'step' : undefined}
                                 >
-                                    {index + 1}. {t(step.label)}
+                                    <span className="wizard-step-number">
+                                        {index < tab ? <Icon name="check" size={13} /> : index + 1}
+                                    </span>
+                                    <span className="wizard-step-label">{t(step.label)}</span>
                                 </button>
                             ))}
                         </div>
@@ -545,49 +549,53 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                 title={t('Sale data by SKU')}
                                 action={<small className="muted">{t('Discount and quantity limit per SKU.')}</small>}
                             />
-                            <div className="receipt-price-lines">
-                                {selectedItems.length === 0 ? (
-                                    <div className="empty-document-lines">{t('Select products first.')}</div>
-                                ) : selectedItems.map(({ item, index, sku }) => {
-                                    const salePrice = salePriceFor(sku, item);
-                                    const locked = Number(item.sold_count || 0) > 0;
-                                    const discountError = form.errors[`items.${index}.discount_type`]
-                                        || form.errors[`items.${index}.discount_value`]
-                                        || pricingErrors[`items.${index}.discount_value`];
-                                    const quantityError = form.errors[`items.${index}.quantity_limit`]
-                                        || pricingErrors[`items.${index}.quantity_limit`];
-                                    const identitySku = {
-                                        id: sku.id,
-                                        product_name: sku.product?.name,
-                                        sku_code: sku.sku_code,
-                                        barcode: null,
-                                        title: sku.title,
-                                    };
+                            <div className="wizard-qty-table" style={{ '--wizard-qty-fields': 5, '--wizard-qty-unit': '108px' }}>
+                                {selectedItems.length > 0 && (
+                                    <div className="wizard-qty-list-head" aria-hidden="true">
+                                        <span>{t('Product / SKU')}</span>
+                                        <span>{t('Original')}</span>
+                                        <span>{t('Discount')}</span>
+                                        <span>{t('Value')}</span>
+                                        <span>{t('Limit')}</span>
+                                        <span>{t('Sale price')}</span>
+                                        <span>{t('Action')}</span>
+                                    </div>
+                                )}
+                                <div className="receipt-price-lines wizard-console-lines">
+                                    {selectedItems.length === 0 ? (
+                                        <div className="empty-document-lines">{t('Select products first.')}</div>
+                                    ) : selectedItems.map(({ item, index, sku }) => {
+                                        const salePrice = salePriceFor(sku, item);
+                                        const locked = Number(item.sold_count || 0) > 0;
+                                        const discountError = form.errors[`items.${index}.discount_type`]
+                                            || form.errors[`items.${index}.discount_value`]
+                                            || pricingErrors[`items.${index}.discount_value`];
+                                        const quantityError = form.errors[`items.${index}.quantity_limit`]
+                                            || pricingErrors[`items.${index}.quantity_limit`];
+                                        const skuStatus = [
+                                            `${sku.available_qty ?? 0} ${t('available')}`,
+                                            locked ? `${item.sold_count} ${t('sold')}` : null,
+                                        ].filter(Boolean).join(' · ');
+                                        const identitySku = {
+                                            id: sku.id,
+                                            product_name: sku.product?.name,
+                                            sku_code: `${sku.sku_code} · ${skuStatus}`,
+                                            barcode: null,
+                                        };
 
-                                    const skuError = itemErrorFor(index);
-                                    const rowInvalid = Boolean(discountError || quantityError || skuError);
+                                        const skuError = itemErrorFor(index);
+                                        const rowInvalid = Boolean(discountError || quantityError || skuError);
 
-                                    return (
+                                        return (
                                         <div
-                                            className={rowInvalid ? 'receipt-price-line has-remove is-invalid' : 'receipt-price-line has-remove'}
-                                            style={{ '--wizard-qty-fields': 5, '--wizard-qty-unit': '108px' }}
+                                            className={rowInvalid ? 'receipt-price-line has-remove wizard-console-line is-invalid' : 'receipt-price-line has-remove wizard-console-line'}
                                             key={sku.id}
                                         >
-                                            <div>
-                                                <ProductIdentity sku={identitySku} showBarcode={false} />
-                                                <small className="muted wizard-qty-hint">
-                                                    {skuLabel(sku)} · {t('available')} {sku.available_qty}
-                                                </small>
-                                                {locked && (
-                                                    <small className="muted wizard-qty-hint">
-                                                        {t(':count units sold — discount is locked', { count: item.sold_count })}
-                                                    </small>
-                                                )}
-                                            </div>
-                                            <label className="form-field">
+                                            <ProductIdentity sku={identitySku} showBarcode={false} />
+                                            <div className="wizard-qty-value">
                                                 <span>{t('Original')}</span>
-                                                <input type="text" value={formatMoney(sku.price)} readOnly tabIndex={-1} />
-                                            </label>
+                                                <strong>{formatMoney(sku.price)}</strong>
+                                            </div>
                                             <label className={form.errors[`items.${index}.discount_type`] ? 'form-field is-invalid' : 'form-field'}>
                                                 <span>{t('Discount')}</span>
                                                 <select
@@ -634,15 +642,10 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                     title={quantityError || undefined}
                                                 />
                                             </label>
-                                            <label className="form-field">
+                                            <div className="wizard-qty-value">
                                                 <span>{t('Sale price')}</span>
-                                                <input
-                                                    type="text"
-                                                    value={salePrice ? formatMoney(salePrice) : '-'}
-                                                    readOnly
-                                                    tabIndex={-1}
-                                                />
-                                            </label>
+                                                <strong>{salePrice ? formatMoney(salePrice) : '-'}</strong>
+                                            </div>
                                             <button
                                                 type="button"
                                                 className="icon-btn small danger wizard-qty-remove"
@@ -654,8 +657,9 @@ export default function FlashSaleForm({ productOptions, flashSale = null, mode =
                                                 <Icon name="trash" size={13} />
                                             </button>
                                         </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </>
                     )}

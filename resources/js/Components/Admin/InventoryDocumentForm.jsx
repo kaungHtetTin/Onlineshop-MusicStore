@@ -187,16 +187,20 @@ export default function InventoryDocumentForm({ type, locations, categories = []
 
                 <section className="panel glass">
                     <div className="wizard-toolbar">
-                        <div className="tab-bar" role="tablist" aria-label={t('Receipt form steps')}>
+                        <div className="tab-bar wizard-stepper" role="tablist" aria-label={t('Receipt form steps')}>
                             {receiptSteps.map((step, index) => (
                                 <button
                                     type="button"
                                     key={step.key}
-                                    className={receiptStep === step.key ? 'active' : ''}
+                                    className={receiptStep === step.key ? 'active' : index < receiptStepIndex ? 'is-complete' : ''}
                                     disabled={!canAccessReceiptStep(index)}
                                     onClick={() => canAccessReceiptStep(index) && setReceiptStep(step.key)}
+                                    aria-current={receiptStep === step.key ? 'step' : undefined}
                                 >
-                                    {index + 1}. {t(step.label)}
+                                    <span className="wizard-step-number">
+                                        {index < receiptStepIndex ? <Icon name="check" size={13} /> : index + 1}
+                                    </span>
+                                    <span className="wizard-step-label">{t(step.label)}</span>
                                 </button>
                             ))}
                         </div>
@@ -268,16 +272,37 @@ export default function InventoryDocumentForm({ type, locations, categories = []
                     {receiptStep === 'details' && (
                         <>
                             <PanelHeading eyebrow={t(stepMeta.eyebrow)} title={t(stepMeta.title)} action={<small className="muted">{t('Original, wholesale, and retail prices update the SKU.')}</small>} />
-                            <div className="receipt-price-lines">
-                                {lineCount === 0 ? <div className="empty-document-lines">{t('Select products before entering quantities.')}</div> : form.data.items.map((item, index) => (
-                                    <div className="receipt-price-line" style={{ '--wizard-qty-fields': 4, '--wizard-qty-unit': '120px' }} key={item.sku_id}>
+                            <div className="wizard-qty-table" style={{ '--wizard-qty-fields': 4, '--wizard-qty-unit': '120px' }}>
+                                {lineCount > 0 && (
+                                    <div className="wizard-qty-list-head" aria-hidden="true">
+                                        <span>{t('Product / SKU')}</span>
+                                        <span>{t('Received')}</span>
+                                        <span>{t('Original price')}</span>
+                                        <span>{t('Wholesale price')}</span>
+                                        <span>{t('Retail price')}</span>
+                                        <span>{t('Action')}</span>
+                                    </div>
+                                )}
+                                <div className="receipt-price-lines wizard-console-lines">
+                                    {lineCount === 0 ? <div className="empty-document-lines">{t('Select products before entering quantities.')}</div> : form.data.items.map((item, index) => (
+                                    <div className="receipt-price-line has-remove wizard-console-line" key={item.sku_id}>
                                         <ProductIdentity sku={item.sku} showBarcode={false} />
                                         <label className="form-field"><span>{t('Received')}</span><input type="number" min="1" value={item.received_quantity} onChange={(event) => updateItem(index, { received_quantity: event.target.value })} required /></label>
                                         <label className="form-field"><span>{t('Original price')}</span><input type="number" min="0" step="0.01" value={item.unit_cost} onChange={(event) => updateItem(index, { unit_cost: event.target.value })} /></label>
                                         <label className="form-field"><span>{t('Wholesale price')}</span><input type="number" min="0" step="0.01" value={item.wholesale_price} onChange={(event) => updateItem(index, { wholesale_price: event.target.value })} /></label>
                                         <label className="form-field"><span>{t('Retail price')}</span><input type="number" min="0" step="0.01" value={item.retail_price} onChange={(event) => updateItem(index, { retail_price: event.target.value })} /></label>
+                                        <button
+                                            type="button"
+                                            className="icon-btn small danger wizard-qty-remove"
+                                            onClick={() => removeSku(item.sku_id)}
+                                            aria-label={t('Remove item')}
+                                            title={t('Remove item')}
+                                        >
+                                            <Icon name="trash" size={13} />
+                                        </button>
                                     </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </>
                     )}

@@ -81,6 +81,21 @@ class PromotionManagementTest extends TestCase
         $this->assertSame('2026-08-10T05:30:00+00:00', $sale->ends_at->toIso8601String());
     }
 
+    public function test_flash_sale_detail_page_includes_item_pricing_and_availability(): void
+    {
+        [$sale, $item] = $this->saleWithItem(3);
+
+        $this->actingAs($this->admin())
+            ->withHeader('X-SPA', 'true')
+            ->get("/admin/flash-sales/{$sale->id}")
+            ->assertOk()
+            ->assertJsonPath('component', 'Admin/FlashSales/Show')
+            ->assertJsonPath('props.flashSale.id', $sale->id)
+            ->assertJsonPath('props.flashSale.items.0.id', $item->id)
+            ->assertJsonPath('props.flashSale.items.0.sold_count', 3)
+            ->assertJsonPath('props.flashSale.items.0.remaining_quantity', 7);
+    }
+
     public function test_deleting_flash_sale_with_sales_history_deactivates_and_preserves_it(): void
     {
         [$sale, $item] = $this->saleWithItem(3);

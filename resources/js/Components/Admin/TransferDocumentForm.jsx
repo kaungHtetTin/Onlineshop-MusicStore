@@ -175,16 +175,20 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
 
             <section className="panel glass">
                 <div className="wizard-toolbar">
-                    <div className="tab-bar" role="tablist" aria-label={t('Transfer form steps')}>
+                    <div className="tab-bar wizard-stepper" role="tablist" aria-label={t('Transfer form steps')}>
                         {steps.map((item, index) => (
                             <button
                                 type="button"
                                 key={item.key}
-                                className={step === item.key ? 'active' : ''}
+                                className={step === item.key ? 'active' : index < stepIndex ? 'is-complete' : ''}
                                 disabled={!canAccessStep(index)}
                                 onClick={() => canAccessStep(index) && setStep(item.key)}
+                                aria-current={step === item.key ? 'step' : undefined}
                             >
-                                {index + 1}. {t(item.label)}
+                                <span className="wizard-step-number">
+                                    {index < stepIndex ? <Icon name="check" size={13} /> : index + 1}
+                                </span>
+                                <span className="wizard-step-label">{t(item.label)}</span>
                             </button>
                         ))}
                     </div>
@@ -254,9 +258,18 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
                 {step === 'details' && (
                     <>
                         <PanelHeading eyebrow={t('Step 3')} title={t('Quantities')} action={<small className="muted">{t('Requested quantity cannot exceed source availability.')}</small>} />
-                        <div className="receipt-price-lines">
-                            {lineCount === 0 ? <div className="empty-document-lines">{t('Select products before entering quantities.')}</div> : form.data.items.map((item, index) => (
-                                <div className="receipt-price-line" style={{ '--wizard-qty-fields': 2, '--wizard-qty-unit': '96px' }} key={item.sku_id}>
+                        <div className="wizard-qty-table" style={{ '--wizard-qty-fields': 2, '--wizard-qty-unit': '96px' }}>
+                            {lineCount > 0 && (
+                                <div className="wizard-qty-list-head" aria-hidden="true">
+                                    <span>{t('Product / SKU')}</span>
+                                    <span>{t('Available')}</span>
+                                    <span>{t('Requested')}</span>
+                                    <span>{t('Action')}</span>
+                                </div>
+                            )}
+                            <div className="receipt-price-lines wizard-console-lines">
+                                {lineCount === 0 ? <div className="empty-document-lines">{t('Select products before entering quantities.')}</div> : form.data.items.map((item, index) => (
+                                <div className="receipt-price-line has-remove wizard-console-line" key={item.sku_id}>
                                     <ProductIdentity sku={item.sku} />
                                     <label className="form-field">
                                         <span>{t('Available')}</span>
@@ -278,8 +291,18 @@ export default function TransferDocumentForm({ locations, categories = [] }) {
                                             required
                                         />
                                     </label>
+                                    <button
+                                        type="button"
+                                        className="icon-btn small danger wizard-qty-remove"
+                                        onClick={() => removeSku(item.sku_id)}
+                                        aria-label={t('Remove item')}
+                                        title={t('Remove item')}
+                                    >
+                                        <Icon name="trash" size={13} />
+                                    </button>
                                 </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </>
                 )}

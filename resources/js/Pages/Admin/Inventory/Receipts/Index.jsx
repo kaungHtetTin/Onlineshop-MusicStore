@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@/spa/router';
 import AdminLayout from '@/Layouts/AdminLayout';
 import AdminPagination from '@/Components/Admin/AdminPagination';
@@ -9,10 +10,59 @@ import { usePhraseTranslation } from '@/Utils/i18n';
 export default function ReceiptsIndex({ receipts }) {
     const { app_base } = usePage().props;
     const t = usePhraseTranslation();
+    const [visibleReceipts, setVisibleReceipts] = useState(receipts);
+    const [deletingId, setDeletingId] = useState(null);
+    const deletedReceiptIds = useRef(new Set());
+
+    const withoutReceipt = (paginator, receiptId) => {
+        const data = paginator.data.filter((item) => Number(item.id) !== Number(receiptId));
+        const removedCount = paginator.data.length - data.length;
+
+        return {
+            ...paginator,
+            data,
+            total: Math.max(0, Number(paginator.total || 0) - removedCount),
+            from: data.length > 0 ? paginator.from : null,
+            to: data.length > 0 ? Number(paginator.from || 1) + data.length - 1 : null,
+        };
+    };
+
+    const withoutDeletedReceipts = (paginator) => (
+        Array.from(deletedReceiptIds.current).reduce(
+            (current, receiptId) => withoutReceipt(current, receiptId),
+            paginator,
+        )
+    );
+
+    useEffect(() => {
+        setVisibleReceipts(withoutDeletedReceipts(receipts));
+    }, [receipts]);
 
     const destroy = (receipt) => {
         if (!confirm(t('Delete :number? This will reduce stock quantities and delete the financial ledger entry.', { number: receipt.receipt_number }))) return;
-        router.delete(routeWithBase(`/admin/inventory/receipts/${receipt.id}`, app_base));
+
+        const previousReceipts = visibleReceipts;
+        deletedReceiptIds.current.add(Number(receipt.id));
+        setDeletingId(receipt.id);
+        setVisibleReceipts((current) => withoutReceipt(current, receipt.id));
+
+        router.delete(
+            routeWithBase(`/admin/inventory/receipts/${receipt.id}`, app_base),
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    if (page?.props?.receipts) {
+                        setVisibleReceipts(withoutDeletedReceipts(page.props.receipts));
+                    }
+                },
+                onError: () => {
+                    deletedReceiptIds.current.delete(Number(receipt.id));
+                    setVisibleReceipts(previousReceipts);
+                },
+                onFinish: () => setDeletingId(null),
+            },
+        );
     };
 
     return (
@@ -39,13 +89,17 @@ export default function ReceiptsIndex({ receipts }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {receipts.data.length === 0 ? (
+                            {visibleReceipts.data.length === 0 ? (
                                 <tr>
                                     <td colSpan="8" className="empty-table-cell">{t('No receipts yet.')}</td>
                                 </tr>
-                            ) : receipts.data.map((receipt) => (
+                            ) : visibleReceipts.data.map((receipt) => (
                                 <tr key={receipt.id}>
-                                    <td><strong>{receipt.receipt_number}</strong></td>
+                                    <td>
+                                        <Link className="table-primary-link" href={routeWithBase(`/admin/inventory/receipts/${receipt.id}`, app_base)}>
+                                            {receipt.receipt_number}
+                                        </Link>
+                                    </td>
                                     <td>{receipt.location.name}<small className="table-subline">{receipt.location.code}</small></td>
                                     <td>{receipt.supplier_reference || '-'}</td>
                                     <td>{receipt.items.length}</td>
@@ -54,6 +108,13 @@ export default function ReceiptsIndex({ receipts }) {
                                     <td>{new Date(receipt.created_at).toLocaleDateString()}</td>
                                     <td>
                                         <div className="inline-actions">
+                                            <Link
+                                                className="icon-btn small"
+                                                href={routeWithBase(`/admin/inventory/receipts/${receipt.id}`, app_base)}
+                                                aria-label={t('View receipt')}
+                                            >
+                                                <Icon name="eye" size={13} />
+                                            </Link>
                                             {receipt.status === 'draft' && (
                                                 <Link className="icon-btn small" href={routeWithBase(`/admin/inventory/receipts/${receipt.id}/edit`, app_base)} aria-label={t('Edit receipt')}>
                                                     <Icon name="edit" size={13} />
@@ -64,6 +125,7 @@ export default function ReceiptsIndex({ receipts }) {
                                                 className="icon-btn small danger"
                                                 onClick={() => destroy(receipt)}
                                                 aria-label={t('Delete receipt')}
+                                                disabled={deletingId !== null}
                                             >
                                                 <Icon name="trash" size={13} />
                                             </button>
@@ -74,7 +136,7 @@ export default function ReceiptsIndex({ receipts }) {
                         </tbody>
                     </table>
                 </div>
-                <AdminPagination paginator={receipts} label={t('receipts')} />
+                <AdminPagination paginator={visibleReceipts} label={t('receipts')} />
             </section>
         </AdminLayout>
     );

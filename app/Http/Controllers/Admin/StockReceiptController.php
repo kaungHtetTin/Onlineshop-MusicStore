@@ -34,6 +34,22 @@ class StockReceiptController extends Controller
         ]);
     }
 
+    public function show(Request $request, StockReceipt $receipt)
+    {
+        $this->authorize('view', $receipt);
+        $receipt->load([
+            'location:id,code,name,type',
+            'creator:id,name',
+            'receiver:id,name',
+            'inventoryImport:id,batch_number,original_filename',
+            'items.sku.product:id,name',
+        ]);
+
+        return Spa::render('Admin/Inventory/Receipts/Show', [
+            'receipt' => $receipt,
+        ]);
+    }
+
     public function store(Request $request, StockReceiptService $service, AuditLogService $audit)
     {
         $this->authorize('create', StockReceipt::class);
@@ -107,7 +123,9 @@ class StockReceiptController extends Controller
         $service->delete($receipt, $request->user());
         $audit->record('inventory.receipt.deleted', null, ['receipt_number' => $receiptNumber, 'location_id' => $locationId], $request);
 
-        return redirect()->route('admin.inventory.receipts.index')->with('success', "Receipt {$receiptNumber} deleted and stock adjusted.");
+        return redirect()
+            ->route('admin.inventory.receipts.index', [], 303)
+            ->with('success', "Receipt {$receiptNumber} deleted and stock adjusted.");
     }
 
     private function applySkuPriceUpdates(array $items): void
